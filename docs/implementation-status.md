@@ -1,0 +1,61 @@
+# Implementation Status
+
+This checklist tracks completion of prompts 00 through 56. Check an item only when its prompt is fully implemented and verified.
+
+- [x] Prompt 00
+- [x] Prompt 01
+- [ ] Prompt 02
+- [ ] Prompt 03
+- [ ] Prompt 04
+- [ ] Prompt 05
+- [ ] Prompt 06
+- [ ] Prompt 07
+- [ ] Prompt 08
+- [ ] Prompt 09
+- [ ] Prompt 10
+- [ ] Prompt 11
+- [ ] Prompt 12
+- [ ] Prompt 13
+- [ ] Prompt 14
+- [ ] Prompt 15
+- [ ] Prompt 16
+- [ ] Prompt 17
+- [ ] Prompt 18
+- [ ] Prompt 19
+- [ ] Prompt 20
+- [ ] Prompt 21
+- [ ] Prompt 22
+- [ ] Prompt 23
+- [ ] Prompt 24
+- [ ] Prompt 25
+- [ ] Prompt 26
+- [ ] Prompt 27
+- [ ] Prompt 28
+- [ ] Prompt 29
+- [ ] Prompt 30
+- [ ] Prompt 31
+- [ ] Prompt 32
+- [ ] Prompt 33
+- [ ] Prompt 34
+- [ ] Prompt 35
+- [ ] Prompt 36
+- [ ] Prompt 37
+- [ ] Prompt 38
+- [ ] Prompt 39
+- [ ] Prompt 40
+- [ ] Prompt 41
+- [ ] Prompt 42
+- [ ] Prompt 43
+- [ ] Prompt 44
+- [ ] Prompt 45
+- [ ] Prompt 46
+- [ ] Prompt 47
+- [ ] Prompt 48
+- [ ] Prompt 49
+- [ ] Prompt 50
+- [ ] Prompt 51
+- [ ] Prompt 52
+- [ ] Prompt 53
+- [ ] Prompt 54
+- [ ] Prompt 55
+- [ ] Prompt 56
