@@ -1,0 +1,5 @@
+{
+  "apiBaseUrl": "http://127.0.0.1:8000",
+  "previewBaseUrl": "http://127.0.0.1:4300",
+  "supportUrl": null
+}

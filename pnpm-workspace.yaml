@@ -3,7 +3,11 @@ packages:
   - packages/site-components
   - packages/web/*
 
-onlyBuiltDependencies: []
+allowBuilds:
+  '@parcel/watcher': false
+  esbuild: false
+  lmdb: false
+  msgpackr-extract: false
 
 overrides:
   '@hono/node-server': 2.0.10

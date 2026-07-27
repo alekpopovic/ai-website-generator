@@ -40,6 +40,12 @@ export default tseslint.config(
     files: ['apps/web/**/*.ts'],
     extends: [...angular.configs.tsRecommended],
     processor: angular.processInlineTemplates,
+    rules: {
+      // Angular components are framework entry points and may intentionally have no class members.
+      '@typescript-eslint/no-extraneous-class': 'off',
+      // Angular's built-in validator collection exposes safe static functions.
+      '@typescript-eslint/unbound-method': 'off',
+    },
   },
   {
     files: ['apps/web/**/*.html'],
