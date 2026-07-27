@@ -6,7 +6,9 @@ from collections.abc import AsyncIterator
 from typing import Annotated, cast
 
 from fastapi import Depends, Request
+from platform_workflows.dispatcher import WorkflowDispatcher
 from sqlalchemy.ext.asyncio import AsyncSession
+from temporalio.client import Client
 
 from platform_api.config import Settings
 from platform_api.errors import ApiError, DependencyUnavailableError
@@ -52,10 +54,33 @@ async def database_transaction_dependency(
         raise pending_error
 
 
+async def temporal_client_dependency(
+    resources: Annotated[ApplicationResources, Depends(resources_dependency)],
+) -> Client:
+    """Return the lazily connected internal Temporal client."""
+    if resources.temporal_clients is None:
+        raise DependencyUnavailableError("temporal")
+    try:
+        return await resources.temporal_clients.get()
+    except Exception as error:
+        raise DependencyUnavailableError("temporal") from error
+
+
+async def workflow_dispatcher_dependency(
+    resources: Annotated[ApplicationResources, Depends(resources_dependency)],
+) -> WorkflowDispatcher:
+    """Return the real dispatcher or the deterministic fake configured for CI."""
+    return resources.workflow_dispatcher
+
+
 SettingsDependency = Annotated[Settings, Depends(settings_dependency)]
 ResourcesDependency = Annotated[ApplicationResources, Depends(resources_dependency)]
 ProbeRegistryDependency = Annotated[ProbeRegistry, Depends(probe_registry_dependency)]
 DatabaseTransactionDependency = Annotated[AsyncSession, Depends(database_transaction_dependency)]
+TemporalClientDependency = Annotated[Client, Depends(temporal_client_dependency)]
+WorkflowDispatcherDependency = Annotated[
+    WorkflowDispatcher, Depends(workflow_dispatcher_dependency)
+]
 
 # Compatibility name for routes created before the transaction boundary was explicit.
 database_session_dependency = database_transaction_dependency

@@ -66,6 +66,7 @@ GPU-enabled services must retain the same private network boundaries as CPU serv
 | `task compose-logs`        | Follow local Compose logs.                                                               |
 | `task ollama-pull`         | Explicitly pull configured Ollama models; may download many gigabytes.                   |
 | `task ollama-ready`        | Verify Ollama availability and configured model presence.                                |
+| `task workflow-worker`     | Run Temporal workflow orchestration on the `control` queue.                              |
 | `task clean`               | Remove allowlisted local caches, dependencies, and generated outputs.                    |
 | `task audit`               | Query vulnerability services for synchronized Python and locked JavaScript dependencies. |
 | `task licenses`            | Print Python and JavaScript dependency license reports.                                  |

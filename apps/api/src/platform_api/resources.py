@@ -5,6 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import httpx2
+from platform_workflows.client import TemporalClientConfig, TemporalClientProvider
+from platform_workflows.dispatcher import (
+    FakeWorkflowDispatcher,
+    TemporalWorkflowDispatcher,
+    WorkflowDispatcher,
+)
 from redis.asyncio import Redis
 
 from platform_api.auth.mail import (
@@ -38,6 +44,8 @@ class ApplicationResources:
     authentication_mailer: AuthenticationMailer
     password_manager: AsyncPasswordManager
     access_tokens: AccessTokenManager | None
+    temporal_clients: TemporalClientProvider | None
+    workflow_dispatcher: WorkflowDispatcher
 
     @classmethod
     async def create(cls, settings: Settings, telemetry: Telemetry) -> ApplicationResources:
@@ -86,6 +94,18 @@ class ApplicationResources:
             if settings.security.access_token_secret is not None
             else None
         )
+        temporal_clients: TemporalClientProvider | None = None
+        if settings.application.fake_dependencies:
+            workflow_dispatcher: WorkflowDispatcher = FakeWorkflowDispatcher()
+        else:
+            temporal_clients = TemporalClientProvider(
+                TemporalClientConfig(
+                    address=settings.temporal.address,
+                    namespace=settings.temporal.namespace,
+                    connect_timeout_seconds=settings.temporal.connect_timeout_seconds,
+                )
+            )
+            workflow_dispatcher = TemporalWorkflowDispatcher(temporal_clients)
         probes = (
             fake_probe_registry()
             if settings.application.fake_dependencies
@@ -101,6 +121,8 @@ class ApplicationResources:
             authentication_mailer=authentication_mailer,
             password_manager=AsyncPasswordManager(),
             access_tokens=access_tokens,
+            temporal_clients=temporal_clients,
+            workflow_dispatcher=workflow_dispatcher,
         )
 
     async def close(self) -> None:

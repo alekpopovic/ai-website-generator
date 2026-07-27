@@ -31,6 +31,11 @@ Temporal workflows own durable orchestration, retries, timeouts, cancellation, a
 
 Workflow histories carry IDs, compact state, and object keys. Large documents, screenshots, model outputs, and binaries remain in object storage.
 
+Shared queue names, retry categories, workflow IDs, heartbeat and cancellation helpers, dispatch
+boundaries, and deterministic test utilities are defined in `platform-workflows`. The control plane
+uses a lazy Temporal client and a fake dispatcher in default unit tests. See
+[Temporal workers](../development/temporal-workers.md) for local process and test commands.
+
 ## 3. Scan workflow
 
 1. An authorized user submits a source, scope, and authorization attestation.

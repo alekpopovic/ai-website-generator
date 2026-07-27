@@ -70,6 +70,11 @@ tasks:
     cmds:
       - uv run platform-seed-local-user
 
+  workflow-worker:
+    desc: Run the Temporal workflow orchestration worker on the control queue
+    cmds:
+      - uv run platform-workflow-worker
+
   verify-generated-api-client:
     desc: Fail when committed OpenAPI or generated Angular client artifacts are stale
     cmds:

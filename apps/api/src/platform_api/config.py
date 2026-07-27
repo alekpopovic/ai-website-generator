@@ -120,7 +120,7 @@ class TemporalSettings(StrictSettings):
 
     address: str = "127.0.0.1:7233"
     namespace: str = "default"
-    task_queue: str = "control-plane"
+    task_queue: str = "control"
     connect_timeout_seconds: PositiveSeconds = 5.0
 
     @field_validator("address")
