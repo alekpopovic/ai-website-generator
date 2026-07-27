@@ -76,13 +76,13 @@ A trained model is promoted only after reproducible evaluation, security review,
 
 ## 8. Storage responsibilities
 
-| Store | Authoritative responsibilities | Must not contain |
-| --- | --- | --- |
-| PostgreSQL | tenants, users, projects, authorization, job state, artifact metadata, provenance, policy, lineage, and audit records | large binaries or workflow payloads |
-| MinIO/S3 | raw bounded scan artifacts, screenshots, normalized datasets, generated sites, validation reports, and model artifacts | authoritative authorization or lifecycle state |
-| Redis | bounded caches, distributed coordination locks, rate-limit state, and ephemeral event streams | durable workflow state or sole copies of business records |
-| Temporal | workflow histories, activity coordination, retries, timers, cancellation, and compact identifiers | large HTML, screenshots, model bodies, or binary artifacts |
-| Qdrant | embeddings and retrieval metadata scoped by tenant, dataset, provenance, licensing, and model version | source-of-truth application state or unfiltered raw scraped content |
+| Store      | Authoritative responsibilities                                                                                         | Must not contain                                                    |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| PostgreSQL | tenants, users, projects, authorization, job state, artifact metadata, provenance, policy, lineage, and audit records  | large binaries or workflow payloads                                 |
+| MinIO/S3   | raw bounded scan artifacts, screenshots, normalized datasets, generated sites, validation reports, and model artifacts | authoritative authorization or lifecycle state                      |
+| Redis      | bounded caches, distributed coordination locks, rate-limit state, and ephemeral event streams                          | durable workflow state or sole copies of business records           |
+| Temporal   | workflow histories, activity coordination, retries, timers, cancellation, and compact identifiers                      | large HTML, screenshots, model bodies, or binary artifacts          |
+| Qdrant     | embeddings and retrieval metadata scoped by tenant, dataset, provenance, licensing, and model version                  | source-of-truth application state or unfiltered raw scraped content |
 
 ## 9. Trust boundaries
 

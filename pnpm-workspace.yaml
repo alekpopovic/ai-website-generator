@@ -1,0 +1,9 @@
+packages:
+  - apps/web
+  - packages/site-components
+  - packages/web/*
+
+onlyBuiltDependencies: []
+
+overrides:
+  '@hono/node-server': 2.0.10

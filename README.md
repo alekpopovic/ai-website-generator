@@ -12,3 +12,7 @@ Monorepo for a production-grade platform that discovers website design patterns 
 - `tests/`: deterministic shared fixtures and cross-service test suites.
 
 See `AGENTS.md` for permanent engineering constraints and `docs/architecture/system-architecture.md` for system boundaries and data flows.
+
+## Development commands
+
+The repository uses uv, pnpm workspaces, and Task. After installing the prerequisites, run `task bootstrap` once and `task verify` before submitting changes. See `docs/development/local-development.md` for setup, CPU-only operation, optional GPU guidance, audits, and the complete command reference.

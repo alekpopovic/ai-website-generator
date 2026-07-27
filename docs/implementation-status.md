@@ -4,7 +4,7 @@ This checklist tracks completion of prompts 00 through 56. Check an item only wh
 
 - [x] Prompt 00
 - [x] Prompt 01
-- [ ] Prompt 02
+- [x] Prompt 02
 - [ ] Prompt 03
 - [ ] Prompt 04
 - [ ] Prompt 05

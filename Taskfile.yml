@@ -1,0 +1,104 @@
+version: '3'
+
+silent: false
+
+tasks:
+  default:
+    desc: List available development tasks
+    cmds:
+      - task --list
+
+  bootstrap:
+    desc: Install locked Python and JavaScript dependencies and local Git hooks
+    cmds:
+      - uv sync --all-groups --all-packages --frozen
+      - pnpm install --frozen-lockfile
+      - uv run pre-commit install --hook-type pre-commit --hook-type commit-msg
+
+  format:
+    desc: Format Python, TypeScript, Angular, JSON, YAML, and Markdown files
+    cmds:
+      - uv run ruff format .
+      - pnpm run format
+
+  format-check:
+    internal: true
+    cmds:
+      - uv run ruff format --check .
+      - pnpm run format:check
+
+  lint:
+    desc: Run Python and web linters plus offline secret scanning
+    cmds:
+      - uv run ruff check .
+      - pnpm run lint
+      - task: format-check
+      - uv run pre-commit run detect-secrets --all-files
+
+  typecheck:
+    desc: Run strict Python and workspace TypeScript type checks
+    cmds:
+      - uv run mypy .
+      - pnpm run typecheck
+
+  unit-test:
+    desc: Run deterministic unit tests without external services
+    cmds:
+      - uv run python infrastructure/scripts/run_pytest.py unit
+      - pnpm run unit-test
+
+  integration-test:
+    desc: Run integration tests against explicitly started local dependencies
+    cmds:
+      - uv run python infrastructure/scripts/run_pytest.py integration
+      - pnpm run integration-test
+
+  e2e-test:
+    desc: Run bounded end-to-end tests
+    cmds:
+      - uv run python infrastructure/scripts/run_pytest.py e2e
+      - pnpm run e2e-test
+
+  generate-api-client:
+    desc: Generate the TypeScript API client when its workspace package exists
+    cmds:
+      - pnpm run generate-api-client
+
+  compose-up:
+    desc: Start the local container stack
+    cmds:
+      - docker compose up --detach
+
+  compose-down:
+    desc: Stop the local container stack without deleting persisted data
+    cmds:
+      - docker compose down
+
+  compose-logs:
+    desc: Follow local container logs
+    cmds:
+      - docker compose logs --follow
+
+  clean:
+    desc: Remove only known local build, test, cache, and dependency artifacts
+    cmds:
+      - python infrastructure/scripts/clean.py
+
+  audit:
+    desc: Check synchronized Python and locked JavaScript dependencies for vulnerabilities
+    cmds:
+      - uv run pip-audit --local
+      - pnpm run audit
+
+  licenses:
+    desc: Print Python and JavaScript dependency license reports
+    cmds:
+      - uv run pip-licenses --from=mixed --format=markdown
+      - pnpm run licenses
+
+  verify:
+    desc: Run offline checks that are safe before applications are implemented
+    cmds:
+      - task: lint
+      - task: typecheck
+      - task: unit-test
