@@ -32,6 +32,11 @@ class CrawlDecisionCode(StrEnum):
     ACCOUNT_ACTION = "account_action"
     FILE_DOWNLOAD = "file_download"
     CALENDAR_TRAP = "calendar_trap"
+    SESSION_ID = "session_id"
+    FACET_EXPLOSION = "facet_explosion"
+    REPEATED_PATH_SEGMENT = "repeated_path_segment"
+    PAGINATION_TRAP = "pagination_trap"
+    QUERY_PERMUTATION = "query_permutation"
     TRACKING_URL = "tracking_url"
     INVALID_URL = "invalid_url"
 
@@ -47,6 +52,11 @@ class CrawlPolicyConfig:
         {"dclid", "fbclid", "gclid", "mc_cid", "mc_eid", "msclkid", "ref", "referrer"}
     )
     tracking_parameter_prefixes: tuple[str, ...] = ("utm_",)
+    query_parameter_ordering: str = "sorted"
+    maximum_query_parameters: int = 20
+    maximum_sitemap_depth: int = 3
+    maximum_sitemap_bytes: int = 10 * 1024 * 1024
+    maximum_sitemap_urls: int = 50_000
     robots_max_bytes: int = 512 * 1024
     default_crawl_delay_seconds: float = 1.0
     token_bucket_capacity: int = 2
@@ -64,6 +74,16 @@ class CrawlPolicyConfig:
             raise ValueError("default crawl delay must be between 0 and 60 seconds")
         if not 1 <= self.token_bucket_capacity <= 100:
             raise ValueError("token bucket capacity must be between 1 and 100")
+        if self.query_parameter_ordering not in {"preserve", "sorted"}:
+            raise ValueError("query parameter ordering must be preserve or sorted")
+        if not 1 <= self.maximum_query_parameters <= 100:
+            raise ValueError("query parameter limit must be between 1 and 100")
+        if not 0 <= self.maximum_sitemap_depth <= 10:
+            raise ValueError("sitemap depth must be between 0 and 10")
+        if not 64 * 1024 <= self.maximum_sitemap_bytes <= 50 * 1024 * 1024:
+            raise ValueError("sitemap size limit must be between 64 KiB and 50 MiB")
+        if not 1 <= self.maximum_sitemap_urls <= 50_000:
+            raise ValueError("sitemap URL limit must be between 1 and 50000")
 
 
 @dataclass(frozen=True, slots=True)
@@ -97,7 +117,7 @@ class CrawlDecision:
     def provenance(self) -> dict[str, object]:
         """Return bounded JSON-compatible policy evidence for persistence."""
         return {
-            "policy_version": 1,
+            "policy_version": 2,
             "code": self.code.value,
             "allowed": self.allowed,
             "depth": self.depth,

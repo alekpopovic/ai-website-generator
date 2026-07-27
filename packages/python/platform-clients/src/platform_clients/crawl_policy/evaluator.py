@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
-from platform_clients.crawl_policy.canonical import canonicalize_url, exclusion_reason
+from urllib.parse import urlsplit
+
+from platform_clients.crawl_policy.canonical import (
+    canonicalize_url,
+    exclusion_reason,
+    query_permutation_key,
+)
 from platform_clients.crawl_policy.models import (
     CrawlDecision,
     CrawlDecisionCode,
@@ -19,6 +25,9 @@ class CrawlPolicyEvaluator:
         self._config = config
         self._robots = robots
         self._accepted: set[str] = set()
+        self._query_permutations: dict[
+            tuple[str, str, str, tuple[tuple[str, str, bool], ...]], str
+        ] = {}
 
     def evaluate(self, url: str, *, depth: int, reserve: bool = True) -> CrawlDecision:
         try:
@@ -27,6 +36,19 @@ class CrawlPolicyEvaluator:
             return self._decision(url, None, depth, False, CrawlDecisionCode.INVALID_URL, None)
         if canonical in self._accepted:
             return self._decision(url, canonical, depth, False, CrawlDecisionCode.DUPLICATE, None)
+        if self._config.query_parameter_ordering == "preserve" and urlsplit(canonical).query:
+            parsed = urlsplit(canonical)
+            permutation = (
+                parsed.scheme,
+                parsed.netloc,
+                parsed.path,
+                query_permutation_key(canonical),
+            )
+            prior = self._query_permutations.get(permutation)
+            if prior is not None and prior != canonical:
+                return self._decision(
+                    url, canonical, depth, False, CrawlDecisionCode.QUERY_PERMUTATION, None
+                )
         if depth > self._config.maximum_depth:
             return self._decision(url, canonical, depth, False, CrawlDecisionCode.DEPTH_LIMIT, None)
         reason = exclusion_reason(canonical, self._config)
@@ -44,6 +66,15 @@ class CrawlPolicyEvaluator:
             return self._decision(url, canonical, depth, False, CrawlDecisionCode.PAGE_LIMIT, True)
         if reserve:
             self._accepted.add(canonical)
+            if self._config.query_parameter_ordering == "preserve" and urlsplit(canonical).query:
+                parsed = urlsplit(canonical)
+                permutation = (
+                    parsed.scheme,
+                    parsed.netloc,
+                    parsed.path,
+                    query_permutation_key(canonical),
+                )
+                self._query_permutations[permutation] = canonical
         return self._decision(url, canonical, depth, True, CrawlDecisionCode.ALLOWED, True)
 
     @property

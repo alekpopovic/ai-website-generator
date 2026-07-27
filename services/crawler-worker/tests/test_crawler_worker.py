@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import gzip
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -92,14 +94,12 @@ async def test_subprocess_cancellation_terminates_child(monkeypatch: pytest.Monk
 
 async def test_fixture_html_metadata_and_internal_links_are_extracted() -> None:
     body = (FIXTURE_SITE / "index.html").read_bytes()
-    title, description, language, links = extract_html_metadata(
-        body, response_url="https://fixture.example/"
-    )
-    assert title == "Northstar Studio Fixture"
-    assert description is None
-    assert language == "en"
-    assert "https://fixture.example/pricing/" in links
-    assert all(link.startswith("https://fixture.example/") for link in links)
+    metadata = extract_html_metadata(body, response_url="https://fixture.example/")
+    assert metadata.title == "Northstar Studio Fixture"
+    assert metadata.description is None
+    assert metadata.language == "en"
+    assert "https://fixture.example/pricing/" in metadata.links
+    assert all(link.startswith("https://fixture.example/") for link in metadata.links)
 
 
 async def test_fixture_urlset_and_sitemap_indexes_are_bounded() -> None:
@@ -111,6 +111,29 @@ async def test_fixture_urlset_and_sitemap_indexes_are_bounded() -> None:
         b'<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
         b"<sitemap><loc>https://fixture.example/child.xml</loc></sitemap></sitemapindex>"
     )
-    assert index.child_sitemaps == ("https://fixture.example/child.xml",)
+    assert index.child_sitemaps[0].original_url == "https://fixture.example/child.xml"
     with pytest.raises(ValueError, match="forbidden"):
         parse_sitemap(b'<!DOCTYPE x [<!ENTITY y SYSTEM "file:///etc/passwd">]><urlset/>')
+
+
+async def test_sitemap_gzip_lastmod_and_decompression_limits() -> None:
+    xml = (
+        b'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url>'
+        b"<loc>https://fixture.example/Page%2fOne</loc><lastmod>2026-07-27T22:15:00Z</lastmod>"
+        b"</url></urlset>"
+    )
+    document = parse_sitemap(gzip.compress(xml), maximum_bytes=2_000)
+    assert document.urls[0].original_url == "https://fixture.example/Page%2fOne"
+    assert document.urls[0].last_modified_at == datetime(2026, 7, 27, 22, 15, tzinfo=UTC)
+    with pytest.raises(ValueError, match="size limit"):
+        parse_sitemap(gzip.compress(b" " * 4_000), maximum_bytes=1_024)
+
+
+async def test_canonical_and_hreflang_metadata_is_bounded_and_resolved() -> None:
+    metadata = extract_html_metadata(
+        b'<html lang="en"><head><link rel="alternate canonical" href="../Preferred" />'
+        b'<link rel="alternate" hreflang="fr" href="/fr/page" /></head></html>',
+        response_url="https://example.com/products/current",
+    )
+    assert metadata.canonical_link == "https://example.com/Preferred"
+    assert metadata.hreflang_links == (("fr", "https://example.com/fr/page"),)

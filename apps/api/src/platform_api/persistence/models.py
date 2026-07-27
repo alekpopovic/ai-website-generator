@@ -164,6 +164,10 @@ class ScanCampaign(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, 
         ),
         CheckConstraint("crawl_delay_seconds BETWEEN 0 AND 60", name="crawl_delay_valid"),
         CheckConstraint("respect_robots_txt IS TRUE", name="robots_required"),
+        CheckConstraint(
+            "query_parameter_ordering IN ('preserve', 'sorted')",
+            name="query_parameter_ordering_allowed",
+        ),
         CheckConstraint("overall_concurrency BETWEEN 1 AND 128", name="overall_concurrency_valid"),
         CheckConstraint("workflow_attempt >= 0", name="workflow_attempt_non_negative"),
         Index("ix_scan_campaigns_project_id_updated_at", "project_id", "updated_at"),
@@ -207,6 +211,9 @@ class ScanCampaign(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, 
     )
     tracking_query_parameters: Mapped[JsonValue] = mapped_column(
         SafeJSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+    )
+    query_parameter_ordering: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="sorted"
     )
     store_raw_html: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     timeout_limits: Mapped[JsonValue] = mapped_column(
@@ -412,7 +419,9 @@ class CrawlPage(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Bas
             "content_length IS NULL OR content_length >= 0", name="content_length_non_negative"
         ),
         CheckConstraint(
-            "discovery_source IN ('seed', 'sitemap', 'link')", name="discovery_source_allowed"
+            "discovery_source IN ("
+            "'submitted_root', 'robots_sitemap', 'sitemap', 'html_link', 'canonical')",
+            name="discovery_source_allowed",
         ),
         Index("ix_crawl_pages_campaign_id_status", "campaign_id", "status"),
         Index("ix_crawl_pages_target_id_depth", "target_id", "depth"),
@@ -434,6 +443,7 @@ class CrawlPage(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Bas
     url: Mapped[str] = mapped_column(String(2_048), nullable=False)
     normalized_url: Mapped[str] = mapped_column(String(2_048), nullable=False)
     final_url: Mapped[str | None] = mapped_column(String(2_048))
+    declared_canonical_url: Mapped[str | None] = mapped_column(String(2_048))
     source_domain: Mapped[str] = mapped_column(String(253), nullable=False)
     depth: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="discovered")
@@ -448,8 +458,12 @@ class CrawlPage(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Bas
     title: Mapped[str | None] = mapped_column(String(500))
     meta_description: Mapped[str | None] = mapped_column(String(1_000))
     language: Mapped[str | None] = mapped_column(String(35))
+    hreflang_links: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+    )
+    last_modified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     content_length: Mapped[int | None] = mapped_column(Integer)
-    discovery_source: Mapped[str] = mapped_column(String(32), nullable=False, default="link")
+    discovery_source: Mapped[str] = mapped_column(String(32), nullable=False, default="html_link")
     parent_url: Mapped[str | None] = mapped_column(String(2_048))
     response_artifact_key: Mapped[str | None] = mapped_column(String(1_024))
     discovered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

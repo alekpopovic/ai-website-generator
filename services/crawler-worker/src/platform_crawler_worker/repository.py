@@ -79,6 +79,7 @@ class CrawlRepository:
                     tracking_parameter_prefixes=tuple(
                         value[:-1] for value in tracking if value.endswith("*")
                     ),
+                    query_parameter_ordering=campaign.query_parameter_ordering,
                     default_crawl_delay_seconds=campaign.crawl_delay_seconds,
                     token_bucket_capacity=campaign.per_domain_concurrency,
                 ),
@@ -119,7 +120,11 @@ class CrawlRepository:
                     "maximum_depth": configuration.policy.maximum_depth,
                     "maximum_pages_per_domain": configuration.policy.maximum_pages_per_domain,
                     "respect_robots_txt": True,
-                    "policy_version": 1,
+                    "policy_version": 2,
+                    "query_parameter_ordering": configuration.policy.query_parameter_ordering,
+                    "maximum_sitemap_depth": configuration.policy.maximum_sitemap_depth,
+                    "maximum_sitemap_bytes": configuration.policy.maximum_sitemap_bytes,
+                    "maximum_sitemap_urls": configuration.policy.maximum_sitemap_urls,
                 },
             }
             if record is None:
@@ -162,6 +167,7 @@ class CrawlRepository:
                 "url": discovery.requested_url,
                 "normalized_url": discovery.canonical_url,
                 "final_url": discovery.final_url,
+                "declared_canonical_url": discovery.declared_canonical_url,
                 "source_domain": configuration.source_domain,
                 "depth": discovery.depth,
                 "status": "fetched",
@@ -174,6 +180,15 @@ class CrawlRepository:
                 "title": discovery.title,
                 "meta_description": discovery.meta_description,
                 "language": discovery.language,
+                "hreflang_links": [
+                    {
+                        "language": link.language,
+                        "original_url": link.original_url,
+                        "normalized_url": link.normalized_url,
+                    }
+                    for link in discovery.hreflang_links
+                ],
+                "last_modified_at": discovery.last_modified_at,
                 "content_length": discovery.content_length,
                 "discovery_source": discovery.discovery_source,
                 "parent_url": discovery.parent_url,

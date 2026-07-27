@@ -139,6 +139,10 @@ export type CrawlPageWithScansResponse = {
      */
     created_at: string;
     /**
+     * Declared Canonical Url
+     */
+    declared_canonical_url: string | null;
+    /**
      * Depth
      */
     depth: number;
@@ -159,6 +163,10 @@ export type CrawlPageWithScansResponse = {
      */
     final_url: string | null;
     /**
+     * Hreflang Links
+     */
+    hreflang_links: Array<HreflangLinkResponse>;
+    /**
      * Http Status
      */
     http_status: number | null;
@@ -170,6 +178,10 @@ export type CrawlPageWithScansResponse = {
      * Language
      */
     language: string | null;
+    /**
+     * Last Modified At
+     */
+    last_modified_at: string | null;
     /**
      * Meta Description
      */
@@ -307,6 +319,24 @@ export type HttpValidationError = {
  * Aggregate health vocabulary.
  */
 export type HealthState = 'healthy' | 'degraded' | 'not_ready';
+
+/**
+ * HreflangLinkResponse
+ */
+export type HreflangLinkResponse = {
+    /**
+     * Language
+     */
+    language: string;
+    /**
+     * Normalized Url
+     */
+    normalized_url: string;
+    /**
+     * Original Url
+     */
+    original_url: string;
+};
 
 /**
  * InvalidParameter
@@ -906,6 +936,10 @@ export type ScanCampaignCreateRequest = {
      */
     per_domain_concurrency?: number;
     /**
+     * Query Parameter Ordering
+     */
+    query_parameter_ordering?: 'preserve' | 'sorted';
+    /**
      * Respect Robots Txt
      */
     respect_robots_txt?: true;
@@ -991,6 +1025,10 @@ export type ScanCampaignResponse = {
      * Project Id
      */
     project_id: string;
+    /**
+     * Query Parameter Ordering
+     */
+    query_parameter_ordering?: 'preserve' | 'sorted';
     /**
      * Respect Robots Txt
      */
@@ -1126,6 +1164,10 @@ export type ScanCampaignUpdateRequest = {
      * Per Domain Concurrency
      */
     per_domain_concurrency?: number | null;
+    /**
+     * Query Parameter Ordering
+     */
+    query_parameter_ordering?: 'preserve' | 'sorted' | null;
     /**
      * Respect Robots Txt
      */

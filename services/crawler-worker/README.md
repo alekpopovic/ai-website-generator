@@ -23,8 +23,10 @@ the child, waits ten seconds, and kills it only if necessary.
 
 The spider fetches robots first, follows only safety-validated redirects, visits bounded declared
 sitemaps and same-origin HTML links, and uses conservative AutoThrottle settings in addition to the
-distributed token bucket. Sitemap indexes are bounded to three levels; XML entities and external DTDs
-are disabled. Requested/final/canonical URLs, response metadata, discovery lineage, and typed failures
-are persisted idempotently. Raw HTML is disabled by default; when enabled it is gzip-compressed through
-a temporary spool and streamed to the private `scan-artifacts` bucket with checksum and retention
-metadata.
+distributed token bucket. Sitemap index recursion, aggregate URL count, compressed and decompressed
+sizes are bounded; gzip is supported, while XML entities and external DTDs are disabled. Canonical URL
+declarations pass normal admission before scheduling, while hreflang declarations remain metadata.
+Original, normalized, final, and declared-canonical URLs, sitemap `lastmod`, response metadata,
+discovery lineage, and typed failures are persisted idempotently. Raw HTML is disabled by default; when
+enabled it is gzip-compressed through a temporary spool and streamed to the private `scan-artifacts`
+bucket with checksum and retention metadata.

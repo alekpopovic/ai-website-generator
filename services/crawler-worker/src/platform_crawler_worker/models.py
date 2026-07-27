@@ -32,6 +32,9 @@ class PageDiscovery:
     requested_url: str
     final_url: str
     canonical_url: str
+    declared_canonical_url: str | None
+    hreflang_links: tuple[HreflangLink, ...]
+    last_modified_at: datetime | None
     status_code: int
     content_type: str
     title: str | None
@@ -50,8 +53,31 @@ class PageDiscovery:
 
 @dataclass(frozen=True, slots=True)
 class SitemapDocument:
-    urls: tuple[str, ...]
-    child_sitemaps: tuple[str, ...]
+    urls: tuple[SitemapEntry, ...]
+    child_sitemaps: tuple[SitemapEntry, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class SitemapEntry:
+    original_url: str
+    last_modified_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class HreflangLink:
+    language: str
+    original_url: str
+    normalized_url: str
+
+
+@dataclass(frozen=True, slots=True)
+class HtmlMetadata:
+    title: str | None
+    description: str | None
+    language: str | None
+    links: tuple[str, ...]
+    canonical_link: str | None
+    hreflang_links: tuple[tuple[str, str], ...]
 
 
 @dataclass(frozen=True, slots=True)

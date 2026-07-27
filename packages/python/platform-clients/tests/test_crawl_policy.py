@@ -93,6 +93,50 @@ def test_canonicalization_removes_fragments_tracking_and_query_order() -> None:
 
 
 @pytest.mark.parametrize(
+    ("original", "expected"),
+    [
+        (
+            "HTTP://Example.COM.:80/A//B/./C/../%7euser/%2fkeep?q=%7e&empty=#x",
+            "http://example.com/A//B/~user/%2Fkeep?empty=&q=~",
+        ),
+        ("https://example.com:443", "https://example.com/"),
+        ("https://example.com/%E2%82%AC", "https://example.com/%E2%82%AC"),
+        ("https://example.com/CamelCase", "https://example.com/CamelCase"),
+        ("https://example.com/a//../b", "https://example.com/a/b"),
+        ("https://example.com/../../safe", "https://example.com/safe"),
+    ],
+)
+def test_rfc_url_component_normalization(original: str, expected: str) -> None:
+    assert canonicalize_url(original, config()) == expected
+
+
+@pytest.mark.parametrize(
+    "malformed",
+    [
+        "https://account@example.com/",
+        "https://example.com/%zz",
+        "https://example.com:99999/",
+        "https://example.com\\@evil.example/",
+        "https://exam\nple.com/",
+        " javascript:https://example.com/",
+    ],
+)
+def test_malformed_or_adversarial_urls_are_rejected(malformed: str) -> None:
+    with pytest.raises(ValueError):
+        canonicalize_url(malformed, config())
+
+
+def test_query_order_can_be_preserved_after_tracking_removal() -> None:
+    assert (
+        canonicalize_url(
+            "https://example.com/?b=2&utm_source=x&a=1",
+            config(query_parameter_ordering="preserve"),
+        )
+        == "https://example.com/?b=2&a=1"
+    )
+
+
+@pytest.mark.parametrize(
     ("url", "code"),
     [
         ("https://example.com/logout", CrawlDecisionCode.LOGOUT),
@@ -101,6 +145,13 @@ def test_canonicalization_removes_fragments_tracking_and_query_order() -> None:
         ("https://example.com/product?add-to-cart=1", CrawlDecisionCode.CART_MUTATION),
         ("https://example.com/report.pdf", CrawlDecisionCode.FILE_DOWNLOAD),
         ("https://example.com/calendar/2026/07", CrawlDecisionCode.CALENDAR_TRAP),
+        ("https://example.com/product?sessionid=secret", CrawlDecisionCode.SESSION_ID),
+        (
+            "https://example.com/products?filter_color=red&filter_size=m&facet=x&brand=y&sort=z",
+            CrawlDecisionCode.FACET_EXPLOSION,
+        ),
+        ("https://example.com/a/b/a/b/a/b", CrawlDecisionCode.REPEATED_PATH_SEGMENT),
+        ("https://example.com/articles/page/999", CrawlDecisionCode.PAGINATION_TRAP),
     ],
 )
 async def test_conservative_traps_are_excluded(url: str, code: CrawlDecisionCode) -> None:
@@ -136,6 +187,16 @@ async def test_patterns_robots_depth_page_limit_and_fragment_duplicates() -> Non
         evaluator.evaluate("https://example.com/docs/three", depth=1).code
         is CrawlDecisionCode.PAGE_LIMIT
     )
+
+
+async def test_query_permutations_are_rejected_before_request_when_order_is_preserved() -> None:
+    evaluator = CrawlPolicyEvaluator(
+        config(query_parameter_ordering="preserve"),
+        robots(body="User-agent: *\nAllow: /\n"),
+    )
+    assert evaluator.evaluate("https://example.com/search?color=red&size=m", depth=1).allowed
+    decision = evaluator.evaluate("https://example.com/search?size=m&color=red", depth=1)
+    assert decision.code is CrawlDecisionCode.QUERY_PERMUTATION
 
 
 async def test_robots_fetch_records_hash_delay_sitemap_and_redirect() -> None:

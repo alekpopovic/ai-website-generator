@@ -145,7 +145,7 @@ def _scrapy_settings(config: TargetCrawlConfiguration) -> ScrapySettings:
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.8,text/plain;q=0.5"
             },
             "DOWNLOAD_WARNSIZE": 4 * 1_024 * 1_024,
-            "DOWNLOAD_MAXSIZE": 5 * 1_024 * 1_024,
+            "DOWNLOAD_MAXSIZE": max(5 * 1_024 * 1_024, config.policy.maximum_sitemap_bytes),
             "DOWNLOAD_TIMEOUT": config.response_timeout_seconds,
             "DNS_TIMEOUT": config.connect_timeout_seconds,
             "CONCURRENT_REQUESTS": config.overall_concurrency,

@@ -229,6 +229,17 @@
             "title": "Created At",
             "type": "string"
           },
+          "declared_canonical_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Declared Canonical Url"
+          },
           "depth": {
             "title": "Depth",
             "type": "integer"
@@ -265,6 +276,13 @@
             ],
             "title": "Final Url"
           },
+          "hreflang_links": {
+            "items": {
+              "$ref": "#/components/schemas/HreflangLinkResponse"
+            },
+            "title": "Hreflang Links",
+            "type": "array"
+          },
           "http_status": {
             "anyOf": [
               {
@@ -291,6 +309,18 @@
               }
             ],
             "title": "Language"
+          },
+          "last_modified_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Modified At"
           },
           "meta_description": {
             "anyOf": [
@@ -403,6 +433,7 @@
           "url",
           "normalized_url",
           "final_url",
+          "declared_canonical_url",
           "source_domain",
           "depth",
           "status",
@@ -415,6 +446,8 @@
           "title",
           "meta_description",
           "language",
+          "hreflang_links",
+          "last_modified_at",
           "content_length",
           "discovery_source",
           "parent_url",
@@ -551,6 +584,30 @@
         ],
         "title": "HealthState",
         "type": "string"
+      },
+      "HreflangLinkResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "normalized_url": {
+            "title": "Normalized Url",
+            "type": "string"
+          },
+          "original_url": {
+            "title": "Original Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "language",
+          "original_url",
+          "normalized_url"
+        ],
+        "title": "HreflangLinkResponse",
+        "type": "object"
       },
       "InvalidParameter": {
         "additionalProperties": false,
@@ -1676,6 +1733,15 @@
             "title": "Per Domain Concurrency",
             "type": "integer"
           },
+          "query_parameter_ordering": {
+            "default": "sorted",
+            "enum": [
+              "preserve",
+              "sorted"
+            ],
+            "title": "Query Parameter Ordering",
+            "type": "string"
+          },
           "respect_robots_txt": {
             "const": true,
             "default": true,
@@ -1857,6 +1923,15 @@
           "project_id": {
             "format": "uuid",
             "title": "Project Id",
+            "type": "string"
+          },
+          "query_parameter_ordering": {
+            "default": "sorted",
+            "enum": [
+              "preserve",
+              "sorted"
+            ],
+            "title": "Query Parameter Ordering",
             "type": "string"
           },
           "respect_robots_txt": {
@@ -2221,6 +2296,21 @@
               }
             ],
             "title": "Per Domain Concurrency"
+          },
+          "query_parameter_ordering": {
+            "anyOf": [
+              {
+                "enum": [
+                  "preserve",
+                  "sorted"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query Parameter Ordering"
           },
           "respect_robots_txt": {
             "anyOf": [

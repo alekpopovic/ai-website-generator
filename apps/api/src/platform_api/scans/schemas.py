@@ -87,6 +87,7 @@ class CampaignConfiguration(ScanModel):
         "ref",
         "referrer",
     )
+    query_parameter_ordering: Literal["preserve", "sorted"] = "sorted"
     store_raw_html: bool = False
     timeout_limits: ScanTimeoutLimits = ScanTimeoutLimits()
     artifact_retention_policy: ArtifactRetentionPolicy = ArtifactRetentionPolicy()
@@ -192,6 +193,7 @@ class ScanCampaignUpdateRequest(ScanModel):
     include_url_patterns: tuple[str, ...] | None = None
     exclude_url_patterns: tuple[str, ...] | None = None
     tracking_query_parameters: tuple[str, ...] | None = None
+    query_parameter_ordering: Literal["preserve", "sorted"] | None = None
     store_raw_html: bool | None = None
     timeout_limits: ScanTimeoutLimits | None = None
     artifact_retention_policy: ArtifactRetentionPolicy | None = None
@@ -335,6 +337,12 @@ class ScanTargetImportCommitRequest(ScanModel):
     authorization_attested: Literal[True]
 
 
+class HreflangLinkResponse(ScanModel):
+    language: str
+    original_url: str
+    normalized_url: str
+
+
 class CrawlPageResponse(ScanModel):
     model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)
 
@@ -346,6 +354,7 @@ class CrawlPageResponse(ScanModel):
     url: str
     normalized_url: str
     final_url: str | None
+    declared_canonical_url: str | None
     source_domain: str
     depth: int
     status: CrawlPageStatus
@@ -358,6 +367,8 @@ class CrawlPageResponse(ScanModel):
     title: str | None
     meta_description: str | None
     language: str | None
+    hreflang_links: tuple[HreflangLinkResponse, ...]
+    last_modified_at: datetime | None
     content_length: int | None
     discovery_source: str
     parent_url: str | None
