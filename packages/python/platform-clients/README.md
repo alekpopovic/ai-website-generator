@@ -20,3 +20,8 @@ Qdrant adapter uses an atomic stable alias over embedding-provider/model/digest/
 physical collections. The in-memory implementation provides equivalent deterministic behavior for
 unit tests. Only bounded abstract design-pattern text and allowlisted provenance metadata can enter
 this boundary.
+
+The `network_safety` package provides the shared fail-closed URL, DNS, redirect, connection, peer,
+response-size, HTML content-type, timeout, and blocked-request audit policy used by Scrapy,
+Playwright, asset inspection, and publishing integrations. It includes an offline sequence resolver
+and recording auditor for deterministic security tests.

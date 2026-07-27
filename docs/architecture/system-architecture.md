@@ -125,6 +125,11 @@ Only the web application and the intended FastAPI ingress may be publicly reacha
 
 Crawler and browser egress passes through URL policy enforcement. Every initial URL, redirect, asset, browser request, and webhook target is re-resolved and checked against allowed schemes, ports, DNS results, IP ranges, redirect limits, and destination policy. Loopback, link-local, private, multicast, metadata-service, and otherwise reserved destinations are denied unless an explicit narrowly scoped internal policy applies. DNS rebinding protections validate at connection time.
 
+The reusable implementation lives in `platform_clients.network_safety` with consumer adapters for
+Scrapy, Playwright, asset inspection, and publishing. Application enforcement is always paired with
+scanner network isolation and fail-closed egress policy; see
+[outbound network safety](../security/outbound-network-safety.md).
+
 ## 11. Data provenance
 
 Every scan and derivative record carries tenant and source identifiers, authorization attestation, canonical URL, timestamps, fetch policy result, content checksum, licensing metadata, tool and schema versions, and parent artifact references. Derived profiles, vectors, datasets, `SiteSpec` versions, generated artifacts, and model artifacts retain transitive lineage through immutable manifests.

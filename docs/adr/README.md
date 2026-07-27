@@ -13,3 +13,6 @@ ADRs record durable choices and their consequences. Accepted decisions are chang
 | [0007](0007-two-stage-scanning.md)              | Scrapy plus Playwright two-stage scanning             | Accepted |
 | [0008](0008-rag-dspy-before-fine-tuning.md)     | RAG and DSPy optimization before fine-tuning          | Accepted |
 | [0009](0009-data-ownership-and-transactions.md) | Data ownership and transaction boundaries             | Accepted |
+| [0010](0010-scan-campaign-control-state.md)     | Scan campaign control state and workflow dispatch     | Accepted |
+| [0011](0011-streamed-scan-target-imports.md)    | Streamed and staged scan-target imports               | Accepted |
+| [0012](0012-shared-outbound-network-safety.md)  | Shared outbound URL and network safety boundary       | Accepted |
