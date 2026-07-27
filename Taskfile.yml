@@ -60,9 +60,16 @@ tasks:
       - pnpm run e2e-test
 
   generate-api-client:
-    desc: Generate the TypeScript API client when its workspace package exists
+    desc: Export FastAPI OpenAPI and deterministically regenerate the Angular client
     cmds:
+      - uv run python infrastructure/scripts/export_openapi.py --output packages/web/api-client/openapi.json
       - pnpm run generate-api-client
+
+  verify-generated-api-client:
+    desc: Fail when committed OpenAPI or generated Angular client artifacts are stale
+    cmds:
+      - uv run python infrastructure/scripts/export_openapi.py --output packages/web/api-client/openapi.json --check
+      - pnpm --filter '@platform/api-client' run check-generated
 
   compose-up:
     desc: Start the local container stack with CPU-only Ollama
@@ -117,3 +124,4 @@ tasks:
       - task: lint
       - task: typecheck
       - task: unit-test
+      - task: verify-generated-api-client

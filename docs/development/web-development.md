@@ -6,6 +6,9 @@
 plane. Browser code must never connect directly to PostgreSQL, Redis, Temporal, MinIO, Qdrant, or
 Ollama. Authentication and domain API integration are intentionally not implemented yet.
 
+The generated client workflow and contract propagation rules are documented in
+[API client generation](api-client-generation.md).
+
 Signals hold synchronous view state, such as responsive navigation and notifications. RxJS is used
 for asynchronous event streams and HTTP boundaries. Feature routes use lazy component loading.
 

@@ -16,4 +16,22 @@ describe('toAppError', () => {
     expect(result.code).toBe('unknown');
     expect(result.message).not.toContain('private implementation detail');
   });
+
+  it('maps generated problem details without duplicating the API contract', () => {
+    const result = toAppError(
+      new HttpErrorResponse({
+        status: 503,
+        error: {
+          title: 'Service Unavailable',
+          status: 503,
+          detail: 'A required data service is unavailable.',
+          code: 'database_unavailable',
+          request_id: 'request-1',
+        },
+      }),
+    );
+
+    expect(result.code).toBe('server');
+    expect(result.problem?.request_id).toBe('request-1');
+  });
 });

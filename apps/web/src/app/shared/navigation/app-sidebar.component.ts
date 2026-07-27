@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
+import { environment } from '../../../environments/environment';
+
 interface NavigationItem {
   readonly label: string;
   readonly path: string;
@@ -61,5 +63,8 @@ export class AppSidebarComponent {
     { label: 'Datasets', path: '/datasets', symbol: 'D' },
     { label: 'Models', path: '/models', symbol: 'M' },
     { label: 'Generator', path: '/generator', symbol: 'G' },
+    ...(!environment.production
+      ? [{ label: 'Diagnostics', path: '/diagnostics', symbol: '!' }]
+      : []),
   ];
 }

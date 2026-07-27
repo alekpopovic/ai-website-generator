@@ -195,6 +195,17 @@ p {
   cursor: pointer;
 }
 
+.secondary-button {
+  min-height: 2.6rem;
+  border: 1px solid #cbd2df;
+  border-radius: 0.65rem;
+  background: white;
+  padding: 0.6rem 0.9rem;
+  color: #263044;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .app-shell {
   min-height: 100vh;
 }
@@ -332,6 +343,69 @@ p {
   background: white;
   padding: 2rem;
   text-align: center;
+}
+
+.diagnostic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: 1rem;
+}
+
+.diagnostic-card {
+  border: 1px solid #e0e4ed;
+  border-radius: 1rem;
+  background: white;
+  padding: 1.25rem;
+}
+
+.diagnostic-card dl,
+.dependency-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0 0;
+  padding: 0;
+}
+
+.diagnostic-card dl div,
+.dependency-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid #edf0f4;
+  padding-bottom: 0.7rem;
+}
+
+.diagnostic-card dt,
+.dependency-list span {
+  color: #667085;
+}
+
+.diagnostic-card dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.dependency-list {
+  list-style: none;
+}
+
+.dependency-list strong[data-state='available'] {
+  color: #08734a;
+}
+
+.dependency-list strong[data-state='unavailable'] {
+  color: #a92727;
+}
+
+.status-pill {
+  display: inline-flex;
+  border-radius: 999px;
+  background: #edf0ff;
+  padding: 0.3rem 0.65rem;
+  color: #4b3fbd;
+  font-size: 0.78rem;
+  font-weight: 750;
 }
 
 .empty-state {

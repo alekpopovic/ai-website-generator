@@ -4,6 +4,9 @@ Auditable bootstrap, migration, verification, and operational helper scripts bel
 
 Current helpers provide cross-platform pytest category selection, guarded cleanup, and local Ollama administration. Cleanup removes only explicitly allowlisted generated directories located below the repository root.
 
+- `export_openapi.py` builds the FastAPI application in deterministic fake mode and writes or
+  verifies its canonical OpenAPI JSON without starting a server.
+
 - `check_ollama_readiness.py` checks the loopback Ollama server and verifies that all configured models are present.
 - `pull_ollama_models.py` explicitly downloads configured models. It never runs during Compose startup; use `--only` to limit a download to one or more model roles.
 

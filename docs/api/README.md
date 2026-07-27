@@ -6,6 +6,9 @@ The control plane exposes domain contracts under `/api/v1`. Process health remai
 
 Errors use `application/problem+json` with stable `code` and `request_id` extensions. Validation responses include sanitized parameter locations and reasons but never echo rejected input. Successful versioned responses use typed envelopes; collection routes will use bounded offset-pagination primitives until a domain requires an explicitly designed cursor.
 
+See [API client generation](../development/api-client-generation.md) for the deterministic FastAPI
+OpenAPI to Angular SDK workflow.
+
 | Method | Path                   | Purpose                                           |
 | ------ | ---------------------- | ------------------------------------------------- |
 | `GET`  | `/health/live`         | Process liveness without dependency I/O           |

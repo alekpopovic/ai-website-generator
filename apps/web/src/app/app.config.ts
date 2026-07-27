@@ -8,6 +8,12 @@ import {
 } from '@angular/core';
 import type { ApplicationConfig } from '@angular/core';
 import { TitleStrategy, provideRouter, withComponentInputBinding } from '@angular/router';
+import {
+  PlatformApiConfiguration,
+  apiBearerInterceptor,
+  providePlatformApi,
+  requestCorrelationInterceptor,
+} from '@platform/api-client';
 
 import { RuntimeConfigService } from './core/config/runtime-config';
 import { GlobalErrorHandler } from './core/errors/global-error-handler';
@@ -20,8 +26,17 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
     provideRouter(routes, withComponentInputBinding()),
-    provideHttpClient(withInterceptors([httpErrorInterceptor])),
-    provideAppInitializer(() => inject(RuntimeConfigService).load()),
+    provideHttpClient(
+      withInterceptors([requestCorrelationInterceptor, httpErrorInterceptor, apiBearerInterceptor]),
+    ),
+    providePlatformApi(),
+    provideAppInitializer(() => {
+      const runtime = inject(RuntimeConfigService);
+      const api = inject(PlatformApiConfiguration);
+      return runtime.load().then(() => {
+        api.configure({ baseUrl: runtime.config.apiBaseUrl });
+      });
+    }),
     { provide: TitleStrategy, useClass: AppTitleStrategy },
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
   ],

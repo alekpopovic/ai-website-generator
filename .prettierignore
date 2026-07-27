@@ -5,6 +5,8 @@ artifacts/
 coverage/
 dist/
 generated/
+packages/web/api-client/openapi.json
+packages/web/api-client/src/generated/
 htmlcov/
 minio-data/
 ollama-data/

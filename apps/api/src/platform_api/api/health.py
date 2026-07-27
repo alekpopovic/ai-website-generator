@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict
 
 from platform_api.constants import SERVICE_NAME
 from platform_api.dependencies import ProbeRegistryDependency, SettingsDependency
+from platform_api.errors import problem_responses
 from platform_api.probes import DependencyCheck, DependencyState
 
 router = APIRouter()
@@ -50,7 +51,12 @@ def _aggregate(checks: tuple[DependencyCheck, ...]) -> HealthState:
     return HealthState.HEALTHY
 
 
-@router.get("/live", response_model=LivenessResponse)
+@router.get(
+    "/live",
+    response_model=LivenessResponse,
+    operation_id="getLiveness",
+    responses=problem_responses(status.HTTP_500_INTERNAL_SERVER_ERROR),
+)
 async def live(settings: SettingsDependency) -> LivenessResponse:
     """Report whether the request process can serve HTTP."""
     return LivenessResponse(
@@ -63,6 +69,7 @@ async def live(settings: SettingsDependency) -> LivenessResponse:
 @router.get(
     "/ready",
     response_model=DependencyHealthResponse,
+    operation_id="getReadiness",
     responses={status.HTTP_503_SERVICE_UNAVAILABLE: {"model": DependencyHealthResponse}},
 )
 async def ready(
@@ -80,6 +87,7 @@ async def ready(
 @router.get(
     "/dependencies",
     response_model=DependencyHealthResponse,
+    operation_id="getDependencyHealth",
     responses={status.HTTP_503_SERVICE_UNAVAILABLE: {"model": DependencyHealthResponse}},
 )
 async def dependencies(

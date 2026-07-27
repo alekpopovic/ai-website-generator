@@ -147,8 +147,9 @@ def problem_responses(*status_codes: int) -> dict[int | str, dict[str, Any]]:
     """Build reusable OpenAPI response metadata for problem responses."""
     return {
         status: {
-            "model": ProblemDetail,
-            "content": {PROBLEM_MEDIA_TYPE: {}},
+            "content": {
+                PROBLEM_MEDIA_TYPE: {"schema": {"$ref": "#/components/schemas/ProblemDetail"}}
+            },
             "description": HTTPStatus(status).phrase,
         }
         for status in status_codes

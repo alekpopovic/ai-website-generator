@@ -20,6 +20,7 @@ from platform_api.middleware import (
     RequestContextMiddleware,
     SecurityHeadersMiddleware,
 )
+from platform_api.openapi import install_openapi_schema
 from platform_api.resources import ApplicationResources
 from platform_api.telemetry import OpenTelemetryBoundary, Telemetry
 
@@ -65,6 +66,7 @@ def create_app(
     app.state.telemetry = resolved_telemetry
     app.include_router(router)
     install_exception_handlers(app)
+    install_openapi_schema(app)
     _install_middleware(app, resolved_settings, resolved_telemetry)
     return app
 

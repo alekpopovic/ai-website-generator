@@ -1,4 +1,6 @@
-export const environment = {
+import type { AppEnvironment } from './environment.model';
+
+export const environment: AppEnvironment = {
   production: false,
   runtimeConfigUrl: '/config/runtime-config.json',
-} as const;
+};

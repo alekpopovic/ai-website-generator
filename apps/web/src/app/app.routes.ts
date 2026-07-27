@@ -1,5 +1,7 @@
 import type { Routes } from '@angular/router';
 
+import { environment } from '../environments/environment';
+
 export const routes: Routes = [
   {
     path: 'login',
@@ -36,6 +38,7 @@ export const routes: Routes = [
         'Create sites from validated structured specifications.',
       ),
       featureRoute('settings', 'Settings', 'Manage workspace and application preferences.'),
+      ...developerRoutes(),
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },
@@ -59,4 +62,19 @@ function featureRoute(path: string, title: string, description: string): Routes[
         (module) => module.FeatureEntryPageComponent,
       ),
   };
+}
+
+function developerRoutes(): Routes {
+  return environment.production
+    ? []
+    : [
+        {
+          path: 'diagnostics',
+          title: 'API diagnostics',
+          loadComponent: () =>
+            import('./features/diagnostics/diagnostics-page.component').then(
+              (module) => module.DiagnosticsPageComponent,
+            ),
+        },
+      ];
 }

@@ -4,4 +4,5 @@ Local setup, repository conventions, offline testing, fake-service usage, migrat
 
 - [Local development](local-development.md)
 - [API development](api-development.md)
+- [API client generation](api-client-generation.md)
 - [Web application development](web-development.md)

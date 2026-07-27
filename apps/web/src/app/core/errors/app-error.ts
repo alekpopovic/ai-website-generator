@@ -1,4 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { mapProblemDetails } from '@platform/api-client';
+import type { ProblemDetail } from '@platform/api-client';
 
 export type AppErrorCode =
   'bad-request' | 'forbidden' | 'network' | 'not-found' | 'server' | 'unauthorized' | 'unknown';
@@ -7,6 +9,7 @@ export interface AppError {
   readonly code: AppErrorCode;
   readonly message: string;
   readonly status: number | null;
+  readonly problem?: ProblemDetail;
   readonly cause?: unknown;
 }
 
@@ -35,6 +38,17 @@ function mapHttpError(error: HttpErrorResponse): AppError {
     };
   }
 
+  const problem = mapProblemDetails(error);
+  if (problem !== null) {
+    return {
+      code: mapProblemCode(problem.status),
+      message: problem.detail ?? problem.title,
+      status: problem.status,
+      problem,
+      cause: error,
+    };
+  }
+
   const byStatus: Partial<Record<number, readonly [AppErrorCode, string]>> = {
     400: ['bad-request', 'The request could not be processed.'],
     401: ['unauthorized', 'Your session is not authorized.'],
@@ -43,6 +57,14 @@ function mapHttpError(error: HttpErrorResponse): AppError {
   };
   const mapped = byStatus[error.status] ?? ['server', 'The service encountered an error.'];
   return { code: mapped[0], message: mapped[1], status: error.status, cause: error };
+}
+
+function mapProblemCode(status: number): AppErrorCode {
+  if (status === 400 || status === 422) return 'bad-request';
+  if (status === 401) return 'unauthorized';
+  if (status === 403) return 'forbidden';
+  if (status === 404) return 'not-found';
+  return 'server';
 }
 
 function isAppError(error: unknown): error is AppError {
