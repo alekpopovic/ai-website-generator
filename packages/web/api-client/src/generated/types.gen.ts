@@ -59,6 +59,130 @@ export type ApiResponseVersionInfo = {
 };
 
 /**
+ * ArtifactRetentionPolicy
+ */
+export type ArtifactRetentionPolicy = {
+    /**
+     * Legal Hold
+     */
+    legal_hold?: boolean;
+    /**
+     * Retain Failures
+     */
+    retain_failures?: boolean;
+    /**
+     * Retention Days
+     */
+    retention_days?: number;
+};
+
+/**
+ * CampaignActionRequest
+ */
+export type CampaignActionRequest = {
+    /**
+     * Idempotency Key
+     */
+    idempotency_key: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * CampaignVersionRequest
+ */
+export type CampaignVersionRequest = {
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * CrawlPageWithScansResponse
+ */
+export type CrawlPageWithScansResponse = {
+    /**
+     * Campaign Id
+     */
+    campaign_id: string;
+    /**
+     * Content Sha256
+     */
+    content_sha256: string | null;
+    /**
+     * Content Type
+     */
+    content_type: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Depth
+     */
+    depth: number;
+    /**
+     * Discovered At
+     */
+    discovered_at: string;
+    /**
+     * Fetched At
+     */
+    fetched_at: string | null;
+    /**
+     * Http Status
+     */
+    http_status: number | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Normalized Url
+     */
+    normalized_url: string;
+    /**
+     * Page Scans
+     */
+    page_scans?: Array<PageScanResponse>;
+    /**
+     * Parent Page Id
+     */
+    parent_page_id: string | null;
+    /**
+     * Robots Allowed
+     */
+    robots_allowed: boolean | null;
+    /**
+     * Source Domain
+     */
+    source_domain: string;
+    /**
+     * Status
+     */
+    status: 'discovered' | 'blocked' | 'fetching' | 'fetched' | 'failed';
+    /**
+     * Target Id
+     */
+    target_id: string;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+    /**
+     * Url
+     */
+    url: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * DependencyCheck
  *
  * Sanitized result of one bounded dependency probe.
@@ -295,6 +419,18 @@ export type ModelWarmupRequest = {
 };
 
 /**
+ * PageResponse[CrawlPageWithScansResponse]
+ */
+export type PageResponseCrawlPageWithScansResponse = {
+    /**
+     * Items
+     */
+    items: Array<CrawlPageWithScansResponse>;
+    meta?: ResponseMeta;
+    pagination: PaginationMeta;
+};
+
+/**
  * PageResponse[ProjectResponse]
  */
 export type PageResponseProjectResponse = {
@@ -304,6 +440,84 @@ export type PageResponseProjectResponse = {
     items: Array<ProjectResponse>;
     meta?: ResponseMeta;
     pagination: PaginationMeta;
+};
+
+/**
+ * PageResponse[ScanCampaignResponse]
+ */
+export type PageResponseScanCampaignResponse = {
+    /**
+     * Items
+     */
+    items: Array<ScanCampaignResponse>;
+    meta?: ResponseMeta;
+    pagination: PaginationMeta;
+};
+
+/**
+ * PageResponse[ScanFailureResponse]
+ */
+export type PageResponseScanFailureResponse = {
+    /**
+     * Items
+     */
+    items: Array<ScanFailureResponse>;
+    meta?: ResponseMeta;
+    pagination: PaginationMeta;
+};
+
+/**
+ * PageResponse[ScanTargetResponse]
+ */
+export type PageResponseScanTargetResponse = {
+    /**
+     * Items
+     */
+    items: Array<ScanTargetResponse>;
+    meta?: ResponseMeta;
+    pagination: PaginationMeta;
+};
+
+/**
+ * PageScanResponse
+ */
+export type PageScanResponse = {
+    /**
+     * Attempt
+     */
+    attempt: number;
+    /**
+     * Completed At
+     */
+    completed_at: string | null;
+    /**
+     * Crawl Page Id
+     */
+    crawl_page_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Started At
+     */
+    started_at: string | null;
+    /**
+     * Status
+     */
+    status: 'pending' | 'rendering' | 'succeeded' | 'failed' | 'cancelled';
+    /**
+     * Viewport
+     */
+    viewport: 'desktop' | 'mobile';
+    /**
+     * Viewport Height
+     */
+    viewport_height: number;
+    /**
+     * Viewport Width
+     */
+    viewport_width: number;
 };
 
 /**
@@ -595,6 +809,401 @@ export type ResponseMeta = {
 };
 
 /**
+ * ScanCampaignCreateRequest
+ */
+export type ScanCampaignCreateRequest = {
+    /**
+     * Allowed Content Types
+     */
+    allowed_content_types?: Array<string>;
+    artifact_retention_policy?: ArtifactRetentionPolicy;
+    /**
+     * Authorization Attested At
+     */
+    authorization_attested_at: string;
+    /**
+     * Crawl Delay Seconds
+     */
+    crawl_delay_seconds?: number;
+    desktop_viewport?: Viewport;
+    /**
+     * Exclude Url Patterns
+     */
+    exclude_url_patterns?: Array<string>;
+    /**
+     * Include Url Patterns
+     */
+    include_url_patterns?: Array<string>;
+    /**
+     * Max Discovered Pages Per Domain
+     */
+    max_discovered_pages_per_domain?: number;
+    /**
+     * Max Visual Pages Per Domain
+     */
+    max_visual_pages_per_domain?: number;
+    /**
+     * Maximum Crawl Depth
+     */
+    maximum_crawl_depth?: number;
+    mobile_viewport?: Viewport;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Overall Concurrency
+     */
+    overall_concurrency?: number;
+    /**
+     * Per Domain Concurrency
+     */
+    per_domain_concurrency?: number;
+    /**
+     * Respect Robots Txt
+     */
+    respect_robots_txt?: boolean;
+    timeout_limits?: ScanTimeoutLimits;
+};
+
+/**
+ * ScanCampaignResponse
+ */
+export type ScanCampaignResponse = {
+    /**
+     * Allowed Content Types
+     */
+    allowed_content_types?: Array<string>;
+    artifact_retention_policy?: ArtifactRetentionPolicy;
+    /**
+     * Authorization Attested At
+     */
+    authorization_attested_at: string;
+    /**
+     * Completed At
+     */
+    completed_at: string | null;
+    /**
+     * Crawl Delay Seconds
+     */
+    crawl_delay_seconds?: number;
+    /**
+     * Created At
+     */
+    created_at: string;
+    desktop_viewport?: Viewport;
+    /**
+     * Exclude Url Patterns
+     */
+    exclude_url_patterns?: Array<string>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Include Url Patterns
+     */
+    include_url_patterns?: Array<string>;
+    /**
+     * Max Discovered Pages Per Domain
+     */
+    max_discovered_pages_per_domain?: number;
+    /**
+     * Max Visual Pages Per Domain
+     */
+    max_visual_pages_per_domain?: number;
+    /**
+     * Maximum Crawl Depth
+     */
+    maximum_crawl_depth?: number;
+    mobile_viewport?: Viewport;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Overall Concurrency
+     */
+    overall_concurrency?: number;
+    /**
+     * Per Domain Concurrency
+     */
+    per_domain_concurrency?: number;
+    /**
+     * Project Id
+     */
+    project_id: string;
+    /**
+     * Respect Robots Txt
+     */
+    respect_robots_txt?: boolean;
+    /**
+     * Started At
+     */
+    started_at: string | null;
+    /**
+     * Status
+     */
+    status: 'draft' | 'queued' | 'running' | 'pausing' | 'paused' | 'cancelling' | 'cancelled' | 'succeeded' | 'partially_succeeded' | 'failed';
+    timeout_limits?: ScanTimeoutLimits;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Workflow Attempt
+     */
+    workflow_attempt: number;
+    /**
+     * Workflow Id
+     */
+    workflow_id: string | null;
+    /**
+     * Workflow Run Id
+     */
+    workflow_run_id: string | null;
+};
+
+/**
+ * ScanCampaignSummaryResponse
+ */
+export type ScanCampaignSummaryResponse = {
+    campaign: ScanCampaignResponse;
+    /**
+     * Failure Count
+     */
+    failure_count: number;
+    /**
+     * Page Counts
+     */
+    page_counts: {
+        [key: string]: number;
+    };
+    /**
+     * Page Scan Counts
+     */
+    page_scan_counts: {
+        [key: string]: number;
+    };
+    /**
+     * Retryable Failure Count
+     */
+    retryable_failure_count: number;
+    /**
+     * Target Counts
+     */
+    target_counts: {
+        [key: string]: number;
+    };
+    /**
+     * Unresolved Failure Count
+     */
+    unresolved_failure_count: number;
+};
+
+/**
+ * ScanCampaignUpdateRequest
+ */
+export type ScanCampaignUpdateRequest = {
+    /**
+     * Allowed Content Types
+     */
+    allowed_content_types?: Array<string> | null;
+    artifact_retention_policy?: ArtifactRetentionPolicy | null;
+    /**
+     * Authorization Attested At
+     */
+    authorization_attested_at?: string | null;
+    /**
+     * Crawl Delay Seconds
+     */
+    crawl_delay_seconds?: number | null;
+    desktop_viewport?: Viewport | null;
+    /**
+     * Exclude Url Patterns
+     */
+    exclude_url_patterns?: Array<string> | null;
+    /**
+     * Include Url Patterns
+     */
+    include_url_patterns?: Array<string> | null;
+    /**
+     * Max Discovered Pages Per Domain
+     */
+    max_discovered_pages_per_domain?: number | null;
+    /**
+     * Max Visual Pages Per Domain
+     */
+    max_visual_pages_per_domain?: number | null;
+    /**
+     * Maximum Crawl Depth
+     */
+    maximum_crawl_depth?: number | null;
+    mobile_viewport?: Viewport | null;
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Overall Concurrency
+     */
+    overall_concurrency?: number | null;
+    /**
+     * Per Domain Concurrency
+     */
+    per_domain_concurrency?: number | null;
+    /**
+     * Respect Robots Txt
+     */
+    respect_robots_txt?: boolean | null;
+    timeout_limits?: ScanTimeoutLimits | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * ScanFailureResponse
+ */
+export type ScanFailureResponse = {
+    /**
+     * Attempt
+     */
+    attempt: number;
+    /**
+     * Campaign Id
+     */
+    campaign_id: string;
+    /**
+     * Crawl Page Id
+     */
+    crawl_page_id: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Error Code
+     */
+    error_code: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Message
+     */
+    message: string;
+    /**
+     * Page Scan Id
+     */
+    page_scan_id: string | null;
+    /**
+     * Resolved At
+     */
+    resolved_at: string | null;
+    /**
+     * Retryable
+     */
+    retryable: boolean;
+    /**
+     * Stage
+     */
+    stage: 'control' | 'crawl' | 'browser' | 'analysis' | 'embedding';
+    /**
+     * Target Id
+     */
+    target_id: string | null;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * ScanTargetCreateRequest
+ */
+export type ScanTargetCreateRequest = {
+    /**
+     * Url
+     */
+    url: string;
+};
+
+/**
+ * ScanTargetResponse
+ */
+export type ScanTargetResponse = {
+    /**
+     * Campaign Id
+     */
+    campaign_id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Normalized Url
+     */
+    normalized_url: string;
+    /**
+     * Source Domain
+     */
+    source_domain: string;
+    /**
+     * Status
+     */
+    status: 'pending' | 'accepted' | 'rejected' | 'completed' | 'failed';
+    /**
+     * Updated At
+     */
+    updated_at: string;
+    /**
+     * Url
+     */
+    url: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * ScanTimeoutLimits
+ */
+export type ScanTimeoutLimits = {
+    /**
+     * Browser Page Seconds
+     */
+    browser_page_seconds?: number;
+    /**
+     * Campaign Seconds
+     */
+    campaign_seconds?: number;
+    /**
+     * Connect Seconds
+     */
+    connect_seconds?: number;
+    /**
+     * Response Seconds
+     */
+    response_seconds?: number;
+};
+
+/**
  * UserResponse
  *
  * Safe current-user representation.
@@ -735,6 +1344,20 @@ export type VersionInfo = {
      * Service Version
      */
     service_version: string;
+};
+
+/**
+ * Viewport
+ */
+export type Viewport = {
+    /**
+     * Height
+     */
+    height: number;
+    /**
+     * Width
+     */
+    width: number;
 };
 
 export type WarmUpConfiguredModelData = {
@@ -1397,6 +2020,850 @@ export type RestoreProjectResponses = {
 };
 
 export type RestoreProjectResponse = RestoreProjectResponses[keyof RestoreProjectResponses];
+
+export type ListScanCampaignsData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+    };
+    query?: {
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Search
+         */
+        search?: string | null;
+        /**
+         * Status
+         */
+        status?: 'draft' | 'queued' | 'running' | 'pausing' | 'paused' | 'cancelling' | 'cancelled' | 'succeeded' | 'partially_succeeded' | 'failed' | null;
+        /**
+         * Sort By
+         */
+        sort_by?: 'created_at' | 'name' | 'updated_at';
+        /**
+         * Sort Order
+         */
+        sort_order?: 'asc' | 'desc';
+    };
+    url: '/api/v1/projects/{project_id}/scan-campaigns';
+};
+
+export type ListScanCampaignsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type ListScanCampaignsError = ListScanCampaignsErrors[keyof ListScanCampaignsErrors];
+
+export type ListScanCampaignsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageResponseScanCampaignResponse;
+};
+
+export type ListScanCampaignsResponse = ListScanCampaignsResponses[keyof ListScanCampaignsResponses];
+
+export type CreateScanCampaignData = {
+    body: ScanCampaignCreateRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/scan-campaigns';
+};
+
+export type CreateScanCampaignErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type CreateScanCampaignError = CreateScanCampaignErrors[keyof CreateScanCampaignErrors];
+
+export type CreateScanCampaignResponses = {
+    /**
+     * Successful Response
+     */
+    201: ScanCampaignResponse;
+};
+
+export type CreateScanCampaignResponse = CreateScanCampaignResponses[keyof CreateScanCampaignResponses];
+
+export type DeleteDraftScanCampaignData = {
+    body: CampaignVersionRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}';
+};
+
+export type DeleteDraftScanCampaignErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type DeleteDraftScanCampaignError = DeleteDraftScanCampaignErrors[keyof DeleteDraftScanCampaignErrors];
+
+export type DeleteDraftScanCampaignResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteDraftScanCampaignResponse = DeleteDraftScanCampaignResponses[keyof DeleteDraftScanCampaignResponses];
+
+export type GetScanCampaignData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}';
+};
+
+export type GetScanCampaignErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type GetScanCampaignError = GetScanCampaignErrors[keyof GetScanCampaignErrors];
+
+export type GetScanCampaignResponses = {
+    /**
+     * Successful Response
+     */
+    200: ScanCampaignResponse;
+};
+
+export type GetScanCampaignResponse = GetScanCampaignResponses[keyof GetScanCampaignResponses];
+
+export type UpdateScanCampaignData = {
+    body: ScanCampaignUpdateRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}';
+};
+
+export type UpdateScanCampaignErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type UpdateScanCampaignError = UpdateScanCampaignErrors[keyof UpdateScanCampaignErrors];
+
+export type UpdateScanCampaignResponses = {
+    /**
+     * Successful Response
+     */
+    200: ScanCampaignResponse;
+};
+
+export type UpdateScanCampaignResponse = UpdateScanCampaignResponses[keyof UpdateScanCampaignResponses];
+
+export type CancelScanCampaignData = {
+    body: CampaignVersionRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/cancel';
+};
+
+export type CancelScanCampaignErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type CancelScanCampaignError = CancelScanCampaignErrors[keyof CancelScanCampaignErrors];
+
+export type CancelScanCampaignResponses = {
+    /**
+     * Successful Response
+     */
+    202: ScanCampaignResponse;
+};
+
+export type CancelScanCampaignResponse = CancelScanCampaignResponses[keyof CancelScanCampaignResponses];
+
+export type ListScanCampaignFailuresData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+    };
+    query?: {
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Stage
+         */
+        stage?: 'control' | 'crawl' | 'browser' | 'analysis' | 'embedding' | null;
+        /**
+         * Retryable
+         */
+        retryable?: boolean | null;
+        /**
+         * Unresolved Only
+         */
+        unresolved_only?: boolean;
+    };
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/failures';
+};
+
+export type ListScanCampaignFailuresErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type ListScanCampaignFailuresError = ListScanCampaignFailuresErrors[keyof ListScanCampaignFailuresErrors];
+
+export type ListScanCampaignFailuresResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageResponseScanFailureResponse;
+};
+
+export type ListScanCampaignFailuresResponse = ListScanCampaignFailuresResponses[keyof ListScanCampaignFailuresResponses];
+
+export type ListScanCampaignPagesData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+    };
+    query?: {
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Status
+         */
+        status?: 'discovered' | 'blocked' | 'fetching' | 'fetched' | 'failed' | null;
+    };
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/pages';
+};
+
+export type ListScanCampaignPagesErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type ListScanCampaignPagesError = ListScanCampaignPagesErrors[keyof ListScanCampaignPagesErrors];
+
+export type ListScanCampaignPagesResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageResponseCrawlPageWithScansResponse;
+};
+
+export type ListScanCampaignPagesResponse = ListScanCampaignPagesResponses[keyof ListScanCampaignPagesResponses];
+
+export type PauseScanCampaignData = {
+    body: CampaignVersionRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/pause';
+};
+
+export type PauseScanCampaignErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type PauseScanCampaignError = PauseScanCampaignErrors[keyof PauseScanCampaignErrors];
+
+export type PauseScanCampaignResponses = {
+    /**
+     * Successful Response
+     */
+    202: ScanCampaignResponse;
+};
+
+export type PauseScanCampaignResponse = PauseScanCampaignResponses[keyof PauseScanCampaignResponses];
+
+export type ResumeScanCampaignData = {
+    body: CampaignVersionRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/resume';
+};
+
+export type ResumeScanCampaignErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type ResumeScanCampaignError = ResumeScanCampaignErrors[keyof ResumeScanCampaignErrors];
+
+export type ResumeScanCampaignResponses = {
+    /**
+     * Successful Response
+     */
+    202: ScanCampaignResponse;
+};
+
+export type ResumeScanCampaignResponse = ResumeScanCampaignResponses[keyof ResumeScanCampaignResponses];
+
+export type RetryScanCampaignFailuresData = {
+    body: CampaignActionRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/retry-failures';
+};
+
+export type RetryScanCampaignFailuresErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type RetryScanCampaignFailuresError = RetryScanCampaignFailuresErrors[keyof RetryScanCampaignFailuresErrors];
+
+export type RetryScanCampaignFailuresResponses = {
+    /**
+     * Successful Response
+     */
+    202: ScanCampaignResponse;
+};
+
+export type RetryScanCampaignFailuresResponse = RetryScanCampaignFailuresResponses[keyof RetryScanCampaignFailuresResponses];
+
+export type StartScanCampaignData = {
+    body: CampaignActionRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/start';
+};
+
+export type StartScanCampaignErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type StartScanCampaignError = StartScanCampaignErrors[keyof StartScanCampaignErrors];
+
+export type StartScanCampaignResponses = {
+    /**
+     * Successful Response
+     */
+    202: ScanCampaignResponse;
+};
+
+export type StartScanCampaignResponse = StartScanCampaignResponses[keyof StartScanCampaignResponses];
+
+export type GetScanCampaignSummaryData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/summary';
+};
+
+export type GetScanCampaignSummaryErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type GetScanCampaignSummaryError = GetScanCampaignSummaryErrors[keyof GetScanCampaignSummaryErrors];
+
+export type GetScanCampaignSummaryResponses = {
+    /**
+     * Successful Response
+     */
+    200: ScanCampaignSummaryResponse;
+};
+
+export type GetScanCampaignSummaryResponse = GetScanCampaignSummaryResponses[keyof GetScanCampaignSummaryResponses];
+
+export type ListScanCampaignTargetsData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+    };
+    query?: {
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Status
+         */
+        status?: 'pending' | 'accepted' | 'rejected' | 'completed' | 'failed' | null;
+    };
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/targets';
+};
+
+export type ListScanCampaignTargetsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type ListScanCampaignTargetsError = ListScanCampaignTargetsErrors[keyof ListScanCampaignTargetsErrors];
+
+export type ListScanCampaignTargetsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageResponseScanTargetResponse;
+};
+
+export type ListScanCampaignTargetsResponse = ListScanCampaignTargetsResponses[keyof ListScanCampaignTargetsResponses];
+
+export type AddScanCampaignTargetData = {
+    body: ScanTargetCreateRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/targets';
+};
+
+export type AddScanCampaignTargetErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type AddScanCampaignTargetError = AddScanCampaignTargetErrors[keyof AddScanCampaignTargetErrors];
+
+export type AddScanCampaignTargetResponses = {
+    /**
+     * Successful Response
+     */
+    201: ScanTargetResponse;
+};
+
+export type AddScanCampaignTargetResponse = AddScanCampaignTargetResponses[keyof AddScanCampaignTargetResponses];
+
+export type DeleteDraftScanCampaignTargetData = {
+    body: CampaignVersionRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+        /**
+         * Target Id
+         */
+        target_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/targets/{target_id}';
+};
+
+export type DeleteDraftScanCampaignTargetErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type DeleteDraftScanCampaignTargetError = DeleteDraftScanCampaignTargetErrors[keyof DeleteDraftScanCampaignTargetErrors];
+
+export type DeleteDraftScanCampaignTargetResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteDraftScanCampaignTargetResponse = DeleteDraftScanCampaignTargetResponses[keyof DeleteDraftScanCampaignTargetResponses];
 
 export type GetApiVersionData = {
     body?: never;

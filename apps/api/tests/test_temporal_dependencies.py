@@ -4,11 +4,32 @@ import httpx2
 import pytest
 from fastapi import Depends
 from platform_api.dependencies import (
+    AfterCommitActions,
     WorkflowDispatcherDependency,
     temporal_client_dependency,
 )
 from platform_api.testing import create_test_app
 from platform_workflows.dispatcher import FakeWorkflowDispatcher
+
+
+@pytest.mark.anyio
+async def test_after_commit_actions_run_once_and_isolate_external_failure() -> None:
+    actions = AfterCommitActions()
+    completed: list[str] = []
+
+    async def successful() -> None:
+        completed.append("dispatch")
+
+    async def unavailable() -> None:
+        raise RuntimeError("safe fixture failure")
+
+    actions.add("scan-dispatch", successful)
+    actions.add("scan-signal", unavailable)
+    await actions.run()
+    await actions.run()
+
+    assert completed == ["dispatch"]
+    assert actions.failures == ["scan-signal"]
 
 
 @pytest.mark.anyio

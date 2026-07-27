@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Iterator
+from datetime import UTC, datetime
 from urllib.parse import urlsplit
 
 import pytest
@@ -11,7 +12,7 @@ from alembic import command
 from alembic.config import Config
 from platform_api.config import DatabaseSettings, clear_settings_cache
 from platform_api.database import DatabaseManager
-from platform_api.persistence.models import AuditLog, Project, User
+from platform_api.persistence.models import AuditLog, Project, ScanCampaign, ScanTarget, User
 from pydantic import SecretStr
 from sqlalchemy import select
 
@@ -103,5 +104,67 @@ async def test_transaction_rolls_back_on_failure(migrated_database: str) -> None
                 await session.scalar(select(User).where(User.email == "rollback@local.test"))
                 is None
             )
+    finally:
+        await manager.close()
+
+
+@pytest.mark.anyio
+async def test_scan_campaign_and_target_constraints_persist_in_postgresql(
+    migrated_database: str,
+) -> None:
+    manager = DatabaseManager(DatabaseSettings(url=SecretStr(migrated_database)))
+    try:
+        async with manager.transaction() as session:
+            user = User(email="scan-integration@local.test", display_name="Scan", status="active")
+            session.add(user)
+            await session.flush()
+            project = Project(
+                owner_id=user.id,
+                name="Scan integration",
+                slug="scan-integration",
+                default_language="en",
+                status="draft",
+                settings={},
+            )
+            session.add(project)
+            await session.flush()
+            campaign = ScanCampaign(
+                project_id=project.id,
+                name="Production policy",
+                authorization_attested_at=datetime.now(UTC),
+                respect_robots_txt=True,
+                max_discovered_pages_per_domain=100,
+                max_visual_pages_per_domain=20,
+                maximum_crawl_depth=5,
+                per_domain_concurrency=2,
+                crawl_delay_seconds=1,
+                overall_concurrency=4,
+                desktop_viewport={"width": 1440, "height": 900},
+                mobile_viewport={"width": 390, "height": 844},
+                allowed_content_types=["text/html"],
+                include_url_patterns=[],
+                exclude_url_patterns=[],
+                timeout_limits={"campaign_seconds": 7200},
+                artifact_retention_policy={"retention_days": 30},
+                status="draft",
+                workflow_attempt=0,
+            )
+            session.add(campaign)
+            await session.flush()
+            session.add(
+                ScanTarget(
+                    campaign_id=campaign.id,
+                    url="https://example.com/",
+                    normalized_url="https://example.com/",
+                    source_domain="example.com",
+                    status="pending",
+                )
+            )
+
+        async with manager.session() as session:
+            stored = await session.scalar(select(ScanCampaign))
+            target = await session.scalar(select(ScanTarget))
+            assert stored is not None and stored.respect_robots_txt
+            assert target is not None and target.campaign_id == stored.id
     finally:
         await manager.close()

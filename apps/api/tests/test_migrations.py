@@ -33,9 +33,15 @@ def test_initial_migration_renders_postgresql_upgrade_sql(
     assert "CREATE TABLE audit_logs" in upgrade_sql
     assert "CREATE TABLE job_events" in upgrade_sql
     assert "CREATE TABLE auth_action_tokens" in upgrade_sql
+    assert "CREATE TABLE scan_campaigns" in upgrade_sql
+    assert "CREATE TABLE scan_targets" in upgrade_sql
+    assert "CREATE TABLE crawl_pages" in upgrade_sql
+    assert "CREATE TABLE page_scans" in upgrade_sql
+    assert "CREATE TABLE scan_failures" in upgrade_sql
     assert "uq_projects_owner_id_slug" in upgrade_sql
     assert "ck_users_status_allowed" in upgrade_sql
     assert "ck_users_ck_" not in upgrade_sql
     assert "CREATE TYPE" not in upgrade_sql
     assert "DROP TABLE job_events" in downgrade_sql
+    assert "DROP TABLE scan_campaigns" in downgrade_sql
     assert "DROP TABLE users" in downgrade_sql

@@ -21,3 +21,6 @@ OpenAPI to Angular SDK workflow.
 
 See [Vector collection diagnostics](vector-collections.md) for the collection identity and
 administrator authorization contract.
+
+See [Scan campaigns](scan-campaigns.md) for project ownership, configuration, lifecycle controls,
+targets, page projections, failures, and the control-only Temporal dispatch contract.

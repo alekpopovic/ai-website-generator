@@ -50,6 +50,10 @@ The service registers `ScanCampaignWorkflow`, `DatasetBuildWorkflow`, `SiteGener
 `TrainingRunWorkflow`, and the administrator-only `ModelWarmupWorkflow` on `control`. Other business
 activities remain future work.
 
+`ScanCampaignWorkflow` is intentionally control-only in the current increment. It retains durable
+queued/paused/cancelling control state and accepts pause, resume, and cancel signals, but it has no
+crawl, browser, AI, embedding, or completion activities.
+
 Model warm-up requires the private AI activity worker in another terminal:
 
 ```sh

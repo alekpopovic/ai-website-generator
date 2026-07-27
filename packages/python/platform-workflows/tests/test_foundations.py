@@ -6,7 +6,11 @@ from uuid import uuid4
 import pytest
 from platform_workflows.cancellation import raise_if_activity_cancelled
 from platform_workflows.commands import CompactWorkflowInput, ModelWarmupInput
-from platform_workflows.dispatcher import DuplicateWorkflowDispatchError, FakeWorkflowDispatcher
+from platform_workflows.dispatcher import (
+    DuplicateWorkflowDispatchError,
+    FakeWorkflowDispatcher,
+    ScanCampaignSignal,
+)
 from platform_workflows.events import InMemoryJobEventPublisher, JobEvent
 from platform_workflows.heartbeat import ActivityHeartbeat
 from platform_workflows.identifiers import ModelRole, WorkflowKind, workflow_id
@@ -79,6 +83,23 @@ async def test_fake_dispatcher_records_once_and_rejects_duplicate_run() -> None:
     assert dispatcher.dispatched == [(WorkflowKind.DATASET_BUILD, workflow_command)]
     with pytest.raises(DuplicateWorkflowDispatchError):
         await dispatcher.dispatch(WorkflowKind.DATASET_BUILD, workflow_command)
+
+
+@pytest.mark.anyio
+async def test_fake_dispatcher_records_scan_control_signals() -> None:
+    dispatcher = FakeWorkflowDispatcher()
+    workflow_command = command()
+    dispatched = await dispatcher.dispatch(WorkflowKind.SCAN_CAMPAIGN, workflow_command)
+
+    await dispatcher.signal_scan_campaign(dispatched.workflow_id, ScanCampaignSignal.PAUSE)
+    await dispatcher.signal_scan_campaign(dispatched.workflow_id, ScanCampaignSignal.RESUME)
+    await dispatcher.signal_scan_campaign(dispatched.workflow_id, ScanCampaignSignal.CANCEL)
+
+    assert dispatcher.scan_signals == [
+        (dispatched.workflow_id, ScanCampaignSignal.PAUSE),
+        (dispatched.workflow_id, ScanCampaignSignal.RESUME),
+        (dispatched.workflow_id, ScanCampaignSignal.CANCEL),
+    ]
 
 
 @pytest.mark.anyio

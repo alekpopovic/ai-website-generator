@@ -13,9 +13,19 @@ from platform_api.database import DatabaseManager
 from platform_api.persistence.audit import AuditLogService
 from platform_api.persistence.base import Base
 from platform_api.persistence.json import normalize_json_value
-from platform_api.persistence.models import AuditLog, Project, User
+from platform_api.persistence.models import (
+    AuditLog,
+    CrawlPage,
+    PageScan,
+    Project,
+    ScanCampaign,
+    ScanFailure,
+    ScanTarget,
+    User,
+)
 from platform_api.persistence.pagination import apply_pagination
 from platform_api.persistence.repositories import ProjectRepository, SqlAlchemyRepository
+from platform_api.scans.repositories import ScanCampaignRepository
 from sqlalchemy import DateTime, Enum, String, select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
@@ -29,6 +39,11 @@ def test_metadata_contains_named_foundation_tables_and_constraints() -> None:
         "projects",
         "refresh_tokens",
         "users",
+        "scan_campaigns",
+        "scan_targets",
+        "crawl_pages",
+        "page_scans",
+        "scan_failures",
     }
     assert Base.metadata.tables["users"].primary_key.name == "pk_users"
     assert all(
@@ -40,12 +55,23 @@ def test_metadata_contains_named_foundation_tables_and_constraints() -> None:
 
 def test_statuses_are_strings_and_editable_records_are_versioned() -> None:
     """Statuses remain portable strings while user/project edits use optimistic locking."""
-    for table_name in ("users", "refresh_tokens", "projects", "job_events"):
+    for table_name in (
+        "users",
+        "refresh_tokens",
+        "projects",
+        "job_events",
+        "scan_campaigns",
+        "scan_targets",
+        "crawl_pages",
+        "page_scans",
+    ):
         status_type = Base.metadata.tables[table_name].c.status.type
         assert isinstance(status_type, String)
         assert not isinstance(status_type, Enum)
     assert User.__mapper__.version_id_col is User.__table__.c.version
     assert Project.__mapper__.version_id_col is Project.__table__.c.version
+    for model in (ScanCampaign, ScanTarget, CrawlPage, PageScan, ScanFailure):
+        assert model.__mapper__.version_id_col is model.__table__.c.version
 
 
 def test_timestamp_columns_are_timezone_aware() -> None:
@@ -173,6 +199,20 @@ async def test_project_repository_queries_are_owner_scoped() -> None:
     count_statement = session.scalar.await_args.args[0]
     assert "projects.owner_id" in str(item_statement)
     assert "projects.owner_id" in str(count_statement)
+
+
+@pytest.mark.anyio
+async def test_scan_repository_queries_join_project_ownership() -> None:
+    session = MagicMock(spec=AsyncSession)
+    session.scalar = AsyncMock(return_value=None)
+    repository = ScanCampaignRepository(session)
+
+    await repository.campaign_owned(uuid4(), uuid4(), uuid4())
+
+    statement = session.scalar.await_args.args[0]
+    compiled = str(statement)
+    assert "JOIN projects" in compiled
+    assert "projects.owner_id" in compiled
 
 
 class RecordingAuditRepository:

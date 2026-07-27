@@ -80,7 +80,7 @@ class WorkflowResult:
 
     def __post_init__(self) -> None:
         _validate_uuid("job_id", self.job_id)
-        if self.status not in {"completed"}:
+        if self.status not in {"completed", "cancelled"}:
             raise ValueError("unsupported workflow result status")
         _validate_object_key("output_object_key", self.output_object_key)
 

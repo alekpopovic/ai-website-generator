@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ArchiveProjectData, ArchiveProjectErrors, ArchiveProjectResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, GetApiVersionData, GetApiVersionErrors, GetApiVersionResponses, GetConfiguredModelReadinessData, GetConfiguredModelReadinessErrors, GetConfiguredModelReadinessResponses, GetCurrentUserData, GetCurrentUserErrors, GetCurrentUserResponses, GetDependencyHealthData, GetDependencyHealthErrors, GetDependencyHealthResponses, GetLivenessData, GetLivenessErrors, GetLivenessResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetVectorCollectionStatisticsData, GetVectorCollectionStatisticsErrors, GetVectorCollectionStatisticsResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, LoginData, LoginErrors, LoginResponses, LogoutAllData, LogoutAllErrors, LogoutAllResponses, LogoutData, LogoutErrors, LogoutResponses, RefreshAccessTokenData, RefreshAccessTokenErrors, RefreshAccessTokenResponses, RegisterData, RegisterErrors, RegisterResponses, RequestPasswordResetData, RequestPasswordResetErrors, RequestPasswordResetResponses, ResetPasswordData, ResetPasswordErrors, ResetPasswordResponses, RestoreProjectData, RestoreProjectErrors, RestoreProjectResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, VerifyEmailData, VerifyEmailErrors, VerifyEmailResponses, WarmUpConfiguredModelData, WarmUpConfiguredModelErrors, WarmUpConfiguredModelResponses } from './types.gen';
+import type { AddScanCampaignTargetData, AddScanCampaignTargetErrors, AddScanCampaignTargetResponses, ArchiveProjectData, ArchiveProjectErrors, ArchiveProjectResponses, CancelScanCampaignData, CancelScanCampaignErrors, CancelScanCampaignResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateScanCampaignData, CreateScanCampaignErrors, CreateScanCampaignResponses, DeleteDraftScanCampaignData, DeleteDraftScanCampaignErrors, DeleteDraftScanCampaignResponses, DeleteDraftScanCampaignTargetData, DeleteDraftScanCampaignTargetErrors, DeleteDraftScanCampaignTargetResponses, GetApiVersionData, GetApiVersionErrors, GetApiVersionResponses, GetConfiguredModelReadinessData, GetConfiguredModelReadinessErrors, GetConfiguredModelReadinessResponses, GetCurrentUserData, GetCurrentUserErrors, GetCurrentUserResponses, GetDependencyHealthData, GetDependencyHealthErrors, GetDependencyHealthResponses, GetLivenessData, GetLivenessErrors, GetLivenessResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetScanCampaignData, GetScanCampaignErrors, GetScanCampaignResponses, GetScanCampaignSummaryData, GetScanCampaignSummaryErrors, GetScanCampaignSummaryResponses, GetVectorCollectionStatisticsData, GetVectorCollectionStatisticsErrors, GetVectorCollectionStatisticsResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListScanCampaignFailuresData, ListScanCampaignFailuresErrors, ListScanCampaignFailuresResponses, ListScanCampaignPagesData, ListScanCampaignPagesErrors, ListScanCampaignPagesResponses, ListScanCampaignsData, ListScanCampaignsErrors, ListScanCampaignsResponses, ListScanCampaignTargetsData, ListScanCampaignTargetsErrors, ListScanCampaignTargetsResponses, LoginData, LoginErrors, LoginResponses, LogoutAllData, LogoutAllErrors, LogoutAllResponses, LogoutData, LogoutErrors, LogoutResponses, PauseScanCampaignData, PauseScanCampaignErrors, PauseScanCampaignResponses, RefreshAccessTokenData, RefreshAccessTokenErrors, RefreshAccessTokenResponses, RegisterData, RegisterErrors, RegisterResponses, RequestPasswordResetData, RequestPasswordResetErrors, RequestPasswordResetResponses, ResetPasswordData, ResetPasswordErrors, ResetPasswordResponses, RestoreProjectData, RestoreProjectErrors, RestoreProjectResponses, ResumeScanCampaignData, ResumeScanCampaignErrors, ResumeScanCampaignResponses, RetryScanCampaignFailuresData, RetryScanCampaignFailuresErrors, RetryScanCampaignFailuresResponses, StartScanCampaignData, StartScanCampaignErrors, StartScanCampaignResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateScanCampaignData, UpdateScanCampaignErrors, UpdateScanCampaignResponses, VerifyEmailData, VerifyEmailErrors, VerifyEmailResponses, WarmUpConfiguredModelData, WarmUpConfiguredModelErrors, WarmUpConfiguredModelResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -255,6 +255,225 @@ export class Projects {
         return (options.client ?? client).post<RestoreProjectResponses, RestoreProjectErrors, ThrowOnError>({
             security: [{ scheme: 'bearer', type: 'http' }],
             url: '/api/v1/projects/{project_id}/restore',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+}
+
+@Injectable({ providedIn: 'root' })
+export class ScanCampaigns {
+    /**
+     * List Scan Campaigns
+     */
+    public listScanCampaigns<ThrowOnError extends boolean = false>(options: Options<ListScanCampaignsData, ThrowOnError>): RequestResult<ListScanCampaignsResponses, ListScanCampaignsErrors, ThrowOnError> {
+        return (options.client ?? client).get<ListScanCampaignsResponses, ListScanCampaignsErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns',
+            ...options
+        });
+    }
+    
+    /**
+     * Create Scan Campaign
+     */
+    public createScanCampaign<ThrowOnError extends boolean = false>(options: Options<CreateScanCampaignData, ThrowOnError>): RequestResult<CreateScanCampaignResponses, CreateScanCampaignErrors, ThrowOnError> {
+        return (options.client ?? client).post<CreateScanCampaignResponses, CreateScanCampaignErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Delete Scan Campaign
+     */
+    public deleteDraftScanCampaign<ThrowOnError extends boolean = false>(options: Options<DeleteDraftScanCampaignData, ThrowOnError>): RequestResult<DeleteDraftScanCampaignResponses, DeleteDraftScanCampaignErrors, ThrowOnError> {
+        return (options.client ?? client).delete<DeleteDraftScanCampaignResponses, DeleteDraftScanCampaignErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Get Scan Campaign
+     */
+    public getScanCampaign<ThrowOnError extends boolean = false>(options: Options<GetScanCampaignData, ThrowOnError>): RequestResult<GetScanCampaignResponses, GetScanCampaignErrors, ThrowOnError> {
+        return (options.client ?? client).get<GetScanCampaignResponses, GetScanCampaignErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}',
+            ...options
+        });
+    }
+    
+    /**
+     * Update Scan Campaign
+     */
+    public updateScanCampaign<ThrowOnError extends boolean = false>(options: Options<UpdateScanCampaignData, ThrowOnError>): RequestResult<UpdateScanCampaignResponses, UpdateScanCampaignErrors, ThrowOnError> {
+        return (options.client ?? client).patch<UpdateScanCampaignResponses, UpdateScanCampaignErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Cancel Scan Campaign
+     */
+    public cancelScanCampaign<ThrowOnError extends boolean = false>(options: Options<CancelScanCampaignData, ThrowOnError>): RequestResult<CancelScanCampaignResponses, CancelScanCampaignErrors, ThrowOnError> {
+        return (options.client ?? client).post<CancelScanCampaignResponses, CancelScanCampaignErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/cancel',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * List Scan Campaign Failures
+     */
+    public listScanCampaignFailures<ThrowOnError extends boolean = false>(options: Options<ListScanCampaignFailuresData, ThrowOnError>): RequestResult<ListScanCampaignFailuresResponses, ListScanCampaignFailuresErrors, ThrowOnError> {
+        return (options.client ?? client).get<ListScanCampaignFailuresResponses, ListScanCampaignFailuresErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/failures',
+            ...options
+        });
+    }
+    
+    /**
+     * List Scan Campaign Pages
+     */
+    public listScanCampaignPages<ThrowOnError extends boolean = false>(options: Options<ListScanCampaignPagesData, ThrowOnError>): RequestResult<ListScanCampaignPagesResponses, ListScanCampaignPagesErrors, ThrowOnError> {
+        return (options.client ?? client).get<ListScanCampaignPagesResponses, ListScanCampaignPagesErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/pages',
+            ...options
+        });
+    }
+    
+    /**
+     * Pause Scan Campaign
+     */
+    public pauseScanCampaign<ThrowOnError extends boolean = false>(options: Options<PauseScanCampaignData, ThrowOnError>): RequestResult<PauseScanCampaignResponses, PauseScanCampaignErrors, ThrowOnError> {
+        return (options.client ?? client).post<PauseScanCampaignResponses, PauseScanCampaignErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/pause',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Resume Scan Campaign
+     */
+    public resumeScanCampaign<ThrowOnError extends boolean = false>(options: Options<ResumeScanCampaignData, ThrowOnError>): RequestResult<ResumeScanCampaignResponses, ResumeScanCampaignErrors, ThrowOnError> {
+        return (options.client ?? client).post<ResumeScanCampaignResponses, ResumeScanCampaignErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/resume',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Retry Scan Campaign Failures
+     */
+    public retryScanCampaignFailures<ThrowOnError extends boolean = false>(options: Options<RetryScanCampaignFailuresData, ThrowOnError>): RequestResult<RetryScanCampaignFailuresResponses, RetryScanCampaignFailuresErrors, ThrowOnError> {
+        return (options.client ?? client).post<RetryScanCampaignFailuresResponses, RetryScanCampaignFailuresErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/retry-failures',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Start Scan Campaign
+     */
+    public startScanCampaign<ThrowOnError extends boolean = false>(options: Options<StartScanCampaignData, ThrowOnError>): RequestResult<StartScanCampaignResponses, StartScanCampaignErrors, ThrowOnError> {
+        return (options.client ?? client).post<StartScanCampaignResponses, StartScanCampaignErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/start',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Get Scan Campaign Summary
+     */
+    public getScanCampaignSummary<ThrowOnError extends boolean = false>(options: Options<GetScanCampaignSummaryData, ThrowOnError>): RequestResult<GetScanCampaignSummaryResponses, GetScanCampaignSummaryErrors, ThrowOnError> {
+        return (options.client ?? client).get<GetScanCampaignSummaryResponses, GetScanCampaignSummaryErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/summary',
+            ...options
+        });
+    }
+    
+    /**
+     * List Scan Campaign Targets
+     */
+    public listScanCampaignTargets<ThrowOnError extends boolean = false>(options: Options<ListScanCampaignTargetsData, ThrowOnError>): RequestResult<ListScanCampaignTargetsResponses, ListScanCampaignTargetsErrors, ThrowOnError> {
+        return (options.client ?? client).get<ListScanCampaignTargetsResponses, ListScanCampaignTargetsErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/targets',
+            ...options
+        });
+    }
+    
+    /**
+     * Add Scan Campaign Target
+     */
+    public addScanCampaignTarget<ThrowOnError extends boolean = false>(options: Options<AddScanCampaignTargetData, ThrowOnError>): RequestResult<AddScanCampaignTargetResponses, AddScanCampaignTargetErrors, ThrowOnError> {
+        return (options.client ?? client).post<AddScanCampaignTargetResponses, AddScanCampaignTargetErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/targets',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Delete Scan Campaign Target
+     */
+    public deleteDraftScanCampaignTarget<ThrowOnError extends boolean = false>(options: Options<DeleteDraftScanCampaignTargetData, ThrowOnError>): RequestResult<DeleteDraftScanCampaignTargetResponses, DeleteDraftScanCampaignTargetErrors, ThrowOnError> {
+        return (options.client ?? client).delete<DeleteDraftScanCampaignTargetResponses, DeleteDraftScanCampaignTargetErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/targets/{target_id}',
             ...options,
             headers: {
                 'Content-Type': 'application/json',

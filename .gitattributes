@@ -17,3 +17,4 @@
 
 pnpm-lock.yaml linguist-generated=true
 uv.lock linguist-generated=true
+packages/web/api-client/src/generated/** linguist-generated=true whitespace=-blank-at-eol

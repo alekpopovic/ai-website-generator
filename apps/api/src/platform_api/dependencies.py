@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
+from dataclasses import dataclass, field
 from typing import Annotated, cast
 
 from fastapi import Depends, Request
@@ -15,6 +16,7 @@ from temporalio.client import Client
 
 from platform_api.config import Settings
 from platform_api.errors import ApiError, DependencyUnavailableError
+from platform_api.logging import get_logger
 from platform_api.probes import ProbeRegistry
 from platform_api.resources import ApplicationResources
 
@@ -39,8 +41,49 @@ async def probe_registry_dependency(
     return resources.probes
 
 
+AfterCommitCallback = Callable[[], Awaitable[None]]
+
+
+@dataclass(slots=True)
+class AfterCommitActions:
+    """Request-owned external actions that run only after PostgreSQL commits."""
+
+    _actions: list[tuple[str, AfterCommitCallback]] = field(default_factory=list)
+    failures: list[str] = field(default_factory=list)
+
+    def add(self, name: str, callback: AfterCommitCallback) -> None:
+        if not name or len(name) > 100:
+            raise ValueError("after-commit action name must be bounded")
+        self._actions.append((name, callback))
+
+    async def run(self) -> None:
+        actions = tuple(self._actions)
+        self._actions.clear()
+        for name, callback in actions:
+            try:
+                await callback()
+            except Exception as error:  # External clients expose unrelated exception hierarchies.
+                self.failures.append(name)
+                get_logger().error(
+                    "after_commit_action_failed",
+                    action=name,
+                    error_type=type(error).__name__,
+                )
+
+
+async def after_commit_actions_dependency(request: Request) -> AfterCommitActions:
+    actions = getattr(request.state, "after_commit_actions", None)
+    if actions is None:
+        actions = AfterCommitActions()
+        request.state.after_commit_actions = actions
+    return cast(AfterCommitActions, actions)
+
+
 async def database_transaction_dependency(
     resources: Annotated[ApplicationResources, Depends(resources_dependency)],
+    after_commit: Annotated[
+        AfterCommitActions | None, Depends(after_commit_actions_dependency)
+    ] = None,
 ) -> AsyncIterator[AsyncSession]:
     """Yield one request-scoped transaction that commits or rolls back atomically."""
     if resources.database is None:
@@ -55,6 +98,8 @@ async def database_transaction_dependency(
             pending_error = error
     if pending_error is not None:
         raise pending_error
+    if after_commit is not None:
+        await after_commit.run()
 
 
 async def temporal_client_dependency(
@@ -99,6 +144,9 @@ async def vector_store_dependency(
 
 SettingsDependency = Annotated[Settings, Depends(settings_dependency)]
 ResourcesDependency = Annotated[ApplicationResources, Depends(resources_dependency)]
+AfterCommitActionsDependency = Annotated[
+    AfterCommitActions, Depends(after_commit_actions_dependency)
+]
 ProbeRegistryDependency = Annotated[ProbeRegistry, Depends(probe_registry_dependency)]
 DatabaseTransactionDependency = Annotated[AsyncSession, Depends(database_transaction_dependency)]
 TemporalClientDependency = Annotated[Client, Depends(temporal_client_dependency)]

@@ -62,38 +62,6 @@ def _control(name: str) -> Stage:
     )
 
 
-_SCAN_STAGES = (
-    _control("prepare-scan"),
-    Stage(
-        "crawl-scan",
-        TaskQueue.CRAWL,
-        ActivityCategory.NETWORK,
-        timedelta(hours=1),
-        timedelta(seconds=30),
-    ),
-    Stage(
-        "render-scan-pages",
-        TaskQueue.BROWSER,
-        ActivityCategory.BROWSER,
-        timedelta(minutes=30),
-        timedelta(seconds=30),
-    ),
-    Stage(
-        "analyze-scan",
-        TaskQueue.AI_ANALYSIS,
-        ActivityCategory.INFERENCE,
-        timedelta(minutes=30),
-        timedelta(seconds=30),
-    ),
-    Stage(
-        "embed-scan",
-        TaskQueue.EMBEDDING,
-        ActivityCategory.STORAGE,
-        timedelta(minutes=30),
-        timedelta(seconds=30),
-    ),
-    _control("complete-scan"),
-)
 _DATASET_STAGES = (
     _control("prepare-dataset"),
     Stage(
@@ -166,11 +134,34 @@ _TRAINING_STAGES = (
 
 @workflow.defn(name="ScanCampaignWorkflow")
 class ScanCampaignWorkflow:
-    """Skeleton for policy-aware crawl, browser, analysis, and embedding stages."""
+    """Control-only scan skeleton; no crawl activity exists in this prompt."""
+
+    def __init__(self) -> None:
+        self._paused = False
+        self._cancel_requested = False
+
+    @workflow.signal(name="pause")
+    async def pause(self) -> None:
+        self._paused = True
+
+    @workflow.signal(name="resume")
+    async def resume(self) -> None:
+        self._paused = False
+
+    @workflow.signal(name="cancel")
+    async def cancel(self) -> None:
+        self._cancel_requested = True
+
+    @workflow.query(name="control-state")
+    def control_state(self) -> str:
+        if self._cancel_requested:
+            return "cancelling"
+        return "paused" if self._paused else "queued"
 
     @workflow.run
     async def run(self, command: CompactWorkflowInput) -> WorkflowResult:
-        return await _run_stages(command, _SCAN_STAGES)
+        await workflow.wait_condition(lambda: self._cancel_requested)
+        return WorkflowResult(job_id=command.job_id, status="cancelled")
 
 
 @workflow.defn(name="DatasetBuildWorkflow")

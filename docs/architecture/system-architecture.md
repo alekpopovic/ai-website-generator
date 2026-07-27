@@ -61,6 +61,12 @@ typed tenant/provenance filters, and an alias over immutable embedding-version c
 
 The scan never promotes third-party logos, names, copy, media, code, or complete compositions into reusable generation inputs.
 
+The current implementation establishes only campaign configuration, targets, page/viewport/failure
+projections, ownership-scoped APIs, lifecycle transitions, and durable workflow control. Starting a
+campaign dispatches a control-only Temporal workflow after PostgreSQL commits. No crawl, browser,
+analysis, or embedding activity is implemented yet. See [Scan campaign API](../api/scan-campaigns.md)
+and [ADR 0010](../adr/0010-scan-campaign-control-state.md).
+
 ## 4. Dataset workflow
 
 Dataset creation selects eligible abstract scan records by ID and evaluates authorization, provenance, licensing, removal state, schema version, and quality policy. Workers normalize and deduplicate records, create immutable versioned manifests, and split data deterministically. Dataset bodies live in object storage; PostgreSQL holds lifecycle state, ownership, policy, lineage, checksums, and object keys. Optional embeddings live in Qdrant with the same dataset and provenance identifiers.
