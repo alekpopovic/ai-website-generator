@@ -19,11 +19,25 @@ from platform_api.models.problem import InvalidParameter, ProblemDetail
 class ApiError(Exception):
     """Expected API failure with a stable public code and safe detail."""
 
-    def __init__(self, status_code: int, code: str, detail: str) -> None:
+    def __init__(
+        self,
+        status_code: int,
+        code: str,
+        detail: str,
+        *,
+        headers: dict[str, str] | None = None,
+        invalid_parameters: list[InvalidParameter] | None = None,
+        commit_transaction: bool = False,
+    ) -> None:
         super().__init__(detail)
         self.status_code = status_code
         self.code = code
         self.detail = detail
+        self.headers = headers
+        self.invalid_parameters = invalid_parameters
+        # Used only when a rejected request has already made a security-critical
+        # state transition, such as revoking a refresh-token family after reuse.
+        self.commit_transaction = commit_transaction
 
 
 class DependencyUnavailableError(ApiError):
@@ -49,6 +63,7 @@ def problem_response(
     code: str,
     detail: str | None,
     invalid_parameters: list[InvalidParameter] | None = None,
+    headers: dict[str, str] | None = None,
 ) -> JSONResponse:
     """Build the one canonical problem response shape."""
     try:
@@ -69,6 +84,7 @@ def problem_response(
         problem.model_dump(mode="json", by_alias=True, exclude_none=True),
         status_code=status,
         media_type=PROBLEM_MEDIA_TYPE,
+        headers=headers,
     )
 
 
@@ -79,6 +95,8 @@ async def api_error_handler(request: Request, exc: ApiError) -> JSONResponse:
         status=exc.status_code,
         code=exc.code,
         detail=exc.detail,
+        headers=exc.headers,
+        invalid_parameters=exc.invalid_parameters,
     )
 
 

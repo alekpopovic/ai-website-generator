@@ -9,12 +9,14 @@ import {
 import type { ApplicationConfig } from '@angular/core';
 import { TitleStrategy, provideRouter, withComponentInputBinding } from '@angular/router';
 import {
+  API_REFRESH_STRATEGY,
   PlatformApiConfiguration,
   apiBearerInterceptor,
   providePlatformApi,
   requestCorrelationInterceptor,
 } from '@platform/api-client';
 
+import { AuthenticationService } from './core/auth/authentication.service';
 import { RuntimeConfigService } from './core/config/runtime-config';
 import { GlobalErrorHandler } from './core/errors/global-error-handler';
 import { httpErrorInterceptor } from './core/errors/http-error.interceptor';
@@ -30,11 +32,14 @@ export const appConfig: ApplicationConfig = {
       withInterceptors([requestCorrelationInterceptor, httpErrorInterceptor, apiBearerInterceptor]),
     ),
     providePlatformApi(),
+    { provide: API_REFRESH_STRATEGY, useExisting: AuthenticationService },
     provideAppInitializer(() => {
       const runtime = inject(RuntimeConfigService);
       const api = inject(PlatformApiConfiguration);
-      return runtime.load().then(() => {
+      const authentication = inject(AuthenticationService);
+      return runtime.load().then(async () => {
         api.configure({ baseUrl: runtime.config.apiBaseUrl });
+        await authentication.initialize();
       });
     }),
     { provide: TitleStrategy, useClass: AppTitleStrategy },

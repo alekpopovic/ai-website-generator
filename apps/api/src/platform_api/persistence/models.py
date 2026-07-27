@@ -30,6 +30,8 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base):
     display_name: Mapped[str] = mapped_column(String(200), nullable=False)
     password_hash: Mapped[str | None] = mapped_column(String(500))
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="active")
+    email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    password_changed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     refresh_tokens: Mapped[list[RefreshToken]] = relationship(back_populates="user")
     projects: Mapped[list[Project]] = relationship(back_populates="owner")
@@ -53,11 +55,38 @@ class RefreshToken(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, 
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="active")
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    replaced_by_token_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("refresh_tokens.id", ondelete="SET NULL")
+    )
     client_metadata: Mapped[JsonValue] = mapped_column(
         SafeJSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")
     )
 
     user: Mapped[User] = relationship(back_populates="refresh_tokens")
+
+
+class AuthActionToken(UUIDPrimaryKeyMixin, Base):
+    """Hashed, single-use email verification or password-reset token."""
+
+    __tablename__ = "auth_action_tokens"
+    __table_args__ = (
+        CheckConstraint(
+            "purpose IN ('email_verification', 'password_reset')", name="purpose_allowed"
+        ),
+        UniqueConstraint("token_hash"),
+        Index("ix_auth_action_tokens_user_id_purpose", "user_id", "purpose"),
+    )
+
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    purpose: Mapped[str] = mapped_column(String(32), nullable=False)
+    token_hash: Mapped[str] = mapped_column(String(128), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=text("CURRENT_TIMESTAMP")
+    )
 
 
 class Project(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base):

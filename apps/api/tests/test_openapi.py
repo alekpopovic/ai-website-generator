@@ -22,3 +22,21 @@ def test_openapi_documents_problem_details_for_version_failures() -> None:
 
     problem_schema = responses["503"]["content"]["application/problem+json"]["schema"]
     assert problem_schema == {"$ref": "#/components/schemas/ProblemDetail"}
+
+
+def test_openapi_exposes_complete_first_party_authentication_contract() -> None:
+    schema = create_test_app().openapi()
+    expected = {
+        "/api/v1/auth/register",
+        "/api/v1/auth/login",
+        "/api/v1/auth/refresh",
+        "/api/v1/auth/logout",
+        "/api/v1/auth/logout-all",
+        "/api/v1/auth/me",
+        "/api/v1/auth/request-password-reset",
+        "/api/v1/auth/reset-password",
+        "/api/v1/auth/verify-email",
+    }
+
+    assert expected <= set(schema["paths"])
+    assert schema["paths"]["/api/v1/auth/me"]["get"]["security"] == [{"bearer": []}]

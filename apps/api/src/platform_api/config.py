@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 from urllib.parse import urlsplit
 
-from pydantic import AnyHttpUrl, Field, SecretStr, field_validator
+from pydantic import AnyHttpUrl, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 Environment = Literal["development", "test", "staging", "production"]
@@ -177,6 +177,29 @@ class SecuritySettings(StrictSettings):
     enable_docs: bool = False
     request_id_header: str = Field(default="X-Request-ID", pattern=r"^[A-Za-z][A-Za-z0-9-]{0,63}$")
     max_request_body_bytes: int = Field(default=1_048_576, ge=1_024, le=10_485_760)
+    access_token_secret: SecretStr | None = None
+    access_token_issuer: str = "ai-website-generator"  # noqa: S105 - public issuer ID.
+    access_token_audience: str = "ai-website-generator-web"  # noqa: S105 - public audience ID.
+    access_token_ttl_seconds: int = Field(default=300, ge=60, le=3_600)
+    refresh_token_ttl_seconds: int = Field(default=2_592_000, ge=3_600, le=7_776_000)
+    refresh_cookie_name: str = Field(
+        default="aiwg_refresh", pattern=r"^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+    )
+    refresh_cookie_domain: str | None = None
+    refresh_cookie_secure: bool = True
+    refresh_cookie_samesite: Literal["lax", "strict"] = "lax"
+    login_rate_limit_attempts: int = Field(default=5, ge=1, le=100)
+    login_rate_limit_window_seconds: int = Field(default=300, ge=10, le=3_600)
+    email_verification_ttl_seconds: int = Field(default=86_400, ge=300, le=604_800)
+    password_reset_ttl_seconds: int = Field(default=1_800, ge=300, le=86_400)
+
+    @field_validator("access_token_secret")
+    @classmethod
+    def validate_access_token_secret(cls, value: SecretStr | None) -> SecretStr | None:
+        """Require enough entropy for the symmetric access-token signing key."""
+        if value is not None and len(value.get_secret_value().encode()) < 32:
+            raise ValueError("SECURITY_ACCESS_TOKEN_SECRET must contain at least 32 bytes")
+        return value
 
     @field_validator("trusted_hosts")
     @classmethod
@@ -185,6 +208,29 @@ class SecuritySettings(StrictSettings):
         if not hosts or "*" in hosts:
             raise ValueError("SECURITY_TRUSTED_HOSTS must contain explicit hosts")
         return hosts
+
+
+class EmailSettings(StrictSettings):
+    """Transactional authentication email delivery settings."""
+
+    model_config = SettingsConfigDict(env_prefix="EMAIL_")
+
+    smtp_host: str = "127.0.0.1"
+    smtp_port: int = Field(default=1025, ge=1, le=65_535)
+    smtp_username: str | None = None
+    smtp_password: SecretStr | None = None
+    smtp_start_tls: bool = False
+    smtp_use_tls: bool = False
+    smtp_timeout_seconds: PositiveSeconds = 10.0
+    from_address: str = "no-reply@local.test"
+    public_web_url: AnyHttpUrl = AnyHttpUrl("http://localhost:4200")
+
+    @model_validator(mode="after")
+    def validate_tls_modes(self) -> Self:
+        """Reject mutually exclusive implicit and STARTTLS modes."""
+        if self.smtp_use_tls and self.smtp_start_tls:
+            raise ValueError("EMAIL_SMTP_USE_TLS and EMAIL_SMTP_START_TLS are mutually exclusive")
+        return self
 
 
 class ScanningSettings(StrictSettings):
@@ -219,8 +265,21 @@ class Settings(StrictSettings):
     qdrant: QdrantSettings = Field(default_factory=QdrantSettings)
     ollama: OllamaSettings = Field(default_factory=OllamaSettings)
     security: SecuritySettings = Field(default_factory=SecuritySettings)
+    email: EmailSettings = Field(default_factory=EmailSettings)
     scanning: ScanningSettings = Field(default_factory=ScanningSettings)
     generation: GenerationSettings = Field(default_factory=GenerationSettings)
+
+    @model_validator(mode="after")
+    def enforce_deployed_cookie_security(self) -> Self:
+        """Never permit plaintext refresh cookies in deployed environments."""
+        if self.application.environment in {"staging", "production"}:
+            if not self.security.refresh_cookie_secure:
+                raise ValueError("secure refresh cookies are required outside development and test")
+            if self.security.access_token_secret is None:
+                raise ValueError(
+                    "access token signing secret is required outside development and test"
+                )
+        return self
 
 
 @lru_cache(maxsize=1)

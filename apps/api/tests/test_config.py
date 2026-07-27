@@ -57,3 +57,18 @@ def test_security_rejects_unrestricted_hosts() -> None:
     """A wildcard Host policy cannot be enabled accidentally."""
     with pytest.raises(ValidationError):
         SecuritySettings(trusted_hosts=("*",))
+
+
+def test_deployed_authentication_requires_secure_cookie_and_signing_secret() -> None:
+    """A deployed settings graph cannot silently expose or disable authentication."""
+    with pytest.raises(ValidationError, match="signing secret"):
+        Settings(application=ApplicationSettings(environment="production"))
+
+    with pytest.raises(ValidationError, match="secure refresh cookies"):
+        Settings(
+            application=ApplicationSettings(environment="production"),
+            security=SecuritySettings(
+                access_token_secret=SecretStr("production-signing-secret-at-least-32-bytes"),
+                refresh_cookie_secure=False,
+            ),
+        )

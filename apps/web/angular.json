@@ -49,6 +49,7 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": { "prebundle": false },
           "configurations": {
             "production": { "buildTarget": "web:build:production" },
             "development": { "buildTarget": "web:build:development" }

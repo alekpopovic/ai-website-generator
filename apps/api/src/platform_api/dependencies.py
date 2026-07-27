@@ -9,7 +9,7 @@ from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from platform_api.config import Settings
-from platform_api.errors import DependencyUnavailableError
+from platform_api.errors import ApiError, DependencyUnavailableError
 from platform_api.probes import ProbeRegistry
 from platform_api.resources import ApplicationResources
 
@@ -40,8 +40,16 @@ async def database_transaction_dependency(
     """Yield one request-scoped transaction that commits or rolls back atomically."""
     if resources.database is None:
         raise DependencyUnavailableError("database")
+    pending_error: ApiError | None = None
     async with resources.database.transaction() as session:
-        yield session
+        try:
+            yield session
+        except ApiError as error:
+            if not error.commit_transaction:
+                raise
+            pending_error = error
+    if pending_error is not None:
+        raise pending_error
 
 
 SettingsDependency = Annotated[Settings, Depends(settings_dependency)]

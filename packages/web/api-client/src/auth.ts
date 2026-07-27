@@ -31,6 +31,15 @@ export const API_REFRESH_STRATEGY = new InjectionToken<ApiRefreshStrategy>('API_
 
 export const SKIP_API_AUTH = new HttpContextToken<boolean>(() => false);
 const ACCESS_TOKEN_REFRESHED = new HttpContextToken<boolean>(() => false);
+const PUBLIC_AUTH_PATHS = new Set([
+  '/api/v1/auth/login',
+  '/api/v1/auth/logout',
+  '/api/v1/auth/refresh',
+  '/api/v1/auth/register',
+  '/api/v1/auth/request-password-reset',
+  '/api/v1/auth/reset-password',
+  '/api/v1/auth/verify-email',
+]);
 
 @Injectable({ providedIn: 'root' })
 export class ApiAccessTokenStore {
@@ -76,7 +85,11 @@ export const apiBearerInterceptor: HttpInterceptorFn = (request, next) => {
   const tokens = inject(ApiAccessTokenStore);
   const refresh = inject(ApiRefreshCoordinator);
 
-  if (!configuration.isApiUrl(request.url) || request.context.get(SKIP_API_AUTH)) {
+  if (
+    !configuration.isApiUrl(request.url) ||
+    request.context.get(SKIP_API_AUTH) ||
+    [...PUBLIC_AUTH_PATHS].some((path) => configuration.isApiPath(request.url, path))
+  ) {
     return next(request);
   }
 

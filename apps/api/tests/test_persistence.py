@@ -24,6 +24,7 @@ def test_metadata_contains_named_foundation_tables_and_constraints() -> None:
     """Alembic sees every initial table through one naming convention."""
     assert set(Base.metadata.tables) == {
         "audit_logs",
+        "auth_action_tokens",
         "job_events",
         "projects",
         "refresh_tokens",

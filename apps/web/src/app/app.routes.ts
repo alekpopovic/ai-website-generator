@@ -1,10 +1,12 @@
 import type { Routes } from '@angular/router';
 
 import { environment } from '../environments/environment';
+import { authenticationGuard, publicOnlyGuard } from './core/auth/authentication.guard';
 
 export const routes: Routes = [
   {
     path: 'login',
+    canActivate: [publicOnlyGuard],
     loadComponent: () =>
       import('./layouts/public-layout/public-layout.component').then(
         (module) => module.PublicLayoutComponent,
@@ -21,7 +23,59 @@ export const routes: Routes = [
     ],
   },
   {
+    path: 'register',
+    canActivate: [publicOnlyGuard],
+    loadComponent: () =>
+      import('./layouts/public-layout/public-layout.component').then(
+        (module) => module.PublicLayoutComponent,
+      ),
+    children: [
+      {
+        path: '',
+        title: 'Create account',
+        loadComponent: () =>
+          import('./features/register/register-page.component').then(
+            (module) => module.RegisterPageComponent,
+          ),
+      },
+    ],
+  },
+  {
     path: '',
+    loadComponent: () =>
+      import('./layouts/public-layout/public-layout.component').then(
+        (module) => module.PublicLayoutComponent,
+      ),
+    children: [
+      {
+        path: 'request-password-reset',
+        title: 'Reset password',
+        loadComponent: () =>
+          import('./features/password-reset/request-password-reset-page.component').then(
+            (module) => module.RequestPasswordResetPageComponent,
+          ),
+      },
+      {
+        path: 'reset-password',
+        title: 'Choose a new password',
+        loadComponent: () =>
+          import('./features/password-reset/reset-password-page.component').then(
+            (module) => module.ResetPasswordPageComponent,
+          ),
+      },
+      {
+        path: 'verify-email',
+        title: 'Verify email',
+        loadComponent: () =>
+          import('./features/email-verification/verify-email-page.component').then(
+            (module) => module.VerifyEmailPageComponent,
+          ),
+      },
+    ],
+  },
+  {
+    path: '',
+    canActivate: [authenticationGuard],
     loadComponent: () =>
       import('./layouts/authenticated-layout/authenticated-layout.component').then(
         (module) => module.AuthenticatedLayoutComponent,

@@ -76,4 +76,42 @@ describe('API transport interceptors', () => {
     expect(refreshStrategy.clearSession).not.toHaveBeenCalled();
     injector.destroy();
   });
+
+  it('never attaches bearer tokens to or recursively refreshes public auth requests', async () => {
+    const configuration = new PlatformApiConfiguration();
+    configuration.configure({ baseUrl: 'https://api.example.test' });
+    const tokens = new ApiAccessTokenStore();
+    tokens.set('private-access-token');
+    const refreshStrategy = {
+      refreshAccessToken: vi.fn(() => of('unexpected-token')),
+      clearSession: vi.fn(),
+    };
+    const injector = Injector.create({
+      providers: [
+        { provide: PlatformApiConfiguration, useValue: configuration },
+        { provide: ApiAccessTokenStore, useValue: tokens },
+        { provide: API_REFRESH_STRATEGY, useValue: refreshStrategy },
+        ApiRefreshCoordinator,
+      ],
+    });
+    let authorization: string | null = null;
+
+    await expect(
+      firstValueFrom(
+        runInInjectionContext(injector, () =>
+          apiBearerInterceptor(
+            new HttpRequest('POST', 'https://api.example.test/api/v1/auth/refresh', null),
+            (request) => {
+              authorization = request.headers.get('Authorization');
+              return throwError(() => new HttpErrorResponse({ status: 401 }));
+            },
+          ),
+        ),
+      ),
+    ).rejects.toBeInstanceOf(HttpErrorResponse);
+
+    expect(authorization).toBeNull();
+    expect(refreshStrategy.refreshAccessToken).not.toHaveBeenCalled();
+    injector.destroy();
+  });
 });

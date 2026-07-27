@@ -15,14 +15,14 @@ def test_initial_migration_renders_postgresql_upgrade_sql(
     """The complete revision graph renders valid PostgreSQL DDL offline."""
     monkeypatch.setenv(
         "DATABASE_URL",
-        "postgresql+asyncpg://migration:unused@127.0.0.1/platform_migration_test",
+        "postgresql+asyncpg://migration:unused@127.0.0.1/platform_migration_test",  # pragma: allowlist secret
     )
     clear_settings_cache()
     config = Config("apps/api/alembic.ini")
     try:
         command.upgrade(config, "head", sql=True)
         upgrade_sql = capsys.readouterr().out
-        command.downgrade(config, "20260727_0001:base", sql=True)
+        command.downgrade(config, "head:base", sql=True)
         downgrade_sql = capsys.readouterr().out
     finally:
         clear_settings_cache()
@@ -32,6 +32,7 @@ def test_initial_migration_renders_postgresql_upgrade_sql(
     assert "CREATE TABLE projects" in upgrade_sql
     assert "CREATE TABLE audit_logs" in upgrade_sql
     assert "CREATE TABLE job_events" in upgrade_sql
+    assert "CREATE TABLE auth_action_tokens" in upgrade_sql
     assert "ck_users_status_allowed" in upgrade_sql
     assert "ck_users_ck_" not in upgrade_sql
     assert "CREATE TYPE" not in upgrade_sql

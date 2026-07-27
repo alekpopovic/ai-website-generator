@@ -8,11 +8,11 @@ The application is packaged from `apps/api/src/platform_api`. `platform_api.appl
 
 ## Configuration
 
-Copy `apps/api/.env.example` to `apps/api/.env`, then supply local secrets. Settings are immutable and grouped into application, database, Redis, Temporal, MinIO, Qdrant, Ollama, security, scanning, and generation sections. Each group has its own environment prefix.
+Copy `apps/api/.env.example` to `apps/api/.env`, then supply local secrets. Settings are immutable and grouped into application, database, Redis, Temporal, MinIO, Qdrant, Ollama, security, email, scanning, and generation sections. Each group has its own environment prefix.
 
 Required local credentials remain blank in the committed example. At minimum, configure `DATABASE_URL` with the `postgresql+asyncpg://` scheme and `REDIS_URL` with the Compose password before using real dependencies. `APP_FAKE_DEPENDENCIES=true` is intended only for deterministic development and CI checks; it makes dependency probes healthy without connecting to services.
 
-Production defaults disable interactive API documentation, require HTTPS redirection, reject wildcard Host policies, allow no CORS origin, cap request bodies, and emit defensive headers. The development example explicitly relaxes HTTPS and enables documentation for loopback use. Configure `APP_CORS_ALLOWED_ORIGINS` as a JSON array of complete trusted origins; wildcard origins are not accepted.
+Authentication requires `SECURITY_ACCESS_TOKEN_SECRET` with at least 32 bytes of entropy. Production defaults disable interactive API documentation, require HTTPS redirection, reject wildcard Host policies, allow no CORS origin, require secure refresh cookies, cap request bodies, and emit defensive headers. The development example explicitly relaxes HTTPS and enables documentation for loopback use. Configure `APP_CORS_ALLOWED_ORIGINS` as a JSON array of complete trusted origins; wildcard origins are not accepted.
 
 ## Run locally
 
@@ -56,13 +56,27 @@ task seed-local-user
 ```
 
 The command is rejected outside `APP_ENV=development` and accepts only `@localhost` or
-`@local.test` email addresses. It creates no sample projects, jobs, tokens, or product data. Because
-authentication is not implemented yet, the account deliberately has no password hash.
+`@local.test` email addresses. It creates no sample projects, jobs, tokens, or product data. The
+seed remains intentionally non-login-capable; use registration and the Mailpit verification
+message when testing authentication locally.
+
+## First-party authentication
+
+Authentication routes live under `/api/v1/auth`. Password hashing uses Argon2id outside the async
+event-loop thread. Access tokens are short-lived signed bearer JWTs; opaque refresh tokens rotate
+through an HttpOnly cookie and are stored only as SHA-256 hashes. Redis enforces a bounded login
+rate window. Registration verification and password recovery send one-time links through the SMTP
+settings; local Compose routes these messages to Mailpit at <http://127.0.0.1:8025>.
+
+The database transaction dependency normally rolls back error responses. A refresh-token reuse
+exception is deliberately committed after the entire family is revoked and the audit event is
+staged, then returned as `401`. This narrow boundary prevents a rejected replay from undoing its
+security response.
 
 PostgreSQL integration tests require an explicitly disposable database whose name ends in `_test`:
 
 ```console
-INTEGRATION_DATABASE_URL=postgresql+asyncpg://user:password@127.0.0.1/ai_website_generator_test \
+INTEGRATION_DATABASE_URL=postgresql+asyncpg://127.0.0.1/ai_website_generator_test \
 INTEGRATION_DATABASE_RESET_ALLOWED=true task integration-test
 ```
 

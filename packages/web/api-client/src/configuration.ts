@@ -27,6 +27,11 @@ export class PlatformApiConfiguration {
     );
   }
 
+  isApiPath(url: string, path: string): boolean {
+    if (!this.isApiUrl(url) || this.currentBaseUrl === null) return false;
+    return new URL(url).pathname === path;
+  }
+
   buildSseUrl(
     path: `/${string}`,
     query: Readonly<Record<string, string | number | boolean>> = {},

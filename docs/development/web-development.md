@@ -4,7 +4,14 @@
 
 `apps/web` is a standalone, zoneless Angular 22 application. It calls only the FastAPI control
 plane. Browser code must never connect directly to PostgreSQL, Redis, Temporal, MinIO, Qdrant, or
-Ollama. Authentication and domain API integration are intentionally not implemented yet.
+Ollama.
+
+First-party authentication uses the generated API client. The access token is held only in an
+Angular signal-backed in-memory store; it is never written to local or session storage. The
+HttpOnly refresh cookie is browser-managed. Protected requests make one coordinated refresh and
+one retry after `401`; auth endpoints are excluded to prevent recursion. Route guards initialize
+the session before allowing protected features. Typed problem details supply form-level and
+field-level validation messages.
 
 The generated client workflow and contract propagation rules are documented in
 [API client generation](api-client-generation.md).

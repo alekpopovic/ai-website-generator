@@ -11,7 +11,11 @@ export const httpErrorInterceptor: HttpInterceptorFn = (request, next) => {
   return next(request).pipe(
     catchError((error: unknown) => {
       const appError = toAppError(error);
-      notifications.error(appError.message);
+      // Authentication screens render typed field and form errors themselves.
+      // Avoid duplicate toasts, including the expected startup refresh rejection.
+      if (!new URL(request.url, globalThis.location.origin).pathname.startsWith('/api/v1/auth/')) {
+        notifications.error(appError.message);
+      }
       return throwError(() => appError);
     }),
   );
