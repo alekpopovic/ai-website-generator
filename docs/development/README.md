@@ -8,3 +8,4 @@ Local setup, repository conventions, offline testing, fake-service usage, migrat
 - [Web application development](web-development.md)
 - [Temporal workers](temporal-workers.md)
 - [Object storage](object-storage.md)
+- [Local LLM gateway](llm-gateway.md)

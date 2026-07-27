@@ -14,6 +14,15 @@ class WorkflowKind(StrEnum):
     DATASET_BUILD = "dataset-build"
     SITE_GENERATION = "site-generation"
     TRAINING_RUN = "training-run"
+    MODEL_WARMUP = "model-warmup"
+
+
+class ModelRole(StrEnum):
+    """Provider-neutral configured model responsibilities used in workflow payloads."""
+
+    GENERATION = "generation"
+    VISION = "vision"
+    EMBEDDING = "embedding"
 
 
 WORKFLOW_ID_REUSE_POLICY = WorkflowIDReusePolicy.REJECT_DUPLICATE

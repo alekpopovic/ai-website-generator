@@ -6,10 +6,11 @@ import pytest
 from platform_api.config import (
     ApplicationSettings,
     DatabaseSettings,
+    OllamaSettings,
     SecuritySettings,
     Settings,
 )
-from pydantic import SecretStr, ValidationError
+from pydantic import AnyHttpUrl, SecretStr, ValidationError
 
 
 def test_settings_are_divided_and_immutable() -> None:
@@ -72,3 +73,21 @@ def test_deployed_authentication_requires_secure_cookie_and_signing_secret() -> 
                 refresh_cookie_secure=False,
             ),
         )
+
+
+def test_ollama_defaults_and_internal_endpoint_policy_are_bounded() -> None:
+    settings = OllamaSettings()
+
+    assert settings.vision_model == "qwen3-vl:8b"
+    assert settings.generation_model == "qwen3-coder:30b"
+    assert settings.embedding_model == "qwen3-embedding:0.6b"
+    assert settings.max_concurrency == 2
+    with pytest.raises(ValidationError, match="service root"):
+        OllamaSettings(url=AnyHttpUrl("http://ollama.internal/api/tags"))
+
+
+def test_administrator_allowlist_is_normalized_and_duplicate_safe() -> None:
+    settings = SecuritySettings(administrator_emails=("Admin@Example.com",))
+    assert settings.administrator_emails == ("admin@example.com",)
+    with pytest.raises(ValidationError, match="duplicates"):
+        SecuritySettings(administrator_emails=("admin@example.com", "ADMIN@example.com"))

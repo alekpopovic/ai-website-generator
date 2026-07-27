@@ -10,12 +10,15 @@ from platform_workflows.commands import (
     ActivityCommand,
     ActivityResult,
     CompactWorkflowInput,
+    ModelWarmupInput,
     WorkflowResult,
 )
+from platform_workflows.identifiers import ModelRole
 from platform_workflows.queues import TaskQueue
 from platform_workflows.testing import TemporalTestServerConfig, temporal_test_environment
 from platform_workflows.workflows import (
     DatasetBuildWorkflow,
+    ModelWarmupWorkflow,
     ScanCampaignWorkflow,
     SiteGenerationWorkflow,
     TrainingRunWorkflow,
@@ -116,3 +119,47 @@ async def test_workflow_skeleton_runs_with_fake_activities(
     assert result.status == "completed"
     assert result.job_id == job_id
     assert result.output_object_key is not None
+
+
+@activity.defn(name="warm-up-model")
+async def fake_model_warmup(command: ModelWarmupInput) -> ActivityResult:
+    activity.heartbeat({"stage": "warm-up-model"})
+    return ActivityResult(record_id=command.job_id)
+
+
+@pytest.mark.anyio
+async def test_model_warmup_workflow_routes_only_compact_role_to_ai_worker() -> None:
+    config = TemporalTestServerConfig.from_environment()
+    if config is None or not _test_server_exists(config):
+        pytest.skip("TEMPORAL_TEST_SERVER_PATH is not configured to an existing binary")
+    command = ModelWarmupInput(
+        job_id=str(uuid4()),
+        requested_by_user_id=str(uuid4()),
+        idempotency_key="warmup-request",
+        model_role=ModelRole.VISION,
+    )
+
+    async with temporal_test_environment(config) as environment, AsyncExitStack() as workers:
+        await workers.enter_async_context(
+            Worker(
+                environment.client,
+                task_queue=TaskQueue.CONTROL.value,
+                workflows=[ModelWarmupWorkflow],
+            )
+        )
+        await workers.enter_async_context(
+            Worker(
+                environment.client,
+                task_queue=TaskQueue.AI_ANALYSIS.value,
+                activities=[fake_model_warmup],
+            )
+        )
+        result = await environment.client.execute_workflow(
+            "ModelWarmupWorkflow",
+            command,
+            id=f"workflow-test-warmup-{command.job_id}",
+            task_queue=TaskQueue.CONTROL.value,
+            result_type=WorkflowResult,
+        )
+
+    assert result == WorkflowResult(job_id=command.job_id, status="completed")

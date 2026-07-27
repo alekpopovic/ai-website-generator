@@ -13,7 +13,7 @@ from platform_api.dependencies import (
     ResourcesDependency,
     SettingsDependency,
 )
-from platform_api.errors import DependencyUnavailableError
+from platform_api.errors import ApiError, DependencyUnavailableError
 from platform_api.persistence.audit import AuditLogService
 from platform_api.persistence.models import User
 from platform_api.persistence.repositories import (
@@ -58,3 +58,17 @@ AuthenticationServiceDependency = Annotated[
     AuthenticationService, Depends(authentication_service_dependency)
 ]
 CurrentUserDependency = Annotated[User, Depends(current_user_dependency)]
+
+
+async def administrator_user_dependency(
+    user: CurrentUserDependency,
+    settings: SettingsDependency,
+) -> User:
+    """Require membership in the explicit fail-closed administrator allowlist."""
+    administrators = {str(email).casefold() for email in settings.security.administrator_emails}
+    if user.email.casefold() not in administrators:
+        raise ApiError(403, "administrator_required", "Administrator access is required.")
+    return user
+
+
+AdministratorUserDependency = Annotated[User, Depends(administrator_user_dependency)]

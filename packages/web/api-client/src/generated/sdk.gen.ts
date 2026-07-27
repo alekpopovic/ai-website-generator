@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ArchiveProjectData, ArchiveProjectErrors, ArchiveProjectResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, GetApiVersionData, GetApiVersionErrors, GetApiVersionResponses, GetCurrentUserData, GetCurrentUserErrors, GetCurrentUserResponses, GetDependencyHealthData, GetDependencyHealthErrors, GetDependencyHealthResponses, GetLivenessData, GetLivenessErrors, GetLivenessResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, LoginData, LoginErrors, LoginResponses, LogoutAllData, LogoutAllErrors, LogoutAllResponses, LogoutData, LogoutErrors, LogoutResponses, RefreshAccessTokenData, RefreshAccessTokenErrors, RefreshAccessTokenResponses, RegisterData, RegisterErrors, RegisterResponses, RequestPasswordResetData, RequestPasswordResetErrors, RequestPasswordResetResponses, ResetPasswordData, ResetPasswordErrors, ResetPasswordResponses, RestoreProjectData, RestoreProjectErrors, RestoreProjectResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, VerifyEmailData, VerifyEmailErrors, VerifyEmailResponses } from './types.gen';
+import type { ArchiveProjectData, ArchiveProjectErrors, ArchiveProjectResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, GetApiVersionData, GetApiVersionErrors, GetApiVersionResponses, GetConfiguredModelReadinessData, GetConfiguredModelReadinessErrors, GetConfiguredModelReadinessResponses, GetCurrentUserData, GetCurrentUserErrors, GetCurrentUserResponses, GetDependencyHealthData, GetDependencyHealthErrors, GetDependencyHealthResponses, GetLivenessData, GetLivenessErrors, GetLivenessResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, LoginData, LoginErrors, LoginResponses, LogoutAllData, LogoutAllErrors, LogoutAllResponses, LogoutData, LogoutErrors, LogoutResponses, RefreshAccessTokenData, RefreshAccessTokenErrors, RefreshAccessTokenResponses, RegisterData, RegisterErrors, RegisterResponses, RequestPasswordResetData, RequestPasswordResetErrors, RequestPasswordResetResponses, ResetPasswordData, ResetPasswordErrors, ResetPasswordResponses, RestoreProjectData, RestoreProjectErrors, RestoreProjectResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, VerifyEmailData, VerifyEmailErrors, VerifyEmailResponses, WarmUpConfiguredModelData, WarmUpConfiguredModelErrors, WarmUpConfiguredModelResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -20,6 +20,39 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      */
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
+
+@Injectable({ providedIn: 'root' })
+export class Models {
+    /**
+     * Warm Up Configured Model
+     *
+     * Queue worker-side model loading; this request process never invokes inference.
+     */
+    public warmUpConfiguredModel<ThrowOnError extends boolean = false>(options: Options<WarmUpConfiguredModelData, ThrowOnError>): RequestResult<WarmUpConfiguredModelResponses, WarmUpConfiguredModelErrors, ThrowOnError> {
+        return (options.client ?? client).post<WarmUpConfiguredModelResponses, WarmUpConfiguredModelErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/admin/models/{model_role}/warm-up',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Configured Model Readiness
+     *
+     * Report installation and capability state without loading or pulling models.
+     */
+    public getConfiguredModelReadiness<ThrowOnError extends boolean = false>(options?: Options<GetConfiguredModelReadinessData, ThrowOnError>): RequestResult<GetConfiguredModelReadinessResponses, GetConfiguredModelReadinessErrors, ThrowOnError> {
+        return (options?.client ?? client).get<GetConfiguredModelReadinessResponses, GetConfiguredModelReadinessErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/models/readiness',
+            ...options
+        });
+    }
+}
 
 @Injectable({ providedIn: 'root' })
 export class Auth {

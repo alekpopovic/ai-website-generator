@@ -6,7 +6,7 @@ from typing import Protocol
 
 from temporalio.client import Client
 
-from platform_workflows.commands import CompactWorkflowInput, WorkflowResult
+from platform_workflows.commands import CompactWorkflowInput, ModelWarmupInput, WorkflowResult
 from platform_workflows.identifiers import (
     WORKFLOW_ID_CONFLICT_POLICY,
     WORKFLOW_ID_REUSE_POLICY,
@@ -30,6 +30,8 @@ class WorkflowDispatcher(Protocol):
     async def dispatch(
         self, kind: WorkflowKind, command: CompactWorkflowInput
     ) -> WorkflowDispatch: ...
+
+    async def dispatch_model_warmup(self, command: ModelWarmupInput) -> WorkflowDispatch: ...
 
 
 class TemporalClientSource(Protocol):
@@ -59,6 +61,8 @@ class TemporalWorkflowDispatcher:
         self._clients = clients
 
     async def dispatch(self, kind: WorkflowKind, command: CompactWorkflowInput) -> WorkflowDispatch:
+        if kind is WorkflowKind.MODEL_WARMUP:
+            raise ValueError("model warm-up requires dispatch_model_warmup")
         client = await self._clients.get()
         dispatch_id = workflow_id(kind, command.project_id, command.idempotency_key)
         handle = await client.start_workflow(
@@ -68,6 +72,25 @@ class TemporalWorkflowDispatcher:
             task_queue=TaskQueue.CONTROL.value,
             result_type=WorkflowResult,
             execution_timeout=_EXECUTION_TIMEOUTS[kind],
+            id_reuse_policy=WORKFLOW_ID_REUSE_POLICY,
+            id_conflict_policy=WORKFLOW_ID_CONFLICT_POLICY,
+        )
+        return WorkflowDispatch(workflow_id=handle.id, run_id=handle.first_execution_run_id)
+
+    async def dispatch_model_warmup(self, command: ModelWarmupInput) -> WorkflowDispatch:
+        client = await self._clients.get()
+        dispatch_id = workflow_id(
+            WorkflowKind.MODEL_WARMUP,
+            command.requested_by_user_id,
+            command.idempotency_key,
+        )
+        handle = await client.start_workflow(
+            "ModelWarmupWorkflow",
+            command,
+            id=dispatch_id,
+            task_queue=TaskQueue.CONTROL.value,
+            result_type=WorkflowResult,
+            execution_timeout=timedelta(minutes=20),
             id_reuse_policy=WORKFLOW_ID_REUSE_POLICY,
             id_conflict_policy=WORKFLOW_ID_CONFLICT_POLICY,
         )
@@ -83,12 +106,27 @@ class FakeWorkflowDispatcher:
 
     def __init__(self) -> None:
         self.dispatched: list[tuple[WorkflowKind, CompactWorkflowInput]] = []
+        self.warmups: list[ModelWarmupInput] = []
         self._workflow_ids: set[str] = set()
 
     async def dispatch(self, kind: WorkflowKind, command: CompactWorkflowInput) -> WorkflowDispatch:
+        if kind is WorkflowKind.MODEL_WARMUP:
+            raise ValueError("model warm-up requires dispatch_model_warmup")
         dispatch_id = workflow_id(kind, command.project_id, command.idempotency_key)
         if dispatch_id in self._workflow_ids:
             raise DuplicateWorkflowDispatchError(dispatch_id)
         self._workflow_ids.add(dispatch_id)
         self.dispatched.append((kind, command))
+        return WorkflowDispatch(workflow_id=dispatch_id, run_id=None)
+
+    async def dispatch_model_warmup(self, command: ModelWarmupInput) -> WorkflowDispatch:
+        dispatch_id = workflow_id(
+            WorkflowKind.MODEL_WARMUP,
+            command.requested_by_user_id,
+            command.idempotency_key,
+        )
+        if dispatch_id in self._workflow_ids:
+            raise DuplicateWorkflowDispatchError(dispatch_id)
+        self._workflow_ids.add(dispatch_id)
+        self.warmups.append(command)
         return WorkflowDispatch(workflow_id=dispatch_id, run_id=None)

@@ -31,6 +31,38 @@
         "title": "AccessTokenResponse",
         "type": "object"
       },
+      "ApiResponse_ModelReadinessData_": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ModelReadinessData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ApiResponse[ModelReadinessData]",
+        "type": "object"
+      },
+      "ApiResponse_ModelWarmupAccepted_": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ModelWarmupAccepted"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ApiResponse[ModelWarmupAccepted]",
+        "type": "object"
+      },
       "ApiResponse_VersionInfo_": {
         "additionalProperties": false,
         "properties": {
@@ -284,6 +316,129 @@
           "message"
         ],
         "title": "MessageResponse",
+        "type": "object"
+      },
+      "ModelReadinessData": {
+        "additionalProperties": false,
+        "properties": {
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/ModelReadinessItem"
+            },
+            "title": "Models",
+            "type": "array"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ready",
+          "models"
+        ],
+        "title": "ModelReadinessData",
+        "type": "object"
+      },
+      "ModelReadinessItem": {
+        "additionalProperties": false,
+        "properties": {
+          "capabilities": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Capabilities",
+            "type": "array"
+          },
+          "capable": {
+            "title": "Capable",
+            "type": "boolean"
+          },
+          "digest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Digest"
+          },
+          "installed": {
+            "title": "Installed",
+            "type": "boolean"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "required_capability": {
+            "title": "Required Capability",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ModelRole"
+          }
+        },
+        "required": [
+          "role",
+          "model",
+          "installed",
+          "capable",
+          "required_capability",
+          "digest",
+          "capabilities"
+        ],
+        "title": "ModelReadinessItem",
+        "type": "object"
+      },
+      "ModelRole": {
+        "description": "Provider-neutral configured model responsibilities used in workflow payloads.",
+        "enum": [
+          "generation",
+          "vision",
+          "embedding"
+        ],
+        "title": "ModelRole",
+        "type": "string"
+      },
+      "ModelWarmupAccepted": {
+        "additionalProperties": false,
+        "properties": {
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          },
+          "model_role": {
+            "$ref": "#/components/schemas/ModelRole"
+          },
+          "workflow_id": {
+            "title": "Workflow Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "workflow_id",
+          "model_role"
+        ],
+        "title": "ModelWarmupAccepted",
+        "type": "object"
+      },
+      "ModelWarmupRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "idempotency_key": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Idempotency Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "idempotency_key"
+        ],
+        "title": "ModelWarmupRequest",
         "type": "object"
       },
       "PageResponse_ProjectResponse_": {
@@ -986,6 +1141,103 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/admin/models/{model_role}/warm-up": {
+      "post": {
+        "description": "Queue worker-side model loading; this request process never invokes inference.",
+        "operationId": "warmUpConfiguredModel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model_role",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ModelRole"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModelWarmupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_ModelWarmupAccepted_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Warm Up Configured Model",
+        "tags": [
+          "models"
+        ]
+      }
+    },
     "/api/v1/auth/login": {
       "post": {
         "operationId": "login",
@@ -1434,6 +1686,53 @@
         "summary": "Verify Email",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/api/v1/models/readiness": {
+      "get": {
+        "description": "Report installation and capability state without loading or pulling models.",
+        "operationId": "getConfiguredModelReadiness",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_ModelReadinessData_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Configured Model Readiness",
+        "tags": [
+          "models"
         ]
       }
     },

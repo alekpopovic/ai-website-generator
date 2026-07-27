@@ -16,4 +16,8 @@ Use Ollama as the initial inference provider behind typed internal clients and d
 - Data stays within the controlled deployment boundary.
 - Hardware capacity, model distribution, warm-up, and concurrency require operations support.
 - Provider abstractions must avoid leaking Ollama response formats into domain contracts.
+- Structured responses are validated against caller-owned Pydantic JSON Schemas, and safe results
+  record model digest and timing/token metadata without logging prompt or content bodies.
+- Readiness may perform bounded list/show calls from the control plane. Inference and model warm-up
+  remain worker activities; warm-up never implies model installation.
 - A later provider can be introduced without changing API or workflow contracts.

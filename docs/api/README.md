@@ -9,9 +9,11 @@ Errors use `application/problem+json` with stable `code` and `request_id` extens
 See [API client generation](../development/api-client-generation.md) for the deterministic FastAPI
 OpenAPI to Angular SDK workflow.
 
-| Method | Path                   | Purpose                                           |
-| ------ | ---------------------- | ------------------------------------------------- |
-| `GET`  | `/health/live`         | Process liveness without dependency I/O           |
-| `GET`  | `/health/ready`        | Critical control-plane dependency readiness       |
-| `GET`  | `/health/dependencies` | Critical and worker-facing dependency diagnostics |
-| `GET`  | `/api/v1/version`      | API contract and service build identity           |
+| Method | Path                                        | Purpose                                                |
+| ------ | ------------------------------------------- | ------------------------------------------------------ |
+| `GET`  | `/health/live`                              | Process liveness without dependency I/O                |
+| `GET`  | `/health/ready`                             | Critical control-plane dependency readiness            |
+| `GET`  | `/health/dependencies`                      | Critical and worker-facing dependency diagnostics      |
+| `GET`  | `/api/v1/version`                           | API contract and service build identity                |
+| `GET`  | `/api/v1/models/readiness`                  | Authenticated model installation and capability status |
+| `POST` | `/api/v1/admin/models/{model_role}/warm-up` | Admin-only durable worker-side model warm-up           |

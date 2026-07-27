@@ -4,6 +4,8 @@ import re
 from dataclasses import dataclass
 from uuid import UUID
 
+from platform_workflows.identifiers import ModelRole
+
 _OBJECT_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9!_.*'()/=-]{0,1023}$")
 _IDEMPOTENCY_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 
@@ -81,3 +83,19 @@ class WorkflowResult:
         if self.status not in {"completed"}:
             raise ValueError("unsupported workflow result status")
         _validate_object_key("output_object_key", self.output_object_key)
+
+
+@dataclass(frozen=True, slots=True)
+class ModelWarmupInput:
+    """Compact administrator-approved model warm-up request."""
+
+    job_id: str
+    requested_by_user_id: str
+    idempotency_key: str
+    model_role: ModelRole
+
+    def __post_init__(self) -> None:
+        _validate_uuid("job_id", self.job_id)
+        _validate_uuid("requested_by_user_id", self.requested_by_user_id)
+        if not _IDEMPOTENCY_KEY.fullmatch(self.idempotency_key):
+            raise ValueError("idempotency_key must be a bounded URL-safe identifier")

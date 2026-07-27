@@ -27,6 +27,22 @@ export type AccessTokenResponse = {
 };
 
 /**
+ * ApiResponse[ModelReadinessData]
+ */
+export type ApiResponseModelReadinessData = {
+    data: ModelReadinessData;
+    meta?: ResponseMeta;
+};
+
+/**
+ * ApiResponse[ModelWarmupAccepted]
+ */
+export type ApiResponseModelWarmupAccepted = {
+    data: ModelWarmupAccepted;
+    meta?: ResponseMeta;
+};
+
+/**
  * ApiResponse[VersionInfo]
  */
 export type ApiResponseVersionInfo = {
@@ -169,6 +185,83 @@ export type MessageResponse = {
      * Message
      */
     message: string;
+};
+
+/**
+ * ModelReadinessData
+ */
+export type ModelReadinessData = {
+    /**
+     * Models
+     */
+    models: Array<ModelReadinessItem>;
+    /**
+     * Ready
+     */
+    ready: boolean;
+};
+
+/**
+ * ModelReadinessItem
+ */
+export type ModelReadinessItem = {
+    /**
+     * Capabilities
+     */
+    capabilities: Array<string>;
+    /**
+     * Capable
+     */
+    capable: boolean;
+    /**
+     * Digest
+     */
+    digest: string | null;
+    /**
+     * Installed
+     */
+    installed: boolean;
+    /**
+     * Model
+     */
+    model: string;
+    /**
+     * Required Capability
+     */
+    required_capability: string;
+    role: ModelRole;
+};
+
+/**
+ * ModelRole
+ *
+ * Provider-neutral configured model responsibilities used in workflow payloads.
+ */
+export type ModelRole = 'generation' | 'vision' | 'embedding';
+
+/**
+ * ModelWarmupAccepted
+ */
+export type ModelWarmupAccepted = {
+    /**
+     * Job Id
+     */
+    job_id: string;
+    model_role: ModelRole;
+    /**
+     * Workflow Id
+     */
+    workflow_id: string;
+};
+
+/**
+ * ModelWarmupRequest
+ */
+export type ModelWarmupRequest = {
+    /**
+     * Idempotency Key
+     */
+    idempotency_key: string;
 };
 
 /**
@@ -559,6 +652,49 @@ export type VersionInfo = {
     service_version: string;
 };
 
+export type WarmUpConfiguredModelData = {
+    body: ModelWarmupRequest;
+    path: {
+        model_role: ModelRole;
+    };
+    query?: never;
+    url: '/api/v1/admin/models/{model_role}/warm-up';
+};
+
+export type WarmUpConfiguredModelErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type WarmUpConfiguredModelError = WarmUpConfiguredModelErrors[keyof WarmUpConfiguredModelErrors];
+
+export type WarmUpConfiguredModelResponses = {
+    /**
+     * Successful Response
+     */
+    202: ApiResponseModelWarmupAccepted;
+};
+
+export type WarmUpConfiguredModelResponse = WarmUpConfiguredModelResponses[keyof WarmUpConfiguredModelResponses];
+
 export type LoginData = {
     body: LoginRequest;
     path?: never;
@@ -839,6 +975,35 @@ export type VerifyEmailResponses = {
 };
 
 export type VerifyEmailResponse = VerifyEmailResponses[keyof VerifyEmailResponses];
+
+export type GetConfiguredModelReadinessData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/models/readiness';
+};
+
+export type GetConfiguredModelReadinessErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type GetConfiguredModelReadinessError = GetConfiguredModelReadinessErrors[keyof GetConfiguredModelReadinessErrors];
+
+export type GetConfiguredModelReadinessResponses = {
+    /**
+     * Successful Response
+     */
+    200: ApiResponseModelReadinessData;
+};
+
+export type GetConfiguredModelReadinessResponse = GetConfiguredModelReadinessResponses[keyof GetConfiguredModelReadinessResponses];
 
 export type ListProjectsData = {
     body?: never;

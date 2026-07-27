@@ -40,3 +40,15 @@ def test_openapi_exposes_complete_first_party_authentication_contract() -> None:
 
     assert expected <= set(schema["paths"])
     assert schema["paths"]["/api/v1/auth/me"]["get"]["security"] == [{"bearer": []}]
+
+
+def test_openapi_exposes_model_readiness_and_worker_dispatched_warmup() -> None:
+    schema = create_test_app().openapi()
+
+    assert schema["paths"]["/api/v1/models/readiness"]["get"]["operationId"] == (
+        "getConfiguredModelReadiness"
+    )
+    assert (
+        schema["paths"]["/api/v1/admin/models/{model_role}/warm-up"]["post"]["operationId"]
+        == "warmUpConfiguredModel"
+    )

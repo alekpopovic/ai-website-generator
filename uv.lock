@@ -1448,7 +1448,17 @@ wheels = [
 [[package]]
 name = "platform-ai-worker"
 version = "0.0.0"
-source = { virtual = "services/ai-worker" }
+source = { editable = "services/ai-worker" }
+dependencies = [
+    { name = "platform-clients" },
+    { name = "platform-workflows" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "platform-clients", editable = "packages/python/platform-clients" },
+    { name = "platform-workflows", editable = "packages/python/platform-workflows" },
+]
 
 [[package]]
 name = "platform-api"
@@ -1506,6 +1516,8 @@ version = "0.0.0"
 source = { editable = "packages/python/platform-clients" }
 dependencies = [
     { name = "aiobotocore" },
+    { name = "httpx2" },
+    { name = "pydantic" },
     { name = "types-aiobotocore" },
     { name = "types-aiobotocore-s3" },
 ]
@@ -1513,6 +1525,8 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "aiobotocore", specifier = "==3.8.0" },
+    { name = "httpx2", specifier = "==2.7.0" },
+    { name = "pydantic", specifier = "==2.13.4" },
     { name = "types-aiobotocore", specifier = "==3.7.0" },
     { name = "types-aiobotocore-s3", specifier = "==3.7.0" },
 ]

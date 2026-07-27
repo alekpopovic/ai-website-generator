@@ -36,6 +36,12 @@ boundaries, and deterministic test utilities are defined in `platform-workflows`
 uses a lazy Temporal client and a fake dispatcher in default unit tests. See
 [Temporal workers](../development/temporal-workers.md) for local process and test commands.
 
+Private inference is accessed through a provider-neutral gateway implemented initially by Ollama.
+The boundary validates Pydantic structured output, records safe model/digest/latency/token metadata,
+and applies redaction, size, timeout, concurrency, retry, capability, and circuit-breaker policy.
+FastAPI may inspect model metadata, but inference and model warm-up execute only in activity workers.
+Administrator warm-up requests start a compact Temporal workflow and never install missing models.
+
 ## 3. Scan workflow
 
 1. An authorized user submits a source, scope, and authorization attestation.

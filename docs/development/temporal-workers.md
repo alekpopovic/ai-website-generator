@@ -46,10 +46,20 @@ Then start the workflow worker in a separate terminal:
 task workflow-worker
 ```
 
-The initial service registers `ScanCampaignWorkflow`, `DatasetBuildWorkflow`,
-`SiteGenerationWorkflow`, and `TrainingRunWorkflow` on `control`. It does not register business
-activities yet. Future activity-worker entry points use the shared `WorkerConfig`, their assigned
-queue, and `WorkerHealthIndicator` for explicit ready/stopping/failed process state.
+The service registers `ScanCampaignWorkflow`, `DatasetBuildWorkflow`, `SiteGenerationWorkflow`,
+`TrainingRunWorkflow`, and the administrator-only `ModelWarmupWorkflow` on `control`. Other business
+activities remain future work.
+
+Model warm-up requires the private AI activity worker in another terminal:
+
+```sh
+task ai-worker
+```
+
+It polls `ai-analysis`, heartbeats during model loading, and uses the provider-neutral gateway. It
+never downloads models and never runs model work inside FastAPI. Future activity-worker entry points
+use the shared `WorkerConfig`, their assigned queue, and `WorkerHealthIndicator` for explicit
+ready/stopping/failed process state.
 
 Stop the foreground worker with `Ctrl-C`, then stop dependencies with `task compose-down`.
 

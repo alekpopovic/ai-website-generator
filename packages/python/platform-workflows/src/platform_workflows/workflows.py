@@ -10,6 +10,7 @@ from platform_workflows.commands import (
     ActivityCommand,
     ActivityResult,
     CompactWorkflowInput,
+    ModelWarmupInput,
     WorkflowResult,
 )
 from platform_workflows.queues import TaskQueue
@@ -199,9 +200,30 @@ class TrainingRunWorkflow:
         return await _run_stages(command, _TRAINING_STAGES)
 
 
+@workflow.defn(name="ModelWarmupWorkflow")
+class ModelWarmupWorkflow:
+    """Dispatch model loading to the AI worker without inference in FastAPI."""
+
+    @workflow.run
+    async def run(self, command: ModelWarmupInput) -> WorkflowResult:
+        await workflow.execute_activity(
+            "warm-up-model",
+            command,
+            result_type=ActivityResult,
+            task_queue=TaskQueue.AI_ANALYSIS.value,
+            start_to_close_timeout=timedelta(minutes=15),
+            heartbeat_timeout=timedelta(seconds=30),
+            retry_policy=retry_policy(ActivityCategory.INFERENCE),
+            cancellation_type=ActivityCancellationType.WAIT_CANCELLATION_COMPLETED,
+            activity_id=f"{command.job_id}:warm-up-model:{command.model_role.value}",
+        )
+        return WorkflowResult(job_id=command.job_id, status="completed")
+
+
 WORKFLOW_TYPES = (
     ScanCampaignWorkflow,
     DatasetBuildWorkflow,
     SiteGenerationWorkflow,
     TrainingRunWorkflow,
+    ModelWarmupWorkflow,
 )

@@ -12,6 +12,7 @@ from typing import Protocol
 from urllib.parse import unquote, urlsplit
 
 import httpx2
+from platform_clients.llm.protocols import LLMGateway
 from platform_clients.object_storage.models import ObjectStorage
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -131,6 +132,7 @@ def real_probe_registry(
     database: DatabaseManager | None,
     http_client: httpx2.AsyncClient,
     object_storage: ObjectStorage,
+    llm_gateway: LLMGateway,
 ) -> ProbeRegistry:
     """Compose real probes without performing I/O during startup."""
 
@@ -170,11 +172,9 @@ def real_probe_registry(
         )
 
     async def ollama_check() -> None:
-        await _http_check(
-            http_client,
-            f"{str(settings.ollama.url).rstrip('/')}/api/tags",
-            settings.ollama.connect_timeout_seconds,
-        )
+        readiness = await llm_gateway.readiness()
+        if not all(model.installed and model.capable for model in readiness):
+            raise RuntimeError("one or more configured inference models are unavailable")
 
     return ProbeRegistry(
         [

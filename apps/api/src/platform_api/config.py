@@ -6,7 +6,7 @@ from functools import lru_cache
 from typing import Annotated, Literal, Self
 from urllib.parse import urlsplit
 
-from pydantic import AnyHttpUrl, Field, SecretStr, field_validator, model_validator
+from pydantic import AnyHttpUrl, EmailStr, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 Environment = Literal["development", "test", "staging", "production"]
@@ -194,6 +194,30 @@ class OllamaSettings(StrictSettings):
     generation_model: ModelName = "qwen3-coder:30b"
     embedding_model: ModelName = "qwen3-embedding:0.6b"
     connect_timeout_seconds: PositiveSeconds = 5.0
+    request_timeout_seconds: float = Field(default=300.0, gt=0, le=1_800)
+    concurrency_wait_seconds: float = Field(default=10.0, gt=0, le=120)
+    max_concurrency: int = Field(default=2, ge=1, le=32)
+    max_attempts: int = Field(default=3, ge=1, le=5)
+    retry_backoff_seconds: float = Field(default=0.25, ge=0, le=10)
+    circuit_failure_threshold: int = Field(default=3, ge=1, le=20)
+    circuit_recovery_seconds: float = Field(default=30.0, gt=0, le=600)
+    metadata_cache_seconds: float = Field(default=30.0, ge=0, le=600)
+    max_prompt_bytes: int = Field(default=262_144, ge=1_024, le=2_097_152)
+    max_image_bytes: int = Field(default=10_485_760, ge=1_024, le=52_428_800)
+    max_total_image_bytes: int = Field(default=20_971_520, ge=1_024, le=104_857_600)
+    max_response_bytes: int = Field(default=4_194_304, ge=1_024, le=16_777_216)
+    keep_alive: str = Field(default="5m", pattern=r"^-?\d+(?:ms|s|m|h)?$")
+
+    @model_validator(mode="after")
+    def validate_endpoint_and_limits(self) -> Self:
+        parsed = urlsplit(str(self.url))
+        if parsed.username or parsed.password or parsed.query or parsed.fragment:
+            raise ValueError("OLLAMA_URL must not contain credentials, query, or fragment")
+        if parsed.path not in {"", "/"}:
+            raise ValueError("OLLAMA_URL must identify the service root")
+        if self.max_total_image_bytes < self.max_image_bytes:
+            raise ValueError("OLLAMA_MAX_TOTAL_IMAGE_BYTES must cover one maximum-sized image")
+        return self
 
 
 class SecuritySettings(StrictSettings):
@@ -221,6 +245,15 @@ class SecuritySettings(StrictSettings):
     login_rate_limit_window_seconds: int = Field(default=300, ge=10, le=3_600)
     email_verification_ttl_seconds: int = Field(default=86_400, ge=300, le=604_800)
     password_reset_ttl_seconds: int = Field(default=1_800, ge=300, le=86_400)
+    administrator_emails: tuple[EmailStr, ...] = ()
+
+    @field_validator("administrator_emails")
+    @classmethod
+    def normalize_administrator_emails(cls, values: tuple[EmailStr, ...]) -> tuple[EmailStr, ...]:
+        normalized = tuple(value.strip().casefold() for value in values)
+        if len(normalized) != len(set(normalized)):
+            raise ValueError("SECURITY_ADMINISTRATOR_EMAILS must not contain duplicates")
+        return normalized
 
     @field_validator("access_token_secret")
     @classmethod

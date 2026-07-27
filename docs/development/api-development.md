@@ -100,6 +100,10 @@ lifecycle are documented in [Projects API](../api/projects.md).
 - `/health/ready` checks critical dependencies: PostgreSQL, Redis, Temporal, and MinIO.
 - `/health/dependencies` also checks Qdrant and Ollama. Worker-facing failures degrade the report without making the control plane unready.
 
+Authenticated model capability details are available from `/api/v1/models/readiness`. Configure the
+fail-closed `SECURITY_ADMINISTRATOR_EMAILS` allowlist to authorize the durable model warm-up action;
+the request dispatches Temporal and never invokes Ollama from FastAPI.
+
 Checks are concurrent, bounded by per-service timeouts, redact credentials and exception messages, disable HTTP redirects, and never download models or execute work. Fake mode replaces all checks with deterministic in-process probes.
 
 ## Tests and verification

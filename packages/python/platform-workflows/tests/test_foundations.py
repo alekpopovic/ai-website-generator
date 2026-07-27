@@ -5,11 +5,11 @@ from uuid import uuid4
 
 import pytest
 from platform_workflows.cancellation import raise_if_activity_cancelled
-from platform_workflows.commands import CompactWorkflowInput
+from platform_workflows.commands import CompactWorkflowInput, ModelWarmupInput
 from platform_workflows.dispatcher import DuplicateWorkflowDispatchError, FakeWorkflowDispatcher
 from platform_workflows.events import InMemoryJobEventPublisher, JobEvent
 from platform_workflows.heartbeat import ActivityHeartbeat
-from platform_workflows.identifiers import WorkflowKind, workflow_id
+from platform_workflows.identifiers import ModelRole, WorkflowKind, workflow_id
 from platform_workflows.queues import TaskQueue
 from platform_workflows.retry import ActivityCategory, retry_policy
 from platform_workflows.worker import WorkerHealthIndicator, WorkerState
@@ -79,6 +79,24 @@ async def test_fake_dispatcher_records_once_and_rejects_duplicate_run() -> None:
     assert dispatcher.dispatched == [(WorkflowKind.DATASET_BUILD, workflow_command)]
     with pytest.raises(DuplicateWorkflowDispatchError):
         await dispatcher.dispatch(WorkflowKind.DATASET_BUILD, workflow_command)
+
+
+@pytest.mark.anyio
+async def test_model_warmup_dispatch_is_compact_and_duplicate_safe() -> None:
+    dispatcher = FakeWorkflowDispatcher()
+    command = ModelWarmupInput(
+        job_id=str(uuid4()),
+        requested_by_user_id=str(uuid4()),
+        idempotency_key="warmup-001",
+        model_role=ModelRole.VISION,
+    )
+
+    dispatched = await dispatcher.dispatch_model_warmup(command)
+
+    assert dispatched.workflow_id.startswith("aiwg:model-warmup:")
+    assert dispatcher.warmups == [command]
+    with pytest.raises(DuplicateWorkflowDispatchError):
+        await dispatcher.dispatch_model_warmup(command)
 
 
 @pytest.mark.anyio
