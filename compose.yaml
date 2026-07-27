@@ -1,0 +1,313 @@
+name: ai-website-generator
+
+x-service-defaults: &service-defaults
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+
+x-ollama-common: &ollama-common
+  <<: *service-defaults
+  image: ollama/ollama:0.32.3
+  environment:
+    OLLAMA_HOST: 0.0.0.0:11434
+    OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-5m}
+    OLLAMA_MAX_LOADED_MODELS: ${OLLAMA_MAX_LOADED_MODELS:-1}
+  volumes:
+    - ollama-data:/root/.ollama
+  networks:
+    - backend
+    - model-egress
+  healthcheck:
+    test: ['CMD', 'ollama', 'list']
+    interval: 10s
+    timeout: 5s
+    retries: 12
+    start_period: 20s
+  pids_limit: 1024
+
+services:
+  postgres:
+    <<: *service-defaults
+    image: postgres:16.14-alpine3.23
+    environment:
+      POSTGRES_DB: ${POSTGRES_DATABASE:-ai_website_generator}
+      POSTGRES_USER: ${POSTGRES_USER:-ai_website_generator}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    ports:
+      - '${DEV_BIND_ADDRESS:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init-temporal-databases.sh:/docker-entrypoint-initdb.d/10-temporal-databases.sh:ro
+    networks:
+      - backend
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    cpus: 2.0
+    mem_limit: 2g
+    mem_reservation: 512m
+    pids_limit: 256
+
+  temporal:
+    <<: *service-defaults
+    image: temporalio/auto-setup:1.30.3
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_SEEDS: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-ai_website_generator}
+      POSTGRES_PWD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      DBNAME: temporal
+      VISIBILITY_DBNAME: temporal_visibility
+      SKIP_DB_CREATE: 'true'
+      DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
+    ports:
+      - '${DEV_BIND_ADDRESS:-127.0.0.1}:${TEMPORAL_PORT:-7233}:7233'
+    networks:
+      - backend
+    healthcheck:
+      test: ['CMD', 'temporal', 'operator', 'cluster', 'health', '--address', '127.0.0.1:7233']
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+    cpus: 2.0
+    mem_limit: 2g
+    mem_reservation: 512m
+    pids_limit: 512
+
+  temporal-ui:
+    <<: *service-defaults
+    image: temporalio/ui:2.52.1
+    depends_on:
+      temporal:
+        condition: service_healthy
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_CORS_ORIGINS: http://localhost:${WEB_PORT:-4200}
+    ports:
+      - '${DEV_BIND_ADDRESS:-127.0.0.1}:${TEMPORAL_UI_PORT:-8233}:8080'
+    networks:
+      - frontend-api
+      - backend
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q --spider http://127.0.0.1:8080/ || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    cpus: 0.5
+    mem_limit: 256m
+    mem_reservation: 64m
+    pids_limit: 128
+
+  redis:
+    <<: *service-defaults
+    image: redis:8.8.0-alpine
+    command:
+      - redis-server
+      - --appendonly
+      - 'yes'
+      - --requirepass
+      - ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+    ports:
+      - '${DEV_BIND_ADDRESS:-127.0.0.1}:${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis-data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ['CMD-SHELL', 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -q PONG']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+    cpus: 1.0
+    mem_limit: 512m
+    mem_reservation: 128m
+    pids_limit: 128
+
+  minio:
+    <<: *service-defaults
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?Set MINIO_ACCESS_KEY in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?Set MINIO_SECRET_KEY in .env}
+    ports:
+      - '${DEV_BIND_ADDRESS:-127.0.0.1}:${MINIO_API_PORT:-9000}:9000'
+      - '${DEV_BIND_ADDRESS:-127.0.0.1}:${MINIO_CONSOLE_PORT:-9001}:9001'
+    volumes:
+      - minio-data:/data
+    networks:
+      - backend
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://127.0.0.1:9000/minio/health/live']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    cpus: 2.0
+    mem_limit: 1g
+    mem_reservation: 256m
+    pids_limit: 256
+
+  minio-init:
+    restart: 'no'
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z-cpuv1
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?Set MINIO_ACCESS_KEY in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?Set MINIO_SECRET_KEY in .env}
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"
+        for bucket in scan-artifacts datasets generated-sites model-artifacts user-assets; do
+          mc mb --ignore-existing "local/$$bucket"
+        done
+    networks:
+      - backend
+    security_opt:
+      - no-new-privileges:true
+    cpus: 0.5
+    mem_limit: 128m
+    pids_limit: 64
+
+  qdrant:
+    <<: *service-defaults
+    image: ai-website-generator/qdrant:1.18.2
+    build:
+      context: ./infrastructure/docker/qdrant
+    environment:
+      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:?Set QDRANT_API_KEY in .env}
+      QDRANT__TELEMETRY_DISABLED: 'true'
+    ports:
+      - '${DEV_BIND_ADDRESS:-127.0.0.1}:${QDRANT_HTTP_PORT:-6333}:6333'
+    volumes:
+      - qdrant-data:/qdrant/storage
+    networks:
+      - backend
+    healthcheck:
+      test:
+        [
+          'CMD',
+          '/usr/local/bin/healthcheck',
+          'wget',
+          '-q',
+          '--spider',
+          'http://127.0.0.1:6333/healthz',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    cpus: 2.0
+    mem_limit: 2g
+    mem_reservation: 256m
+    pids_limit: 256
+
+  ollama-cpu:
+    <<: *ollama-common
+    profiles: [cpu]
+    ports:
+      - '${DEV_BIND_ADDRESS:-127.0.0.1}:${OLLAMA_PORT:-11434}:11434'
+    cpus: ${OLLAMA_CPU_LIMIT:-8.0}
+    mem_limit: ${OLLAMA_MEMORY_LIMIT:-16g}
+    mem_reservation: 512m
+
+  ollama-gpu:
+    <<: *ollama-common
+    profiles: [gpu]
+    ports:
+      - '${DEV_BIND_ADDRESS:-127.0.0.1}:${OLLAMA_PORT:-11434}:11434'
+    cpus: ${OLLAMA_GPU_CPU_LIMIT:-8.0}
+    mem_limit: ${OLLAMA_GPU_MEMORY_LIMIT:-24g}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: ${OLLAMA_GPU_COUNT:-1}
+              capabilities: [gpu]
+
+  mailpit:
+    <<: *service-defaults
+    image: axllent/mailpit:v1.30.0
+    environment:
+      MP_DATABASE: /data/mailpit.db
+      MP_SMTP_AUTH_ACCEPT_ANY: 'false'
+      MP_SMTP_AUTH_ALLOW_INSECURE: 'true'
+    ports:
+      - '${DEV_BIND_ADDRESS:-127.0.0.1}:${MAILPIT_SMTP_PORT:-1025}:1025'
+      - '${DEV_BIND_ADDRESS:-127.0.0.1}:${MAILPIT_UI_PORT:-8025}:8025'
+    volumes:
+      - mailpit-data:/data
+    networks:
+      - frontend-api
+      - backend
+    healthcheck:
+      test: ['CMD', '/mailpit', 'readyz']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+    cpus: 0.5
+    mem_limit: 256m
+    mem_reservation: 32m
+    pids_limit: 128
+
+  fixture-website:
+    <<: *service-defaults
+    image: nginx:1.28.3-alpine
+    user: '101:101'
+    read_only: true
+    volumes:
+      - ./tests/fixtures/websites/site:/usr/share/nginx/html:ro
+      - ./infrastructure/docker/fixture-site/nginx.conf:/etc/nginx/nginx.conf:ro
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    ports:
+      - '${DEV_BIND_ADDRESS:-127.0.0.1}:${FIXTURE_WEBSITE_PORT:-8088}:8080'
+    networks:
+      - frontend-api
+      - scanner-egress
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:8080/healthz']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+    cap_drop:
+      - ALL
+    cpus: 0.5
+    mem_limit: 128m
+    mem_reservation: 16m
+    pids_limit: 64
+
+networks:
+  frontend-api:
+    internal: true
+  backend:
+    internal: true
+  scanner-egress: {}
+  model-egress: {}
+
+volumes:
+  postgres-data: {}
+  redis-data: {}
+  minio-data: {}
+  qdrant-data: {}
+  ollama-data: {}
+  mailpit-data: {}

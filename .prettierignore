@@ -15,5 +15,6 @@ redis-data/
 site-output/
 temporal-data/
 test-results/
+tests/fixtures/websites/site/malformed/index.html
 pnpm-lock.yaml
 uv.lock

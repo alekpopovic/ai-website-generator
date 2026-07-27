@@ -14,6 +14,8 @@ Install these tools before bootstrapping the repository:
 
 The JavaScript toolchain deliberately uses TypeScript 6.0.x because Angular 22 supports TypeScript from 6.0.0 up to, but not including, 6.1.0. Do not upgrade to TypeScript 7 until Angular and the lint toolchain support it together.
 
+Infrastructure-specific start, stop, profile, port, reset, and inspection procedures are documented in [Local development stack](../operations/local-development-stack.md).
+
 ## Initial setup
 
 Copy `.env.example` to `.env`, then provide local values for the blank credential fields. The committed example files contain no secrets. Never put server credentials in `apps/web/.env` because Angular-bundled values are public.
@@ -58,9 +60,12 @@ GPU-enabled services must retain the same private network boundaries as CPU serv
 | `task integration-test`    | Run integration tests against explicitly started local services.                         |
 | `task e2e-test`            | Run bounded end-to-end tests.                                                            |
 | `task generate-api-client` | Generate the web API client after that workspace is implemented.                         |
-| `task compose-up`          | Start the local Compose stack after its manifest is introduced.                          |
+| `task compose-up`          | Start the Compose dependency stack with CPU-only Ollama.                                 |
+| `task compose-up-gpu`      | Start the stack with the optional NVIDIA Ollama profile.                                 |
 | `task compose-down`        | Stop the local Compose stack without deleting persisted data.                            |
 | `task compose-logs`        | Follow local Compose logs.                                                               |
+| `task ollama-pull`         | Explicitly pull configured Ollama models; may download many gigabytes.                   |
+| `task ollama-ready`        | Verify Ollama availability and configured model presence.                                |
 | `task clean`               | Remove allowlisted local caches, dependencies, and generated outputs.                    |
 | `task audit`               | Query vulnerability services for synchronized Python and locked JavaScript dependencies. |
 | `task licenses`            | Print Python and JavaScript dependency license reports.                                  |

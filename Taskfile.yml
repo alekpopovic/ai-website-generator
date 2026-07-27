@@ -65,9 +65,14 @@ tasks:
       - pnpm run generate-api-client
 
   compose-up:
-    desc: Start the local container stack
+    desc: Start the local container stack with CPU-only Ollama
     cmds:
-      - docker compose up --detach
+      - docker compose --profile cpu up --detach
+
+  compose-up-gpu:
+    desc: Start the local container stack with NVIDIA Ollama
+    cmds:
+      - docker compose --profile gpu up --detach
 
   compose-down:
     desc: Stop the local container stack without deleting persisted data
@@ -78,6 +83,16 @@ tasks:
     desc: Follow local container logs
     cmds:
       - docker compose logs --follow
+
+  ollama-pull:
+    desc: Explicitly pull the configured Ollama models (large downloads)
+    cmds:
+      - uv run python infrastructure/scripts/pull_ollama_models.py
+
+  ollama-ready:
+    desc: Check Ollama availability and configured model presence
+    cmds:
+      - uv run python infrastructure/scripts/check_ollama_readiness.py
 
   clean:
     desc: Remove only known local build, test, cache, and dependency artifacts

@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Intentionally malformed validation fixture</title>
+  <link rel="stylesheet" href="/styles.css">
+<body>
+  <main id="duplicate">
+    <h1>Broken document
+    <p>This heading and paragraph are intentionally left open.
+    <section id="duplicate">
+      <p>A block element contains <div>invalid nesting and duplicate IDs.
+      <img src="/missing-fixture-image.png">
+    </main>
+  <footer><a href="http://127.0.0.1:9/unreachable">Known unreachable local link</footer>
