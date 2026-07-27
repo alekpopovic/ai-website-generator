@@ -95,14 +95,18 @@ class Project(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base)
     __tablename__ = "projects"
     __table_args__ = (
         CheckConstraint("status IN ('draft', 'active', 'archived')", name="status_allowed"),
-        Index("ix_projects_owner_user_id_updated_at", "owner_user_id", "updated_at"),
+        Index("ix_projects_owner_id_updated_at", "owner_id", "updated_at"),
+        UniqueConstraint("owner_id", "slug"),
     )
 
-    owner_user_id: Mapped[UUID] = mapped_column(
+    owner_id: Mapped[UUID] = mapped_column(
         ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
     )
     name: Mapped[str] = mapped_column(String(200), nullable=False)
+    slug: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str | None] = mapped_column(String(2_000))
+    default_language: Mapped[str] = mapped_column(String(35), nullable=False, default="en")
+    default_industry: Mapped[str | None] = mapped_column(String(100))
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
     settings: Mapped[JsonValue] = mapped_column(
         SafeJSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")

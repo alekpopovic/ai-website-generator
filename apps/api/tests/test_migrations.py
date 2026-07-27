@@ -33,6 +33,7 @@ def test_initial_migration_renders_postgresql_upgrade_sql(
     assert "CREATE TABLE audit_logs" in upgrade_sql
     assert "CREATE TABLE job_events" in upgrade_sql
     assert "CREATE TABLE auth_action_tokens" in upgrade_sql
+    assert "uq_projects_owner_id_slug" in upgrade_sql
     assert "ck_users_status_allowed" in upgrade_sql
     assert "ck_users_ck_" not in upgrade_sql
     assert "CREATE TYPE" not in upgrade_sql

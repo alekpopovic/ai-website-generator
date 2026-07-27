@@ -91,6 +91,9 @@ The request-context middleware accepts a bounded safe `X-Request-ID` or creates 
 
 OpenTelemetry exporters are deliberately not configured inside the package. The telemetry boundary uses the global API provider, allowing deployment to install an SDK, resource attributes, sampler, processor, and exporter without coupling unit tests or default CI to a collector.
 
+The user-owned project resource contract, query behavior, optimistic concurrency, and archive
+lifecycle are documented in [Projects API](../api/projects.md).
+
 ## Health semantics
 
 - `/health/live` performs no dependency I/O and answers whether the process serves HTTP.

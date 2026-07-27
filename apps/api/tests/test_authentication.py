@@ -174,7 +174,7 @@ def test_password_policy_returns_typed_password_validation() -> None:
         RegisterRequest(
             email="person@example.com",
             display_name="Person",
-            password="weak",  # noqa: S106 - deliberate invalid test fixture.
+            password="weak",  # pragma: allowlist secret  # noqa: S106 - invalid fixture.
         )
 
     assert any(error["loc"] == ("password",) for error in captured.value.errors())

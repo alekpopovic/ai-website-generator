@@ -58,6 +58,8 @@ blob-report/
 
 # Generated clients and sites
 generated/
+!packages/web/api-client/src/generated/
+!packages/web/api-client/src/generated/**
 artifacts/
 site-output/
 

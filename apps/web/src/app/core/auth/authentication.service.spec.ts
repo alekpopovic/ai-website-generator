@@ -38,7 +38,7 @@ describe('AuthenticationService', () => {
     const service = TestBed.inject(AuthenticationService);
     const tokens = TestBed.inject(ApiAccessTokenStore);
 
-    await service.login({ email: USER.email, password: 'not-persisted' });
+    await service.login({ email: USER.email, password: 'not-persisted' }); // pragma: allowlist secret
 
     expect(tokens.accessToken()).toBe('memory-token');
     expect(service.currentUser()).toEqual(USER);

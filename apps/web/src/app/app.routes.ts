@@ -82,7 +82,7 @@ export const routes: Routes = [
       ),
     children: [
       featureRoute('dashboard', 'Dashboard', 'Monitor platform work and recent activity.'),
-      featureRoute('projects', 'Projects', 'Create and manage website generation projects.'),
+      ...projectRoutes(),
       featureRoute('scanner', 'Scanner', 'Configure authorized website discovery and scanning.'),
       featureRoute('datasets', 'Datasets', 'Review governed datasets and their provenance.'),
       featureRoute('models', 'Models', 'Review configured inference and embedding models.'),
@@ -116,6 +116,60 @@ function featureRoute(path: string, title: string, description: string): Routes[
         (module) => module.FeatureEntryPageComponent,
       ),
   };
+}
+
+function projectRoutes(): Routes {
+  const section = (path: string, heading: string, message: string): Routes[number] => ({
+    path,
+    title: heading,
+    data: { heading, message },
+    loadComponent: () =>
+      import('./features/projects/project-section-page.component').then(
+        (module) => module.ProjectSectionPageComponent,
+      ),
+  });
+  return [
+    {
+      path: 'projects',
+      title: 'Projects',
+      loadComponent: () =>
+        import('./features/projects/project-list-page.component').then(
+          (module) => module.ProjectListPageComponent,
+        ),
+    },
+    {
+      path: 'projects/new',
+      title: 'Create project',
+      loadComponent: () =>
+        import('./features/projects/project-form-page.component').then(
+          (module) => module.ProjectFormPageComponent,
+        ),
+    },
+    {
+      path: 'projects/:projectId/edit',
+      title: 'Edit project',
+      loadComponent: () =>
+        import('./features/projects/project-form-page.component').then(
+          (module) => module.ProjectFormPageComponent,
+        ),
+    },
+    {
+      path: 'projects/:projectId',
+      title: 'Project workspace',
+      loadComponent: () =>
+        import('./features/projects/project-detail-shell.component').then(
+          (module) => module.ProjectDetailShellComponent,
+        ),
+      children: [
+        section('generated-sites', 'Generated sites', 'Generated site versions will appear here.'),
+        section('scans', 'Scans', 'Project scans will appear here.'),
+        section('datasets', 'Datasets', 'Project datasets will appear here.'),
+        section('assets', 'Assets', 'Project assets will appear here.'),
+        section('settings', 'Settings', 'Use Edit project to change workspace defaults.'),
+        { path: '', pathMatch: 'full', redirectTo: 'generated-sites' },
+      ],
+    },
+  ];
 }
 
 function developerRoutes(): Routes {

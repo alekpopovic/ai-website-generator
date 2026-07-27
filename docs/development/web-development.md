@@ -65,3 +65,8 @@ download or require a browser.
 Accessibility foundations include semantic landmarks and navigation, a keyboard skip link, visible
 focus states, labelled forms, live-announced notifications, reduced-motion support, and responsive
 navigation. Preserve these behaviors when adding feature implementations.
+
+The Projects feature uses only generated API contracts. It provides list search/filter/sort and
+pagination controls, create/edit forms, archive/restore actions, and a nested detail shell for
+generated sites, scans, datasets, assets, and project settings. Project forms submit the current
+version on edits and surface `409` conflicts without overwriting newer state.

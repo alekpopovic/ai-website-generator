@@ -3,7 +3,9 @@ import type {
   AccessTokenResponse,
   ApiResponseVersionInfo,
   DependencyHealthResponse,
+  PageResponseProjectResponse,
   ProblemDetail,
+  ProjectResponse,
   UserResponse,
 } from '@platform/api-client';
 
@@ -29,6 +31,21 @@ const UNAUTHENTICATED = {
   request_id: 'e2e-auth',
 } satisfies ProblemDetail;
 
+const PROJECT = {
+  id: '8d922dd8-530f-4270-a5c2-d2f783614834',
+  owner_id: USER.id,
+  name: 'Portfolio workspace',
+  slug: 'portfolio-workspace',
+  description: 'A project used by the UI test.',
+  default_language: 'en',
+  default_industry: 'Creative services',
+  status: 'draft',
+  settings: {},
+  created_at: '2026-07-27T10:00:00Z',
+  updated_at: '2026-07-27T10:00:00Z',
+  version: 1,
+} satisfies ProjectResponse;
+
 async function fakeSession(
   page: import('@playwright/test').Page,
   authenticated: boolean,
@@ -48,6 +65,35 @@ async function fakeSession(
       return;
     }
     await route.fallback();
+  });
+}
+
+async function fakeProjects(
+  page: import('@playwright/test').Page,
+  projects: readonly ProjectResponse[],
+): Promise<void> {
+  await page.route('http://127.0.0.1:8000/api/v1/projects**', async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === '/api/v1/projects') {
+      const body = {
+        items: [...projects],
+        pagination: {
+          offset: 0,
+          limit: 12,
+          total: projects.length,
+          has_more: false,
+        },
+        meta: { request_id: 'e2e-projects' },
+      } satisfies PageResponseProjectResponse;
+      await route.fulfill({ status: 200, json: body });
+      return;
+    }
+    const project = projects.find((item) => url.pathname === `/api/v1/projects/${item.id}`);
+    await route.fulfill(
+      project === undefined
+        ? { status: 404, json: { ...UNAUTHENTICATED, status: 404, title: 'Not Found' } }
+        : { status: 200, json: project },
+    );
   });
 }
 
@@ -75,6 +121,7 @@ test('registration form exposes accessible first-party account fields', async ({
 
 test('authenticated shell provides lazy feature navigation', async ({ page }) => {
   await fakeSession(page, true);
+  await fakeProjects(page, []);
   await page.goto('/dashboard');
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
   const projectsLink = page.getByRole('link', { name: 'Projects' });
@@ -84,8 +131,33 @@ test('authenticated shell provides lazy feature navigation', async ({ page }) =>
   await projectsLink.click();
 
   await expect(page).toHaveURL(/\/projects$/);
-  await expect(page.getByRole('heading', { name: 'Projects' })).toBeVisible();
-  await expect(page.getByText('Nothing here yet')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Projects', exact: true })).toBeVisible();
+  await expect(page.getByText('No projects found')).toBeVisible();
+});
+
+test('project list opens a detail shell with all workspace tabs', async ({ page }) => {
+  await fakeSession(page, true);
+  await fakeProjects(page, [PROJECT]);
+  await page.goto('/projects');
+
+  await page.getByRole('link', { name: PROJECT.name }).click();
+
+  await expect(page).toHaveURL(new RegExp(`/projects/${PROJECT.id}/generated-sites$`));
+  await expect(page.getByRole('heading', { name: PROJECT.name })).toBeVisible();
+  const projectSections = page.getByLabel('Project sections');
+  for (const tab of ['Generated sites', 'Scans', 'Datasets', 'Assets', 'Settings']) {
+    await expect(projectSections.getByRole('link', { name: tab, exact: true })).toBeVisible();
+  }
+});
+
+test('project creation form exposes workspace defaults without fake data', async ({ page }) => {
+  await fakeSession(page, true);
+  await page.goto('/projects/new');
+
+  await expect(page.getByRole('heading', { name: 'Create project' })).toBeVisible();
+  await expect(page.getByLabel('Name')).toBeVisible();
+  await expect(page.getByLabel('Default language')).toHaveValue('en');
+  await expect(page.getByLabel('Settings JSON')).toHaveValue('{}');
 });
 
 test('developer diagnostics uses generated API contracts with local UI fakes', async ({ page }) => {

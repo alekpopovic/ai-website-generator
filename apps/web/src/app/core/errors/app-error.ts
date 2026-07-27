@@ -5,48 +5,57 @@ import type { ProblemDetail } from '@platform/api-client';
 export type AppErrorCode =
   'bad-request' | 'forbidden' | 'network' | 'not-found' | 'server' | 'unauthorized' | 'unknown';
 
-export interface AppError {
-  readonly code: AppErrorCode;
-  readonly message: string;
-  readonly status: number | null;
-  readonly problem?: ProblemDetail;
-  readonly cause?: unknown;
+export class AppError extends Error {
+  constructor(
+    readonly code: AppErrorCode,
+    message: string,
+    readonly status: number | null,
+    readonly problem?: ProblemDetail,
+    options?: ErrorOptions,
+  ) {
+    super(message, options);
+    this.name = 'AppError';
+  }
 }
 
 export function toAppError(error: unknown): AppError {
-  if (isAppError(error)) {
+  if (error instanceof AppError) {
     return error;
   }
   if (error instanceof HttpErrorResponse) {
     return mapHttpError(error);
   }
-  return {
-    code: 'unknown',
-    message: 'Something went wrong. Please try again.',
-    status: null,
+  const problem = mapProblemDetails(error);
+  if (problem !== null) {
+    return new AppError(
+      mapProblemCode(problem.status),
+      problem.detail ?? problem.title,
+      problem.status,
+      problem,
+      { cause: error },
+    );
+  }
+  return new AppError('unknown', 'Something went wrong. Please try again.', null, undefined, {
     cause: error,
-  };
+  });
 }
 
 function mapHttpError(error: HttpErrorResponse): AppError {
   if (error.status === 0) {
-    return {
-      code: 'network',
-      message: 'The service could not be reached.',
-      status: 0,
+    return new AppError('network', 'The service could not be reached.', 0, undefined, {
       cause: error,
-    };
+    });
   }
 
   const problem = mapProblemDetails(error);
   if (problem !== null) {
-    return {
-      code: mapProblemCode(problem.status),
-      message: problem.detail ?? problem.title,
-      status: problem.status,
+    return new AppError(
+      mapProblemCode(problem.status),
+      problem.detail ?? problem.title,
+      problem.status,
       problem,
-      cause: error,
-    };
+      { cause: error },
+    );
   }
 
   const byStatus: Partial<Record<number, readonly [AppErrorCode, string]>> = {
@@ -56,7 +65,7 @@ function mapHttpError(error: HttpErrorResponse): AppError {
     404: ['not-found', 'The requested resource was not found.'],
   };
   const mapped = byStatus[error.status] ?? ['server', 'The service encountered an error.'];
-  return { code: mapped[0], message: mapped[1], status: error.status, cause: error };
+  return new AppError(mapped[0], mapped[1], error.status, undefined, { cause: error });
 }
 
 function mapProblemCode(status: number): AppErrorCode {
@@ -65,12 +74,4 @@ function mapProblemCode(status: number): AppErrorCode {
   if (status === 403) return 'forbidden';
   if (status === 404) return 'not-found';
   return 'server';
-}
-
-function isAppError(error: unknown): error is AppError {
-  if (typeof error !== 'object' || error === null) {
-    return false;
-  }
-  const candidate = error as Partial<AppError>;
-  return typeof candidate.code === 'string' && typeof candidate.message === 'string';
 }

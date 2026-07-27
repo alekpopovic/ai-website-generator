@@ -15,7 +15,7 @@ from platform_api.persistence.base import Base
 from platform_api.persistence.json import normalize_json_value
 from platform_api.persistence.models import AuditLog, Project, User
 from platform_api.persistence.pagination import apply_pagination
-from platform_api.persistence.repositories import SqlAlchemyRepository
+from platform_api.persistence.repositories import ProjectRepository, SqlAlchemyRepository
 from sqlalchemy import DateTime, Enum, String, select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
@@ -141,6 +141,38 @@ async def test_repository_page_uses_supplied_session_and_returns_total() -> None
     session.scalars.assert_awaited_once()
     session.scalar.assert_awaited_once()
     assert session.commit.call_count == 0
+
+
+@pytest.mark.anyio
+async def test_project_repository_queries_are_owner_scoped() -> None:
+    """Persistence authorization includes owner identity in item and collection SQL."""
+    session = MagicMock(spec=AsyncSession)
+    session.scalar = AsyncMock(return_value=None)
+    scalar_result = MagicMock()
+    scalar_result.all.return_value = []
+    session.scalars = AsyncMock(return_value=scalar_result)
+    repository = ProjectRepository(session)
+    owner_id, project_id = uuid4(), uuid4()
+
+    await repository.owned(project_id, owner_id)
+    owned_statement = session.scalar.await_args.args[0]
+    assert "projects.owner_id" in str(owned_statement)
+
+    session.scalar.reset_mock()
+    session.scalar.return_value = 0
+    await repository.owned_page(
+        owner_id=owner_id,
+        limit=20,
+        offset=0,
+        search="site",
+        status="draft",
+        sort_by="updated_at",
+        sort_order="desc",
+    )
+    item_statement = session.scalars.await_args.args[0]
+    count_statement = session.scalar.await_args.args[0]
+    assert "projects.owner_id" in str(item_statement)
+    assert "projects.owner_id" in str(count_statement)
 
 
 class RecordingAuditRepository:

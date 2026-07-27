@@ -57,8 +57,10 @@ async def test_transaction_commit_health_and_optimistic_versioning(migrated_data
             session.add(user)
             await session.flush()
             project = Project(
-                owner_user_id=user.id,
+                owner_id=user.id,
                 name="Integration project",
+                slug="integration-project",
+                default_language="en",
                 status="draft",
                 settings={"source": "integration"},
             )
