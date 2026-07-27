@@ -89,6 +89,12 @@ A trained model is promoted only after reproducible evaluation, security review,
 | Temporal   | workflow histories, activity coordination, retries, timers, cancellation, and compact identifiers                      | large HTML, screenshots, model bodies, or binary artifacts          |
 | Qdrant     | embeddings and retrieval metadata scoped by tenant, dataset, provenance, licensing, and model version                  | source-of-truth application state or unfiltered raw scraped content |
 
+Object access uses typed keys and private buckets through the asynchronous `platform-clients`
+abstraction. Immutable uploads and downloads are SHA-256 verified, large streams use multipart
+checksums, and retention intent is mirrored as metadata while PostgreSQL remains authoritative.
+Presigned writes are restricted to control-plane-approved user assets; there is no general browser
+object-storage client.
+
 ## 9. Trust boundaries
 
 The primary boundaries are: public browser to Angular; Angular to authenticated FastAPI; FastAPI to internal infrastructure; workers to untrusted external websites; workers to private inference; and generated artifacts to preview or publication environments. Authentication does not replace tenant authorization. IDs, workflow signals, object keys, model output, scraped content, uploaded files, webhook bodies, and external URLs are untrusted until validated for their specific boundary.

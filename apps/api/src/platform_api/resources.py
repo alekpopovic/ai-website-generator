@@ -5,6 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import httpx2
+from platform_clients.object_storage.fake import InMemoryObjectStorage
+from platform_clients.object_storage.models import ObjectStorage, StorageConfig, StorageProvider
+from platform_clients.object_storage.s3 import S3ObjectStorage
 from platform_workflows.client import TemporalClientConfig, TemporalClientProvider
 from platform_workflows.dispatcher import (
     FakeWorkflowDispatcher,
@@ -46,6 +49,7 @@ class ApplicationResources:
     access_tokens: AccessTokenManager | None
     temporal_clients: TemporalClientProvider | None
     workflow_dispatcher: WorkflowDispatcher
+    object_storage: ObjectStorage
 
     @classmethod
     async def create(cls, settings: Settings, telemetry: Telemetry) -> ApplicationResources:
@@ -60,6 +64,35 @@ class ApplicationResources:
         if not settings.application.fake_dependencies and settings.database.url is not None:
             database = DatabaseManager(settings.database)
         redis: Redis | None = None
+        if settings.application.fake_dependencies:
+            object_storage: ObjectStorage = InMemoryObjectStorage()
+        else:
+            minio = settings.minio
+            object_storage = await S3ObjectStorage.create(
+                StorageConfig(
+                    provider=StorageProvider(minio.provider),
+                    region=minio.region,
+                    endpoint_url=str(minio.endpoint).rstrip("/") if minio.endpoint else None,
+                    access_key=(
+                        minio.access_key.get_secret_value()
+                        if minio.access_key is not None
+                        else None
+                    ),
+                    secret_key=(
+                        minio.secret_key.get_secret_value()
+                        if minio.secret_key is not None
+                        else None
+                    ),
+                    session_token=(
+                        minio.session_token.get_secret_value()
+                        if minio.session_token is not None
+                        else None
+                    ),
+                    connect_timeout_seconds=minio.connect_timeout_seconds,
+                    read_timeout_seconds=minio.read_timeout_seconds,
+                    multipart_part_size=minio.multipart_part_size,
+                )
+            )
         if settings.application.fake_dependencies:
             login_rate_limiter: LoginRateLimiter = InMemoryLoginRateLimiter(
                 attempts=settings.security.login_rate_limit_attempts,
@@ -109,7 +142,7 @@ class ApplicationResources:
         probes = (
             fake_probe_registry()
             if settings.application.fake_dependencies
-            else real_probe_registry(settings, database, http_client)
+            else real_probe_registry(settings, database, http_client, object_storage)
         )
         return cls(
             database=database,
@@ -123,10 +156,12 @@ class ApplicationResources:
             access_tokens=access_tokens,
             temporal_clients=temporal_clients,
             workflow_dispatcher=workflow_dispatcher,
+            object_storage=object_storage,
         )
 
     async def close(self) -> None:
         """Close resources in reverse ownership order."""
+        await self.object_storage.close()
         if self.database is not None:
             await self.database.close()
         if self.redis is not None:

@@ -6,6 +6,7 @@ from collections.abc import AsyncIterator
 from typing import Annotated, cast
 
 from fastapi import Depends, Request
+from platform_clients.object_storage.models import ObjectStorage
 from platform_workflows.dispatcher import WorkflowDispatcher
 from sqlalchemy.ext.asyncio import AsyncSession
 from temporalio.client import Client
@@ -73,6 +74,13 @@ async def workflow_dispatcher_dependency(
     return resources.workflow_dispatcher
 
 
+async def object_storage_dependency(
+    resources: Annotated[ApplicationResources, Depends(resources_dependency)],
+) -> ObjectStorage:
+    """Return process-owned private object storage through an overridable boundary."""
+    return resources.object_storage
+
+
 SettingsDependency = Annotated[Settings, Depends(settings_dependency)]
 ResourcesDependency = Annotated[ApplicationResources, Depends(resources_dependency)]
 ProbeRegistryDependency = Annotated[ProbeRegistry, Depends(probe_registry_dependency)]
@@ -81,6 +89,7 @@ TemporalClientDependency = Annotated[Client, Depends(temporal_client_dependency)
 WorkflowDispatcherDependency = Annotated[
     WorkflowDispatcher, Depends(workflow_dispatcher_dependency)
 ]
+ObjectStorageDependency = Annotated[ObjectStorage, Depends(object_storage_dependency)]
 
 # Compatibility name for routes created before the transaction boundary was explicit.
 database_session_dependency = database_transaction_dependency

@@ -12,6 +12,7 @@ from typing import Protocol
 from urllib.parse import unquote, urlsplit
 
 import httpx2
+from platform_clients.object_storage.models import ObjectStorage
 from pydantic import BaseModel, ConfigDict, Field
 
 from platform_api.config import Settings
@@ -129,6 +130,7 @@ def real_probe_registry(
     settings: Settings,
     database: DatabaseManager | None,
     http_client: httpx2.AsyncClient,
+    object_storage: ObjectStorage,
 ) -> ProbeRegistry:
     """Compose real probes without performing I/O during startup."""
 
@@ -152,11 +154,9 @@ def real_probe_registry(
         )
 
     async def minio_check() -> None:
-        await _http_check(
-            http_client,
-            f"{str(settings.minio.endpoint).rstrip('/')}/minio/health/ready",
-            settings.minio.connect_timeout_seconds,
-        )
+        readiness = await object_storage.readiness()
+        if not all(bucket.ready for bucket in readiness):
+            raise RuntimeError("one or more object-storage buckets are unavailable")
 
     async def qdrant_check() -> None:
         headers = {}

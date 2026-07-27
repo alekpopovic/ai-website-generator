@@ -13,7 +13,7 @@ This checklist tracks completion of prompts 00 through 56. Check an item only wh
 - [x] Prompt 08
 - [x] Prompt 09
 - [x] Prompt 10
-- [ ] Prompt 11
+- [x] Prompt 11
 - [ ] Prompt 12
 - [ ] Prompt 13
 - [ ] Prompt 14

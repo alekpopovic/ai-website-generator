@@ -1,8 +1,23 @@
 [project]
 name = "platform-clients"
 version = "0.0.0"
+description = "Typed asynchronous infrastructure clients"
 requires-python = ">=3.12,<3.15"
-dependencies = []
+dependencies = [
+    "aiobotocore==3.8.0",
+    "types-aiobotocore==3.7.0",
+    "types-aiobotocore-s3==3.7.0",
+]
+
+[project.scripts]
+platform-storage-artifacts = "platform_clients.object_storage.cli:main"
+
+[build-system]
+requires = ["hatchling==1.31.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/platform_clients"]
 
 [tool.uv]
-package = false
+package = true

@@ -75,6 +75,11 @@ tasks:
     cmds:
       - uv run platform-workflow-worker
 
+  storage-test-artifacts:
+    desc: Inspect development objects explicitly tagged as test artifacts
+    cmds:
+      - uv run platform-storage-artifacts inspect
+
   verify-generated-api-client:
     desc: Fail when committed OpenAPI or generated Angular client artifacts are stale
     cmds:

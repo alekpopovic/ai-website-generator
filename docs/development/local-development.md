@@ -50,27 +50,28 @@ GPU-enabled services must retain the same private network boundaries as CPU serv
 
 ## Root commands
 
-| Command                    | Purpose                                                                                  |
-| -------------------------- | ---------------------------------------------------------------------------------------- |
-| `task bootstrap`           | Install locked uv and pnpm dependencies and Git hooks.                                   |
-| `task format`              | Apply Ruff and Prettier formatting.                                                      |
-| `task lint`                | Run Ruff, ESLint, Prettier checks, and offline secret scanning.                          |
-| `task typecheck`           | Run strict mypy and implemented workspace TypeScript checks.                             |
-| `task unit-test`           | Run deterministic Python and web unit tests.                                             |
-| `task integration-test`    | Run integration tests against explicitly started local services.                         |
-| `task e2e-test`            | Run bounded end-to-end tests.                                                            |
-| `task generate-api-client` | Generate the web API client after that workspace is implemented.                         |
-| `task compose-up`          | Start the Compose dependency stack with CPU-only Ollama.                                 |
-| `task compose-up-gpu`      | Start the stack with the optional NVIDIA Ollama profile.                                 |
-| `task compose-down`        | Stop the local Compose stack without deleting persisted data.                            |
-| `task compose-logs`        | Follow local Compose logs.                                                               |
-| `task ollama-pull`         | Explicitly pull configured Ollama models; may download many gigabytes.                   |
-| `task ollama-ready`        | Verify Ollama availability and configured model presence.                                |
-| `task workflow-worker`     | Run Temporal workflow orchestration on the `control` queue.                              |
-| `task clean`               | Remove allowlisted local caches, dependencies, and generated outputs.                    |
-| `task audit`               | Query vulnerability services for synchronized Python and locked JavaScript dependencies. |
-| `task licenses`            | Print Python and JavaScript dependency license reports.                                  |
-| `task verify`              | Run offline lint, formatting checks, type checks, and unit tests.                        |
+| Command                       | Purpose                                                                                  |
+| ----------------------------- | ---------------------------------------------------------------------------------------- |
+| `task bootstrap`              | Install locked uv and pnpm dependencies and Git hooks.                                   |
+| `task format`                 | Apply Ruff and Prettier formatting.                                                      |
+| `task lint`                   | Run Ruff, ESLint, Prettier checks, and offline secret scanning.                          |
+| `task typecheck`              | Run strict mypy and implemented workspace TypeScript checks.                             |
+| `task unit-test`              | Run deterministic Python and web unit tests.                                             |
+| `task integration-test`       | Run integration tests against explicitly started local services.                         |
+| `task e2e-test`               | Run bounded end-to-end tests.                                                            |
+| `task generate-api-client`    | Generate the web API client after that workspace is implemented.                         |
+| `task compose-up`             | Start the Compose dependency stack with CPU-only Ollama.                                 |
+| `task compose-up-gpu`         | Start the stack with the optional NVIDIA Ollama profile.                                 |
+| `task compose-down`           | Stop the local Compose stack without deleting persisted data.                            |
+| `task compose-logs`           | Follow local Compose logs.                                                               |
+| `task ollama-pull`            | Explicitly pull configured Ollama models; may download many gigabytes.                   |
+| `task ollama-ready`           | Verify Ollama availability and configured model presence.                                |
+| `task workflow-worker`        | Run Temporal workflow orchestration on the `control` queue.                              |
+| `task storage-test-artifacts` | Inspect explicitly tagged development test objects.                                      |
+| `task clean`                  | Remove allowlisted local caches, dependencies, and generated outputs.                    |
+| `task audit`                  | Query vulnerability services for synchronized Python and locked JavaScript dependencies. |
+| `task licenses`               | Print Python and JavaScript dependency license reports.                                  |
+| `task verify`                 | Run offline lint, formatting checks, type checks, and unit tests.                        |
 
 Audit commands intentionally run separately from `verify` because current vulnerability data requires network access. Review audit findings and license reports; never apply automated dependency fixes without inspecting the resulting manifests and lockfiles.
 

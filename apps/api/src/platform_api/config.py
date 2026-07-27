@@ -134,15 +134,44 @@ class TemporalSettings(StrictSettings):
 
 
 class MinioSettings(StrictSettings):
-    """S3-compatible artifact storage settings."""
+    """MinIO development or AWS S3-compatible artifact storage settings."""
 
     model_config = SettingsConfigDict(env_prefix="MINIO_")
 
-    endpoint: AnyHttpUrl = AnyHttpUrl("http://127.0.0.1:9000")
+    provider: Literal["minio", "aws"] = "minio"
+    endpoint: AnyHttpUrl | None = AnyHttpUrl("http://127.0.0.1:9000")
+    region: str = "us-east-1"
     access_key: SecretStr | None = None
     secret_key: SecretStr | None = None
+    session_token: SecretStr | None = None
     secure: bool = False
     connect_timeout_seconds: PositiveSeconds = 5.0
+    read_timeout_seconds: PositiveSeconds = 60.0
+    multipart_part_size: int = Field(
+        default=8 * 1_024 * 1_024,
+        ge=5 * 1_024 * 1_024,
+        le=128 * 1_024 * 1_024,
+    )
+
+    @field_validator("endpoint", mode="before")
+    @classmethod
+    def normalize_blank_endpoint(cls, value: object) -> object:
+        return None if value == "" else value
+
+    @model_validator(mode="after")
+    def validate_provider(self) -> Self:
+        if (self.access_key is None) != (self.secret_key is None):
+            raise ValueError("MINIO_ACCESS_KEY and MINIO_SECRET_KEY must be supplied together")
+        if self.provider == "minio":
+            if self.endpoint is None:
+                raise ValueError("MinIO provider requires MINIO_ENDPOINT")
+            if self.access_key is None or self.secret_key is None:
+                return self
+            if self.secure and self.endpoint.scheme != "https":
+                raise ValueError("MINIO_SECURE requires an HTTPS endpoint")
+        elif self.endpoint is not None:
+            raise ValueError("AWS provider must use the SDK endpoint without MINIO_ENDPOINT")
+        return self
 
 
 class QdrantSettings(StrictSettings):

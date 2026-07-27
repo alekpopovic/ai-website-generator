@@ -12,6 +12,7 @@ dependencies = [
     "fastapi==0.139.2",
     "httpx2==2.7.0",
     "opentelemetry-api==1.44.0",
+    "platform-clients",
     "platform-workflows",
     "pydantic==2.13.4",
     "pydantic-settings==2.14.2",
@@ -37,4 +38,5 @@ packages = ["src/platform_api"]
 package = true
 
 [tool.uv.sources]
+platform-clients = { workspace = true }
 platform-workflows = { workspace = true }
