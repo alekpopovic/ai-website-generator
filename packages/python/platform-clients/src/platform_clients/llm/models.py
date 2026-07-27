@@ -91,6 +91,7 @@ class InferenceResult[ValueT]:
 
 @dataclass(frozen=True, slots=True)
 class ModelMetadata:
+    provider: str
     name: str
     digest: str
     size: int
@@ -100,6 +101,7 @@ class ModelMetadata:
     family: str | None = None
     parameter_size: str | None = None
     quantization_level: str | None = None
+    embedding_dimensions: int | None = None
 
 
 @dataclass(frozen=True, slots=True)

@@ -8,6 +8,7 @@ from typing import Annotated, cast
 from fastapi import Depends, Request
 from platform_clients.llm.protocols import LLMGateway
 from platform_clients.object_storage.models import ObjectStorage
+from platform_clients.vector_store.protocols import VectorStore
 from platform_workflows.dispatcher import WorkflowDispatcher
 from sqlalchemy.ext.asyncio import AsyncSession
 from temporalio.client import Client
@@ -89,6 +90,13 @@ async def llm_gateway_dependency(
     return resources.llm_gateway
 
 
+async def vector_store_dependency(
+    resources: Annotated[ApplicationResources, Depends(resources_dependency)],
+) -> VectorStore:
+    """Return private vector storage; browser clients never receive its credentials."""
+    return resources.vector_store
+
+
 SettingsDependency = Annotated[Settings, Depends(settings_dependency)]
 ResourcesDependency = Annotated[ApplicationResources, Depends(resources_dependency)]
 ProbeRegistryDependency = Annotated[ProbeRegistry, Depends(probe_registry_dependency)]
@@ -99,6 +107,7 @@ WorkflowDispatcherDependency = Annotated[
 ]
 ObjectStorageDependency = Annotated[ObjectStorage, Depends(object_storage_dependency)]
 LLMGatewayDependency = Annotated[LLMGateway, Depends(llm_gateway_dependency)]
+VectorStoreDependency = Annotated[VectorStore, Depends(vector_store_dependency)]
 
 # Compatibility name for routes created before the transaction boundary was explicit.
 database_session_dependency = database_transaction_dependency

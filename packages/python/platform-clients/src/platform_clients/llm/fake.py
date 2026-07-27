@@ -32,12 +32,14 @@ class FakeLLMGateway:
     @staticmethod
     def _metadata(name: str, digest: str, capability: str) -> ModelMetadata:
         return ModelMetadata(
+            provider="fake",
             name=name,
             digest=digest,
             size=0,
             modified_at=datetime(2026, 1, 1, tzinfo=UTC),
             capabilities=frozenset({capability}),
             format="gguf",
+            embedding_dimensions=3 if capability == "embedding" else None,
         )
 
     def _result[ValueT](self, value: ValueT, role: ModelRole) -> InferenceResult[ValueT]:

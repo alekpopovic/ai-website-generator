@@ -11,6 +11,9 @@ from platform_clients.llm.protocols import LLMGateway
 from platform_clients.object_storage.fake import InMemoryObjectStorage
 from platform_clients.object_storage.models import ObjectStorage, StorageConfig, StorageProvider
 from platform_clients.object_storage.s3 import S3ObjectStorage
+from platform_clients.vector_store.fake import InMemoryVectorStore
+from platform_clients.vector_store.protocols import VectorStore
+from platform_clients.vector_store.qdrant import QdrantConfig, QdrantVectorStore
 from platform_workflows.client import TemporalClientConfig, TemporalClientProvider
 from platform_workflows.dispatcher import (
     FakeWorkflowDispatcher,
@@ -54,6 +57,7 @@ class ApplicationResources:
     workflow_dispatcher: WorkflowDispatcher
     object_storage: ObjectStorage
     llm_gateway: LLMGateway
+    vector_store: VectorStore
 
     @classmethod
     async def create(cls, settings: Settings, telemetry: Telemetry) -> ApplicationResources:
@@ -71,6 +75,7 @@ class ApplicationResources:
         if settings.application.fake_dependencies:
             object_storage: ObjectStorage = InMemoryObjectStorage()
             llm_gateway: LLMGateway = FakeLLMGateway()
+            vector_store: VectorStore = InMemoryVectorStore(alias=settings.qdrant.collection_alias)
         else:
             minio = settings.minio
             object_storage = await S3ObjectStorage.create(
@@ -119,6 +124,21 @@ class ApplicationResources:
                     max_total_image_bytes=ollama.max_total_image_bytes,
                     max_response_bytes=ollama.max_response_bytes,
                     keep_alive=ollama.keep_alive,
+                )
+            )
+            qdrant = settings.qdrant
+            vector_store = QdrantVectorStore.create(
+                QdrantConfig(
+                    base_url=str(qdrant.url).rstrip("/"),
+                    api_key=(
+                        qdrant.api_key.get_secret_value() if qdrant.api_key is not None else None
+                    ),
+                    collection_alias=qdrant.collection_alias,
+                    vector_name=qdrant.vector_name,
+                    connect_timeout_seconds=qdrant.connect_timeout_seconds,
+                    request_timeout_seconds=qdrant.request_timeout_seconds,
+                    max_concurrency=qdrant.max_concurrency,
+                    max_batch_size=qdrant.max_batch_size,
                 )
             )
         if settings.application.fake_dependencies:
@@ -170,7 +190,7 @@ class ApplicationResources:
         probes = (
             fake_probe_registry()
             if settings.application.fake_dependencies
-            else real_probe_registry(settings, database, http_client, object_storage, llm_gateway)
+            else real_probe_registry(settings, database, object_storage, llm_gateway, vector_store)
         )
         return cls(
             database=database,
@@ -186,10 +206,12 @@ class ApplicationResources:
             workflow_dispatcher=workflow_dispatcher,
             object_storage=object_storage,
             llm_gateway=llm_gateway,
+            vector_store=vector_store,
         )
 
     async def close(self) -> None:
         """Close resources in reverse ownership order."""
+        await self.vector_store.close()
         await self.llm_gateway.close()
         await self.object_storage.close()
         if self.database is not None:

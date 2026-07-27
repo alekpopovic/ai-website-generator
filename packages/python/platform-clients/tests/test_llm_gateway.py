@@ -79,6 +79,7 @@ class FakeOllamaServer:
                 "modified_at": "2026-07-01T00:00:00Z",
                 "capabilities": [capability],
                 "details": {"format": "gguf", "family": "qwen3"},
+                "model_info": ({"qwen3.embedding_length": 3} if capability == "embedding" else {}),
             }
 
         @self.app.post("/api/chat")
@@ -207,6 +208,8 @@ async def test_vision_embeddings_readiness_metadata_and_warmup_use_fixed_models(
     assert len(embeddings.value) == 2
     assert all(len(vector) == 4 for vector in embeddings.value)
     assert all(model.installed and model.capable for model in readiness)
+    embedding_metadata = await gateway.model_metadata(ModelRole.EMBEDDING)
+    assert embedding_metadata.embedding_dimensions == 3
     assert warmup.model == "qwen3-vl:8b"
     assert all(path != "/api/pull" for path, _ in server.requests)
     warmup_payload = next(payload for path, payload in server.requests if path == "/api/generate")

@@ -11,9 +11,11 @@ from enum import StrEnum
 from typing import Protocol
 from urllib.parse import unquote, urlsplit
 
-import httpx2
+from platform_clients.llm.models import ModelRole
 from platform_clients.llm.protocols import LLMGateway
 from platform_clients.object_storage.models import ObjectStorage
+from platform_clients.vector_store.models import CollectionIdentity
+from platform_clients.vector_store.protocols import VectorStore
 from pydantic import BaseModel, ConfigDict, Field
 
 from platform_api.config import Settings
@@ -130,9 +132,9 @@ def fake_probe_registry() -> ProbeRegistry:
 def real_probe_registry(
     settings: Settings,
     database: DatabaseManager | None,
-    http_client: httpx2.AsyncClient,
     object_storage: ObjectStorage,
     llm_gateway: LLMGateway,
+    vector_store: VectorStore,
 ) -> ProbeRegistry:
     """Compose real probes without performing I/O during startup."""
 
@@ -161,15 +163,24 @@ def real_probe_registry(
             raise RuntimeError("one or more object-storage buckets are unavailable")
 
     async def qdrant_check() -> None:
-        headers = {}
-        if settings.qdrant.api_key is not None:
-            headers["api-key"] = settings.qdrant.api_key.get_secret_value()
-        await _http_check(
-            http_client,
-            f"{str(settings.qdrant.url).rstrip('/')}/healthz",
-            settings.qdrant.connect_timeout_seconds,
-            headers=headers,
+        health = await vector_store.health()
+        if not health.available:
+            raise RuntimeError("vector service is unavailable")
+        metadata = await llm_gateway.model_metadata(ModelRole.EMBEDDING)
+        if metadata.embedding_dimensions is None:
+            raise RuntimeError("embedding dimensions are absent from model metadata")
+        readiness = await vector_store.readiness(
+            CollectionIdentity(
+                embedding_provider=metadata.provider,
+                embedding_model=metadata.name,
+                embedding_model_digest=metadata.digest,
+                serialization_schema_version=settings.qdrant.serialization_schema_version,
+                vector_name=settings.qdrant.vector_name,
+            ),
+            metadata.embedding_dimensions,
         )
+        if not readiness.ready:
+            raise RuntimeError("versioned vector collection is not ready")
 
     async def ollama_check() -> None:
         readiness = await llm_gateway.readiness()
@@ -238,15 +249,3 @@ async def _redis_command(
     response = (await reader.readline()).decode(errors="replace").rstrip("\r\n")
     if response != expected:
         raise RuntimeError("Redis health command failed")
-
-
-async def _http_check(
-    client: httpx2.AsyncClient,
-    url: str,
-    timeout_seconds: float,
-    *,
-    headers: dict[str, str] | None = None,
-) -> None:
-    """Perform a non-redirecting HTTP health request to a trusted configured endpoint."""
-    response = await client.get(url, timeout=timeout_seconds, headers=headers)
-    response.raise_for_status()

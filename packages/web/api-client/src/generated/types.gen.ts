@@ -43,6 +43,14 @@ export type ApiResponseModelWarmupAccepted = {
 };
 
 /**
+ * ApiResponse[VectorCollectionStatisticsData]
+ */
+export type ApiResponseVectorCollectionStatisticsData = {
+    data: VectorCollectionStatisticsData;
+    meta?: ResponseMeta;
+};
+
+/**
  * ApiResponse[VersionInfo]
  */
 export type ApiResponseVersionInfo = {
@@ -94,6 +102,28 @@ export type DependencyHealthResponse = {
  * Public state vocabulary used by dependency health endpoints.
  */
 export type DependencyState = 'available' | 'unavailable';
+
+/**
+ * EmbeddingCollectionVersion
+ */
+export type EmbeddingCollectionVersion = {
+    /**
+     * Embedding Model
+     */
+    embedding_model: string;
+    /**
+     * Embedding Model Digest
+     */
+    embedding_model_digest: string;
+    /**
+     * Embedding Provider
+     */
+    embedding_provider: string;
+    /**
+     * Serialization Schema Version
+     */
+    serialization_schema_version: number;
+};
 
 /**
  * HTTPValidationError
@@ -621,6 +651,61 @@ export type ValidationError = {
 };
 
 /**
+ * VectorCollectionStatisticsData
+ */
+export type VectorCollectionStatisticsData = {
+    /**
+     * Active Collection
+     */
+    active_collection: string | null;
+    /**
+     * Active Dimensions
+     */
+    active_dimensions?: number | null;
+    /**
+     * Alias
+     */
+    alias: string;
+    /**
+     * Dimensions Match
+     */
+    dimensions_match: boolean;
+    /**
+     * Expected Collection
+     */
+    expected_collection: string;
+    /**
+     * Expected Dimensions
+     */
+    expected_dimensions: number;
+    /**
+     * Identity Match
+     */
+    identity_match: boolean;
+    /**
+     * Indexed Vectors Count
+     */
+    indexed_vectors_count: number;
+    /**
+     * Points Count
+     */
+    points_count: number;
+    /**
+     * Ready
+     */
+    ready: boolean;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Vector Name
+     */
+    vector_name: string;
+    version: EmbeddingCollectionVersion;
+};
+
+/**
  * VerifyEmailRequest
  *
  * Single-use email verification token.
@@ -694,6 +779,39 @@ export type WarmUpConfiguredModelResponses = {
 };
 
 export type WarmUpConfiguredModelResponse = WarmUpConfiguredModelResponses[keyof WarmUpConfiguredModelResponses];
+
+export type GetVectorCollectionStatisticsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/vector-collections/statistics';
+};
+
+export type GetVectorCollectionStatisticsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type GetVectorCollectionStatisticsError = GetVectorCollectionStatisticsErrors[keyof GetVectorCollectionStatisticsErrors];
+
+export type GetVectorCollectionStatisticsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ApiResponseVectorCollectionStatisticsData;
+};
+
+export type GetVectorCollectionStatisticsResponse = GetVectorCollectionStatisticsResponses[keyof GetVectorCollectionStatisticsResponses];
 
 export type LoginData = {
     body: LoginRequest;

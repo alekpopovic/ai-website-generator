@@ -175,13 +175,30 @@ class MinioSettings(StrictSettings):
 
 
 class QdrantSettings(StrictSettings):
-    """Vector service endpoint settings used for diagnostics and future clients."""
+    """Private vector service and versioned design-pattern collection settings."""
 
     model_config = SettingsConfigDict(env_prefix="QDRANT_")
 
     url: AnyHttpUrl = AnyHttpUrl("http://127.0.0.1:6333")
     api_key: SecretStr | None = None
     connect_timeout_seconds: PositiveSeconds = 5.0
+    request_timeout_seconds: float = Field(default=30.0, gt=0, le=300)
+    max_concurrency: int = Field(default=8, ge=1, le=64)
+    max_batch_size: int = Field(default=256, ge=1, le=1_000)
+    collection_alias: str = Field(
+        default="design-patterns", pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+    )
+    vector_name: str = Field(default="design-pattern", pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
+    serialization_schema_version: int = Field(default=1, ge=1, le=65_535)
+
+    @model_validator(mode="after")
+    def validate_endpoint(self) -> Self:
+        parsed = urlsplit(str(self.url))
+        if parsed.username or parsed.password or parsed.query or parsed.fragment:
+            raise ValueError("QDRANT_URL must not contain credentials, query, or fragment")
+        if parsed.path not in {"", "/"}:
+            raise ValueError("QDRANT_URL must identify the service root")
+        return self
 
 
 class OllamaSettings(StrictSettings):

@@ -63,6 +63,22 @@
         "title": "ApiResponse[ModelWarmupAccepted]",
         "type": "object"
       },
+      "ApiResponse_VectorCollectionStatisticsData_": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/VectorCollectionStatisticsData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ApiResponse[VectorCollectionStatisticsData]",
+        "type": "object"
+      },
       "ApiResponse_VersionInfo_": {
         "additionalProperties": false,
         "properties": {
@@ -150,6 +166,36 @@
         ],
         "title": "DependencyState",
         "type": "string"
+      },
+      "EmbeddingCollectionVersion": {
+        "additionalProperties": false,
+        "properties": {
+          "embedding_model": {
+            "title": "Embedding Model",
+            "type": "string"
+          },
+          "embedding_model_digest": {
+            "title": "Embedding Model Digest",
+            "type": "string"
+          },
+          "embedding_provider": {
+            "title": "Embedding Provider",
+            "type": "string"
+          },
+          "serialization_schema_version": {
+            "minimum": 1.0,
+            "title": "Serialization Schema Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "embedding_provider",
+          "embedding_model",
+          "embedding_model_digest",
+          "serialization_schema_version"
+        ],
+        "title": "EmbeddingCollectionVersion",
+        "type": "object"
       },
       "HTTPValidationError": {
         "properties": {
@@ -1085,6 +1131,96 @@
         "title": "ValidationError",
         "type": "object"
       },
+      "VectorCollectionStatisticsData": {
+        "additionalProperties": false,
+        "properties": {
+          "active_collection": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Collection"
+          },
+          "active_dimensions": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Dimensions"
+          },
+          "alias": {
+            "title": "Alias",
+            "type": "string"
+          },
+          "dimensions_match": {
+            "title": "Dimensions Match",
+            "type": "boolean"
+          },
+          "expected_collection": {
+            "title": "Expected Collection",
+            "type": "string"
+          },
+          "expected_dimensions": {
+            "minimum": 1.0,
+            "title": "Expected Dimensions",
+            "type": "integer"
+          },
+          "identity_match": {
+            "title": "Identity Match",
+            "type": "boolean"
+          },
+          "indexed_vectors_count": {
+            "minimum": 0.0,
+            "title": "Indexed Vectors Count",
+            "type": "integer"
+          },
+          "points_count": {
+            "minimum": 0.0,
+            "title": "Points Count",
+            "type": "integer"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "vector_name": {
+            "title": "Vector Name",
+            "type": "string"
+          },
+          "version": {
+            "$ref": "#/components/schemas/EmbeddingCollectionVersion"
+          }
+        },
+        "required": [
+          "ready",
+          "alias",
+          "active_collection",
+          "expected_collection",
+          "status",
+          "vector_name",
+          "expected_dimensions",
+          "points_count",
+          "indexed_vectors_count",
+          "dimensions_match",
+          "identity_match",
+          "version"
+        ],
+        "title": "VectorCollectionStatisticsData",
+        "type": "object"
+      },
       "VerifyEmailRequest": {
         "additionalProperties": false,
         "description": "Single-use email verification token.",
@@ -1235,6 +1371,63 @@
         "summary": "Warm Up Configured Model",
         "tags": [
           "models"
+        ]
+      }
+    },
+    "/api/v1/admin/vector-collections/statistics": {
+      "get": {
+        "description": "Inspect bounded collection metadata without invoking embedding inference.",
+        "operationId": "getVectorCollectionStatistics",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse_VectorCollectionStatisticsData_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Vector Collection Statistics",
+        "tags": [
+          "vector-collections"
         ]
       }
     },

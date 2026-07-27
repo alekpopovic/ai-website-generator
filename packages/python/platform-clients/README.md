@@ -13,3 +13,10 @@ embedding, model catalog, capability, readiness, and warm-up contracts. Its Olla
 prompt redaction, strict byte limits, bounded concurrency and timeouts, selective retries, circuit
 breaking, response validation, and safe inference metadata. `FakeLLMGateway` keeps default CI
 deterministic and offline.
+
+The `vector_store` package exposes versioned collection lifecycle, named dense-vector upserts,
+typed payload filters, source-diverse retrieval, health/readiness, and collection statistics. Its
+Qdrant adapter uses an atomic stable alias over embedding-provider/model/digest/schema-specific
+physical collections. The in-memory implementation provides equivalent deterministic behavior for
+unit tests. Only bounded abstract design-pattern text and allowlisted provenance metadata can enter
+this boundary.

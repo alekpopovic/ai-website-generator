@@ -165,6 +165,7 @@ class _ShowResponse(BaseModel):
     modified_at: datetime | None = None
     capabilities: frozenset[str] = frozenset()
     details: _Details = Field(default_factory=_Details)
+    model_info: dict[str, object] = Field(default_factory=dict)
 
 
 class _AssistantMessage(BaseModel):
@@ -516,6 +517,7 @@ class OllamaGateway:
         response = await self._execute(lambda: self._validated("GET", "/api/tags", _TagsResponse))
         return tuple(
             ModelMetadata(
+                provider="ollama",
                 name=item.model,
                 digest=item.digest,
                 size=item.size,
@@ -546,6 +548,7 @@ class OllamaGateway:
             )
         )
         metadata = ModelMetadata(
+            provider="ollama",
             name=listed.name,
             digest=listed.digest,
             size=listed.size,
@@ -555,6 +558,7 @@ class OllamaGateway:
             family=shown.details.family or listed.family,
             parameter_size=shown.details.parameter_size or listed.parameter_size,
             quantization_level=shown.details.quantization_level or listed.quantization_level,
+            embedding_dimensions=_embedding_dimensions(shown.model_info),
         )
         self._metadata_cache[name] = (time.monotonic(), metadata)
         return metadata
@@ -635,3 +639,20 @@ class OllamaGateway:
             model_digest=metadata.digest,
             latency_ms=round((time.perf_counter() - started) * 1_000, 3),
         )
+
+
+def _embedding_dimensions(model_info: dict[str, object]) -> int | None:
+    """Read Ollama's architecture-specific `*.embedding_length` metadata."""
+    candidates = {
+        value
+        for key, value in model_info.items()
+        if key.endswith(".embedding_length")
+        and isinstance(value, int)
+        and not isinstance(value, bool)
+        and 1 <= value <= 65_536
+    }
+    if not candidates:
+        return None
+    if len(candidates) != 1:
+        raise MalformedProviderResponseError("model reports conflicting embedding dimensions")
+    return next(iter(candidates))

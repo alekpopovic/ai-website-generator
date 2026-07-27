@@ -42,6 +42,12 @@ and applies redaction, size, timeout, concurrency, retry, capability, and circui
 FastAPI may inspect model metadata, but inference and model warm-up execute only in activity workers.
 Administrator warm-up requests start a compact Temporal workflow and never install missing models.
 
+Vector access is likewise provider-neutral. Embedding workers write only validated abstract pattern
+records through the shared vector-store boundary; API processes are limited to bounded health,
+readiness, and administrator statistics calls. The current Qdrant adapter uses named dense vectors,
+typed tenant/provenance filters, and an alias over immutable embedding-version collections. See
+[Vector storage](vector-storage.md) for its data and reindex contracts.
+
 ## 3. Scan workflow
 
 1. An authorized user submits a source, scope, and authorization attestation.
