@@ -1,0 +1,7 @@
+User-agent: AIWebsiteGeneratorBot
+Disallow: /private/
+Disallow: /docs/private/
+Allow: /private/public-info
+Crawl-delay: 3
+
+Sitemap: https://example.com/sitemap.xml

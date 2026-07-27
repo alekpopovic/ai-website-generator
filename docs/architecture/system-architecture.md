@@ -61,11 +61,13 @@ typed tenant/provenance filters, and an alias over immutable embedding-version c
 
 The scan never promotes third-party logos, names, copy, media, code, or complete compositions into reusable generation inputs.
 
-The current implementation establishes only campaign configuration, targets, page/viewport/failure
-projections, ownership-scoped APIs, lifecycle transitions, and durable workflow control. Starting a
-campaign dispatches a control-only Temporal workflow after PostgreSQL commits. No crawl, browser,
-analysis, or embedding activity is implemented yet. See [Scan campaign API](../api/scan-campaigns.md)
-and [ADR 0010](../adr/0010-scan-campaign-control-state.md).
+The current implementation establishes campaign configuration, targets, page/viewport/failure
+projections, ownership-scoped APIs, lifecycle transitions, durable workflow control, and the shared
+crawl-policy evaluation boundary. Domain robots snapshots and effective per-page decisions have
+durable provenance fields. Starting a campaign still dispatches a control-only Temporal workflow after
+PostgreSQL commits; no crawl, browser, analysis, or embedding activity is implemented yet. See
+[Scan campaign API](../api/scan-campaigns.md), [Crawl policy](../security/crawl-policy.md), and
+[ADR 0013](../adr/0013-crawl-policy-and-provenance.md).
 
 ## 4. Dataset workflow
 

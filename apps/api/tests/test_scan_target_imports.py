@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator, Sequence
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 from uuid import UUID, uuid4
 
 import httpx2
@@ -20,6 +20,7 @@ from platform_api.persistence.models import (
     User,
 )
 from platform_api.scans.dependencies import scan_target_import_service_dependency
+from platform_api.scans.target_import_repositories import ScanTargetImportRepository
 from platform_api.scans.target_import_service import ScanTargetImportService
 from platform_api.scans.target_imports import (
     MAX_IMPORT_ROWS,
@@ -63,7 +64,7 @@ class FakeImportRepository:
         self, entities: Sequence[ScanTarget | ScanTargetImport | ScanTargetImportRow]
     ) -> None:
         for entity in entities:
-            if entity.id is None:
+            if cast(UUID | None, entity.id) is None:
                 entity.id = uuid4()
             if isinstance(entity, ScanTargetImport):
                 self.imports[entity.id] = entity
@@ -74,14 +75,14 @@ class FakeImportRepository:
 
     async def flush(self) -> None:
         for target_import in self.imports.values():
-            if target_import.created_at is None:
+            if cast(datetime | None, target_import.created_at) is None:
                 target_import.created_at = NOW
                 target_import.updated_at = NOW
                 target_import.version = 1
         for row in self.rows:
-            if row.id is None:
+            if cast(UUID | None, row.id) is None:
                 row.id = uuid4()
-            if row.created_at is None:
+            if cast(datetime | None, row.created_at) is None:
                 row.created_at = NOW
 
     async def campaign_owned_for_update(
@@ -141,7 +142,13 @@ def fixture() -> tuple[ScanTargetImportService, FakeImportRepository, RecordingA
     )
     repository = FakeImportRepository(campaign, owner_id)
     audit = RecordingAudit()
-    return ScanTargetImportService(repository, audit), repository, audit, owner_id, project_id
+    return (
+        ScanTargetImportService(cast(ScanTargetImportRepository, repository), audit),
+        repository,
+        audit,
+        owner_id,
+        project_id,
+    )
 
 
 def test_normalization_handles_unicode_punycode_trailing_dots_and_paths() -> None:

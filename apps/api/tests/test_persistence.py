@@ -16,6 +16,7 @@ from platform_api.persistence.json import normalize_json_value
 from platform_api.persistence.models import (
     AuditLog,
     CrawlPage,
+    CrawlPolicyRecord,
     PageScan,
     Project,
     ScanCampaign,
@@ -43,6 +44,7 @@ def test_metadata_contains_named_foundation_tables_and_constraints() -> None:
         "scan_campaigns",
         "scan_targets",
         "crawl_pages",
+        "crawl_policy_records",
         "page_scans",
         "scan_failures",
         "scan_target_imports",
@@ -74,7 +76,15 @@ def test_statuses_are_strings_and_editable_records_are_versioned() -> None:
         assert not isinstance(status_type, Enum)
     assert User.__mapper__.version_id_col is User.__table__.c.version
     assert Project.__mapper__.version_id_col is Project.__table__.c.version
-    for model in (ScanCampaign, ScanTarget, CrawlPage, PageScan, ScanFailure, ScanTargetImport):
+    for model in (
+        ScanCampaign,
+        ScanTarget,
+        CrawlPolicyRecord,
+        CrawlPage,
+        PageScan,
+        ScanFailure,
+        ScanTargetImport,
+    ):
         assert model.__mapper__.version_id_col is model.__table__.c.version
 
 

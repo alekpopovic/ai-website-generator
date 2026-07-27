@@ -6,3 +6,9 @@ Every Scrapy request and redirect must pass through `ScrapyRequestSafety`; autom
 following is disabled. The adapter revalidates DNS immediately before connection, validates the peer
 when the connector exposes it, rejects non-HTML responses, and streams decoded bodies through shared
 limits.
+
+Discovery activities construct `CrawlPolicyEvaluator` from the persisted campaign and robots snapshot.
+They must acquire `RedisCrawlLocks` and `RedisDomainRateLimiter` before outbound work, heartbeat while
+waiting, and persist the bounded decision provenance on each crawl page. The worker uses the stricter
+of campaign and parsed robots crawl delays. `robots.txt` compliance cannot be disabled by a normal API
+request.

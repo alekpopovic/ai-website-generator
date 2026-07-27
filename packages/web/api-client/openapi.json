@@ -185,6 +185,34 @@
             ],
             "title": "Content Type"
           },
+          "crawl_decision_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crawl Decision Code"
+          },
+          "crawl_policy_provenance": {
+            "additionalProperties": true,
+            "title": "Crawl Policy Provenance",
+            "type": "object"
+          },
+          "crawl_policy_record_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crawl Policy Record Id"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -301,12 +329,15 @@
           "campaign_id",
           "target_id",
           "parent_page_id",
+          "crawl_policy_record_id",
           "url",
           "normalized_url",
           "source_domain",
           "depth",
           "status",
           "robots_allowed",
+          "crawl_decision_code",
+          "crawl_policy_provenance",
           "http_status",
           "content_type",
           "content_sha256",
@@ -1490,6 +1521,13 @@
             "title": "Crawl Delay Seconds",
             "type": "number"
           },
+          "crawler_user_agent": {
+            "default": "AIWebsiteGeneratorBot/1.0",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Crawler User Agent",
+            "type": "string"
+          },
           "desktop_viewport": {
             "$ref": "#/components/schemas/Viewport",
             "default": {
@@ -1562,6 +1600,7 @@
             "type": "integer"
           },
           "respect_robots_txt": {
+            "const": true,
             "default": true,
             "title": "Respect Robots Txt",
             "type": "boolean"
@@ -1574,6 +1613,24 @@
               "connect_seconds": 10.0,
               "response_seconds": 30.0
             }
+          },
+          "tracking_query_parameters": {
+            "default": [
+              "utm_*",
+              "dclid",
+              "fbclid",
+              "gclid",
+              "mc_cid",
+              "mc_eid",
+              "msclkid",
+              "ref",
+              "referrer"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "title": "Tracking Query Parameters",
+            "type": "array"
           }
         },
         "required": [
@@ -1628,6 +1685,13 @@
             "minimum": 0.0,
             "title": "Crawl Delay Seconds",
             "type": "number"
+          },
+          "crawler_user_agent": {
+            "default": "AIWebsiteGeneratorBot/1.0",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Crawler User Agent",
+            "type": "string"
           },
           "created_at": {
             "format": "date-time",
@@ -1714,6 +1778,7 @@
             "type": "string"
           },
           "respect_robots_txt": {
+            "const": true,
             "default": true,
             "title": "Respect Robots Txt",
             "type": "boolean"
@@ -1754,6 +1819,24 @@
               "connect_seconds": 10.0,
               "response_seconds": 30.0
             }
+          },
+          "tracking_query_parameters": {
+            "default": [
+              "utm_*",
+              "dclid",
+              "fbclid",
+              "gclid",
+              "mc_cid",
+              "mc_eid",
+              "msclkid",
+              "ref",
+              "referrer"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "title": "Tracking Query Parameters",
+            "type": "array"
           },
           "updated_at": {
             "format": "date-time",
@@ -1913,6 +1996,19 @@
             ],
             "title": "Crawl Delay Seconds"
           },
+          "crawler_user_agent": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crawler User Agent"
+          },
           "desktop_viewport": {
             "anyOf": [
               {
@@ -2042,6 +2138,7 @@
           "respect_robots_txt": {
             "anyOf": [
               {
+                "const": true,
                 "type": "boolean"
               },
               {
@@ -2059,6 +2156,20 @@
                 "type": "null"
               }
             ]
+          },
+          "tracking_query_parameters": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tracking Query Parameters"
           },
           "version": {
             "minimum": 1.0,

@@ -320,6 +320,10 @@ class ScanningSettings(StrictSettings):
     max_pages_per_scan: int = Field(default=100, ge=1, le=10_000)
     max_depth: int = Field(default=5, ge=0, le=20)
     requests_per_second: float = Field(default=1.0, gt=0, le=20)
+    crawler_user_agent: str = Field(
+        default="AIWebsiteGeneratorBot/1.0", min_length=1, max_length=256
+    )
+    robots_max_bytes: int = Field(default=524_288, ge=1_024, le=2_097_152)
     workflow_timeout_seconds: int = Field(default=7_200, ge=60, le=86_400)
 
 

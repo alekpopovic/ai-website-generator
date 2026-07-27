@@ -7,3 +7,6 @@ The implemented first-party session and account-recovery controls are documented
 
 Shared SSRF defenses, DNS pinning, redirect rules, response limits, browser residual risks, and
 production firewall policy are documented in [Outbound network safety](outbound-network-safety.md).
+
+Robots handling, canonicalization, crawl traps, courtesy limits, Redis coordination, and decision
+provenance are documented in [Crawl policy](crawl-policy.md).

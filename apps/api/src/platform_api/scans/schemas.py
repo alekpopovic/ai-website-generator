@@ -61,7 +61,10 @@ class ArtifactRetentionPolicy(ScanModel):
 
 class CampaignConfiguration(ScanModel):
     authorization_attested_at: datetime
-    respect_robots_txt: bool = True
+    respect_robots_txt: Literal[True] = True
+    crawler_user_agent: str = Field(
+        default="AIWebsiteGeneratorBot/1.0", min_length=1, max_length=256
+    )
     max_discovered_pages_per_domain: int = Field(default=100, ge=1, le=10_000)
     max_visual_pages_per_domain: int = Field(default=20, ge=0, le=1_000)
     maximum_crawl_depth: int = Field(default=5, ge=0, le=20)
@@ -73,6 +76,17 @@ class CampaignConfiguration(ScanModel):
     allowed_content_types: tuple[str, ...] = ("text/html", "application/xhtml+xml")
     include_url_patterns: tuple[str, ...] = ()
     exclude_url_patterns: tuple[str, ...] = ()
+    tracking_query_parameters: tuple[str, ...] = (
+        "utm_*",
+        "dclid",
+        "fbclid",
+        "gclid",
+        "mc_cid",
+        "mc_eid",
+        "msclkid",
+        "ref",
+        "referrer",
+    )
     timeout_limits: ScanTimeoutLimits = ScanTimeoutLimits()
     artifact_retention_policy: ArtifactRetentionPolicy = ArtifactRetentionPolicy()
 
@@ -120,6 +134,24 @@ class CampaignConfiguration(ScanModel):
             raise ValueError("URL patterns must be bounded forward-slash glob patterns.")
         return normalized
 
+    @field_validator("crawler_user_agent")
+    @classmethod
+    def validate_user_agent(cls, value: str) -> str:
+        normalized = " ".join(value.split())
+        if not normalized or any(ord(character) < 32 for character in normalized):
+            raise ValueError("Crawler user agent must be a bounded printable value.")
+        return normalized
+
+    @field_validator("tracking_query_parameters")
+    @classmethod
+    def validate_tracking_parameters(cls, values: tuple[str, ...]) -> tuple[str, ...]:
+        normalized = tuple(value.strip().casefold() for value in values)
+        if len(normalized) > 100 or len(normalized) != len(set(normalized)):
+            raise ValueError("Tracking parameters must be unique and contain at most 100 entries.")
+        if any(re.fullmatch(r"[a-z0-9_.-]+\*?", value) is None for value in normalized):
+            raise ValueError("Tracking parameters must be names or suffix-wildcard prefixes.")
+        return normalized
+
     @model_validator(mode="after")
     def validate_concurrency(self) -> Self:
         if self.per_domain_concurrency > self.overall_concurrency:
@@ -145,7 +177,8 @@ class ScanCampaignUpdateRequest(ScanModel):
     version: int = Field(ge=1)
     name: str | None = Field(default=None, min_length=1, max_length=200)
     authorization_attested_at: datetime | None = None
-    respect_robots_txt: bool | None = None
+    respect_robots_txt: Literal[True] | None = None
+    crawler_user_agent: str | None = Field(default=None, min_length=1, max_length=256)
     max_discovered_pages_per_domain: int | None = Field(default=None, ge=1, le=10_000)
     max_visual_pages_per_domain: int | None = Field(default=None, ge=0, le=1_000)
     maximum_crawl_depth: int | None = Field(default=None, ge=0, le=20)
@@ -157,6 +190,7 @@ class ScanCampaignUpdateRequest(ScanModel):
     allowed_content_types: tuple[str, ...] | None = None
     include_url_patterns: tuple[str, ...] | None = None
     exclude_url_patterns: tuple[str, ...] | None = None
+    tracking_query_parameters: tuple[str, ...] | None = None
     timeout_limits: ScanTimeoutLimits | None = None
     artifact_retention_policy: ArtifactRetentionPolicy | None = None
 
@@ -164,6 +198,11 @@ class ScanCampaignUpdateRequest(ScanModel):
     @classmethod
     def strip_optional_name(cls, value: str | None) -> str | None:
         return None if value is None else ScanCampaignCreateRequest.strip_name(value)
+
+    @field_validator("crawler_user_agent")
+    @classmethod
+    def validate_optional_user_agent(cls, value: str | None) -> str | None:
+        return None if value is None else CampaignConfiguration.validate_user_agent(value)
 
     @field_validator("authorization_attested_at")
     @classmethod
@@ -179,6 +218,11 @@ class ScanCampaignUpdateRequest(ScanModel):
     @classmethod
     def validate_optional_globs(cls, value: tuple[str, ...] | None) -> tuple[str, ...] | None:
         return None if value is None else CampaignConfiguration.validate_url_globs(value)
+
+    @field_validator("tracking_query_parameters")
+    @classmethod
+    def validate_optional_tracking(cls, value: tuple[str, ...] | None) -> tuple[str, ...] | None:
+        return None if value is None else CampaignConfiguration.validate_tracking_parameters(value)
 
     @model_validator(mode="after")
     def require_change(self) -> Self:
@@ -296,12 +340,15 @@ class CrawlPageResponse(ScanModel):
     campaign_id: UUID
     target_id: UUID
     parent_page_id: UUID | None
+    crawl_policy_record_id: UUID | None
     url: str
     normalized_url: str
     source_domain: str
     depth: int
     status: CrawlPageStatus
     robots_allowed: bool | None
+    crawl_decision_code: str | None
+    crawl_policy_provenance: dict[str, object]
     http_status: int | None
     content_type: str | None
     content_sha256: str | None

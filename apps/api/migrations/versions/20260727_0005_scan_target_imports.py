@@ -6,6 +6,7 @@ Create Date: 2026-07-27
 """
 
 from collections.abc import Sequence
+from typing import Any
 
 import sqlalchemy as sa
 from alembic import op
@@ -17,8 +18,8 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
-def _identity_columns(*, timestamps: bool = True) -> tuple[sa.Column[object], ...]:
-    columns: list[sa.Column[object]] = [
+def _identity_columns(*, timestamps: bool = True) -> tuple[sa.Column[Any], ...]:
+    columns: list[sa.Column[Any]] = [
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column(
             "created_at",

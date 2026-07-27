@@ -48,6 +48,7 @@ from platform_api.scans.schemas import (
 _CONFIGURATION_FIELDS = (
     "authorization_attested_at",
     "respect_robots_txt",
+    "crawler_user_agent",
     "max_discovered_pages_per_domain",
     "max_visual_pages_per_domain",
     "maximum_crawl_depth",
@@ -59,6 +60,7 @@ _CONFIGURATION_FIELDS = (
     "allowed_content_types",
     "include_url_patterns",
     "exclude_url_patterns",
+    "tracking_query_parameters",
     "timeout_limits",
     "artifact_retention_policy",
 )

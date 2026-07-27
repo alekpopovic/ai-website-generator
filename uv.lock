@@ -1518,6 +1518,7 @@ dependencies = [
     { name = "aiobotocore" },
     { name = "httpx2" },
     { name = "pydantic" },
+    { name = "redis" },
     { name = "types-aiobotocore" },
     { name = "types-aiobotocore-s3" },
 ]
@@ -1527,6 +1528,7 @@ requires-dist = [
     { name = "aiobotocore", specifier = "==3.8.0" },
     { name = "httpx2", specifier = "==2.7.0" },
     { name = "pydantic", specifier = "==2.13.4" },
+    { name = "redis", specifier = "==8.0.1" },
     { name = "types-aiobotocore", specifier = "==3.7.0" },
     { name = "types-aiobotocore-s3", specifier = "==3.7.0" },
 ]

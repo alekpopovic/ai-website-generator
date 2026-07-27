@@ -117,6 +117,20 @@ export type CrawlPageWithScansResponse = {
      */
     content_type: string | null;
     /**
+     * Crawl Decision Code
+     */
+    crawl_decision_code: string | null;
+    /**
+     * Crawl Policy Provenance
+     */
+    crawl_policy_provenance: {
+        [key: string]: unknown;
+    };
+    /**
+     * Crawl Policy Record Id
+     */
+    crawl_policy_record_id: string | null;
+    /**
      * Created At
      */
     created_at: string;
@@ -825,6 +839,10 @@ export type ScanCampaignCreateRequest = {
      * Crawl Delay Seconds
      */
     crawl_delay_seconds?: number;
+    /**
+     * Crawler User Agent
+     */
+    crawler_user_agent?: string;
     desktop_viewport?: Viewport;
     /**
      * Exclude Url Patterns
@@ -862,8 +880,12 @@ export type ScanCampaignCreateRequest = {
     /**
      * Respect Robots Txt
      */
-    respect_robots_txt?: boolean;
+    respect_robots_txt?: true;
     timeout_limits?: ScanTimeoutLimits;
+    /**
+     * Tracking Query Parameters
+     */
+    tracking_query_parameters?: Array<string>;
 };
 
 /**
@@ -887,6 +909,10 @@ export type ScanCampaignResponse = {
      * Crawl Delay Seconds
      */
     crawl_delay_seconds?: number;
+    /**
+     * Crawler User Agent
+     */
+    crawler_user_agent?: string;
     /**
      * Created At
      */
@@ -936,7 +962,7 @@ export type ScanCampaignResponse = {
     /**
      * Respect Robots Txt
      */
-    respect_robots_txt?: boolean;
+    respect_robots_txt?: true;
     /**
      * Started At
      */
@@ -946,6 +972,10 @@ export type ScanCampaignResponse = {
      */
     status: 'draft' | 'queued' | 'running' | 'pausing' | 'paused' | 'cancelling' | 'cancelled' | 'succeeded' | 'partially_succeeded' | 'failed';
     timeout_limits?: ScanTimeoutLimits;
+    /**
+     * Tracking Query Parameters
+     */
+    tracking_query_parameters?: Array<string>;
     /**
      * Updated At
      */
@@ -1022,6 +1052,10 @@ export type ScanCampaignUpdateRequest = {
      * Crawl Delay Seconds
      */
     crawl_delay_seconds?: number | null;
+    /**
+     * Crawler User Agent
+     */
+    crawler_user_agent?: string | null;
     desktop_viewport?: Viewport | null;
     /**
      * Exclude Url Patterns
@@ -1059,8 +1093,12 @@ export type ScanCampaignUpdateRequest = {
     /**
      * Respect Robots Txt
      */
-    respect_robots_txt?: boolean | null;
+    respect_robots_txt?: true | null;
     timeout_limits?: ScanTimeoutLimits | null;
+    /**
+     * Tracking Query Parameters
+     */
+    tracking_query_parameters?: Array<string> | null;
     /**
      * Version
      */

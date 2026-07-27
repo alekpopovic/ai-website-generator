@@ -163,6 +163,7 @@ class ScanCampaign(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, 
             "per_domain_concurrency BETWEEN 1 AND 32", name="per_domain_concurrency_valid"
         ),
         CheckConstraint("crawl_delay_seconds BETWEEN 0 AND 60", name="crawl_delay_valid"),
+        CheckConstraint("respect_robots_txt IS TRUE", name="robots_required"),
         CheckConstraint("overall_concurrency BETWEEN 1 AND 128", name="overall_concurrency_valid"),
         CheckConstraint("workflow_attempt >= 0", name="workflow_attempt_non_negative"),
         Index("ix_scan_campaigns_project_id_updated_at", "project_id", "updated_at"),
@@ -178,6 +179,9 @@ class ScanCampaign(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, 
         DateTime(timezone=True), nullable=False
     )
     respect_robots_txt: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    crawler_user_agent: Mapped[str] = mapped_column(
+        String(256), nullable=False, default="AIWebsiteGeneratorBot/1.0"
+    )
     max_discovered_pages_per_domain: Mapped[int] = mapped_column(
         Integer, nullable=False, default=100
     )
@@ -201,6 +205,9 @@ class ScanCampaign(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, 
     exclude_url_patterns: Mapped[JsonValue] = mapped_column(
         SafeJSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
     )
+    tracking_query_parameters: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+    )
     timeout_limits: Mapped[JsonValue] = mapped_column(
         SafeJSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")
     )
@@ -220,6 +227,7 @@ class ScanCampaign(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, 
     page_scans: Mapped[list[PageScan]] = relationship(back_populates="campaign")
     failures: Mapped[list[ScanFailure]] = relationship(back_populates="campaign")
     target_imports: Mapped[list[ScanTargetImport]] = relationship(back_populates="campaign")
+    crawl_policy_records: Mapped[list[CrawlPolicyRecord]] = relationship(back_populates="campaign")
 
 
 class ScanTarget(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base):
@@ -254,6 +262,49 @@ class ScanTarget(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Ba
     campaign: Mapped[ScanCampaign] = relationship(back_populates="targets")
     crawl_pages: Mapped[list[CrawlPage]] = relationship(back_populates="target")
     failures: Mapped[list[ScanFailure]] = relationship(back_populates="target")
+    crawl_policy_records: Mapped[list[CrawlPolicyRecord]] = relationship(back_populates="target")
+
+
+class CrawlPolicyRecord(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base):
+    """Durable robots result and effective domain-level policy provenance."""
+
+    __tablename__ = "crawl_policy_records"
+    __table_args__ = (
+        CheckConstraint(
+            "fetch_status IN ('fetched', 'not_found', 'unavailable', 'invalid', "
+            "'oversized', 'redirect_limit_exceeded', 'blocked')",
+            name="fetch_status_allowed",
+        ),
+        CheckConstraint("redirect_count BETWEEN 0 AND 20", name="redirect_count_valid"),
+        UniqueConstraint("campaign_id", "target_id"),
+        Index("ix_crawl_policy_records_campaign_id_source_domain", "campaign_id", "source_domain"),
+    )
+
+    campaign_id: Mapped[UUID] = mapped_column(
+        ForeignKey("scan_campaigns.id", ondelete="CASCADE"), nullable=False
+    )
+    target_id: Mapped[UUID] = mapped_column(
+        ForeignKey("scan_targets.id", ondelete="CASCADE"), nullable=False
+    )
+    source_domain: Mapped[str] = mapped_column(String(253), nullable=False)
+    robots_url: Mapped[str] = mapped_column(String(2_048), nullable=False)
+    final_robots_url: Mapped[str] = mapped_column(String(2_048), nullable=False)
+    fetch_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    content_sha256: Mapped[str | None] = mapped_column(String(64))
+    crawler_user_agent: Mapped[str] = mapped_column(String(256), nullable=False)
+    crawl_delay_seconds: Mapped[float | None] = mapped_column(Float)
+    redirect_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    sitemap_urls: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+    )
+    effective_policy: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")
+    )
+
+    campaign: Mapped[ScanCampaign] = relationship(back_populates="crawl_policy_records")
+    target: Mapped[ScanTarget] = relationship(back_populates="crawl_policy_records")
+    crawl_pages: Mapped[list[CrawlPage]] = relationship(back_populates="crawl_policy_record")
 
 
 class ScanTargetImport(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base):
@@ -370,12 +421,19 @@ class CrawlPage(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Bas
     parent_page_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("crawl_pages.id", ondelete="SET NULL")
     )
+    crawl_policy_record_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("crawl_policy_records.id", ondelete="SET NULL")
+    )
     url: Mapped[str] = mapped_column(String(2_048), nullable=False)
     normalized_url: Mapped[str] = mapped_column(String(2_048), nullable=False)
     source_domain: Mapped[str] = mapped_column(String(253), nullable=False)
     depth: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="discovered")
     robots_allowed: Mapped[bool | None] = mapped_column(Boolean)
+    crawl_decision_code: Mapped[str | None] = mapped_column(String(64))
+    crawl_policy_provenance: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")
+    )
     http_status: Mapped[int | None] = mapped_column(Integer)
     content_type: Mapped[str | None] = mapped_column(String(255))
     content_sha256: Mapped[str | None] = mapped_column(String(64))
@@ -387,6 +445,9 @@ class CrawlPage(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Bas
     target: Mapped[ScanTarget] = relationship(back_populates="crawl_pages")
     page_scans: Mapped[list[PageScan]] = relationship(back_populates="crawl_page")
     failures: Mapped[list[ScanFailure]] = relationship(back_populates="crawl_page")
+    crawl_policy_record: Mapped[CrawlPolicyRecord | None] = relationship(
+        back_populates="crawl_pages"
+    )
 
 
 class PageScan(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base):

@@ -284,6 +284,13 @@ def campaign_payload(name: str = "Primary scan") -> ScanCampaignCreateRequest:
     return ScanCampaignCreateRequest(name=name, authorization_attested_at=NOW)
 
 
+def test_normal_users_cannot_disable_robots_compliance() -> None:
+    with pytest.raises(ValueError):
+        ScanCampaignCreateRequest.model_validate(
+            {"name": "Unsafe scan", "authorization_attested_at": NOW, "respect_robots_txt": False}
+        )
+
+
 @pytest.mark.anyio
 async def test_campaign_crud_is_owner_scoped_and_draft_only() -> None:
     service, repository, audits, _, _, owner_id = fixture()

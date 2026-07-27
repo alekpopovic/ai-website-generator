@@ -16,3 +16,4 @@ ADRs record durable choices and their consequences. Accepted decisions are chang
 | [0010](0010-scan-campaign-control-state.md)     | Scan campaign control state and workflow dispatch     | Accepted |
 | [0011](0011-streamed-scan-target-imports.md)    | Streamed and staged scan-target imports               | Accepted |
 | [0012](0012-shared-outbound-network-safety.md)  | Shared outbound URL and network safety boundary       | Accepted |
+| [0013](0013-crawl-policy-and-provenance.md)     | Shared crawl policy and durable provenance            | Accepted |

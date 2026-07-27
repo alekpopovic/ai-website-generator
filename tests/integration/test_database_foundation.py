@@ -14,6 +14,7 @@ from platform_api.config import DatabaseSettings, clear_settings_cache
 from platform_api.database import DatabaseManager
 from platform_api.persistence.models import (
     AuditLog,
+    CrawlPolicyRecord,
     Project,
     ScanCampaign,
     ScanTarget,
@@ -192,6 +193,22 @@ async def test_scan_campaign_and_target_constraints_persist_in_postgresql(
             )
             session.add(target)
             await session.flush()
+            policy_record = CrawlPolicyRecord(
+                campaign_id=campaign.id,
+                target_id=target.id,
+                source_domain="example.com",
+                robots_url="https://example.com/robots.txt",
+                final_robots_url="https://example.com/robots.txt",
+                fetch_status="fetched",
+                fetched_at=datetime.now(UTC),
+                content_sha256="a" * 64,
+                crawler_user_agent="AIWebsiteGeneratorBot/1.0",
+                crawl_delay_seconds=1,
+                redirect_count=0,
+                sitemap_urls=["https://example.com/sitemap.xml"],
+                effective_policy={"respect_robots_txt": True, "policy_version": 1},
+            )
+            session.add(policy_record)
             session.add(
                 ScanTargetImportRow(
                     import_id=target_import.id,
@@ -207,11 +224,17 @@ async def test_scan_campaign_and_target_constraints_persist_in_postgresql(
 
         async with manager.session() as session:
             stored = await session.scalar(select(ScanCampaign))
-            target = await session.scalar(select(ScanTarget))
+            stored_target = await session.scalar(select(ScanTarget))
             imported_row = await session.scalar(select(ScanTargetImportRow))
+            stored_policy = await session.scalar(select(CrawlPolicyRecord))
             assert stored is not None and stored.respect_robots_txt
-            assert target is not None and target.campaign_id == stored.id
-            assert target.import_metadata == {"category": "fixture"}
+            assert stored_target is not None and stored_target.campaign_id == stored.id
+            assert stored_target.import_metadata == {"category": "fixture"}
             assert imported_row is not None and imported_row.row_number == 2
+            assert stored_policy is not None
+            assert stored_policy.effective_policy == {
+                "respect_robots_txt": True,
+                "policy_version": 1,
+            }
     finally:
         await manager.close()

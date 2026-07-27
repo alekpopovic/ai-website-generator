@@ -40,6 +40,8 @@ def test_initial_migration_renders_postgresql_upgrade_sql(
     assert "CREATE TABLE scan_failures" in upgrade_sql
     assert "CREATE TABLE scan_target_imports" in upgrade_sql
     assert "CREATE TABLE scan_target_import_rows" in upgrade_sql
+    assert "CREATE TABLE crawl_policy_records" in upgrade_sql
+    assert "ck_scan_campaigns_robots_required" in upgrade_sql
     assert "ALTER TABLE scan_targets ADD COLUMN import_id" in upgrade_sql
     assert "uq_projects_owner_id_slug" in upgrade_sql
     assert "ck_users_status_allowed" in upgrade_sql

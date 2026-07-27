@@ -11,6 +11,10 @@ concurrency, crawl delay, desktop/mobile viewports, content types, URL globs, ne
 campaign timeouts, and artifact retention. Configuration is editable only while the campaign is a
 draft and uses an optimistic `version`.
 
+`respect_robots_txt` is a literal `true` value and is also protected by a database constraint; normal
+API callers cannot create or update a bypass. The effective crawler user agent and configurable
+tracking-query removal list are captured with the campaign and copied into crawl-policy provenance.
+
 URL include/exclude patterns are bounded forward-slash globs, not executable regular expressions.
 Targets permit only credential-free HTTP(S), ports 80/443, and statically public destinations.
 Literal private, loopback, link-local, multicast, reserved, localhost, `.local`, and `.internal`
