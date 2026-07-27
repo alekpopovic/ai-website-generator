@@ -59,6 +59,7 @@ select = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["S101"]
+"**/tests/**/*.py" = ["S101"]
 
 [tool.mypy]
 python_version = "3.12"

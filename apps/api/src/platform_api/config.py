@@ -1,0 +1,234 @@
+"""Typed application configuration loaded only from trusted local sources."""
+
+from __future__ import annotations
+
+from functools import lru_cache
+from typing import Annotated, Literal
+from urllib.parse import urlsplit
+
+from pydantic import AnyHttpUrl, Field, SecretStr, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+Environment = Literal["development", "test", "staging", "production"]
+LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+PositiveSeconds = Annotated[float, Field(gt=0)]
+ModelName = Annotated[
+    str,
+    Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._/-]*(?::[A-Za-z0-9._-]+)?$", max_length=200),
+]
+
+
+class StrictSettings(BaseSettings):
+    """Base settings policy shared by every independently loaded section."""
+
+    model_config = SettingsConfigDict(
+        env_file=(".env", "apps/api/.env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+        case_sensitive=False,
+        frozen=True,
+        populate_by_name=True,
+        validate_default=True,
+    )
+
+
+class ApplicationSettings(StrictSettings):
+    """HTTP application identity and runtime behavior."""
+
+    model_config = SettingsConfigDict(env_prefix="APP_")
+
+    name: str = "AI Website Generator API"
+    environment: Environment = Field(default="development", validation_alias="APP_ENV")
+    version: str = "0.0.0"
+    debug: bool = False
+    log_level: LogLevel = Field(default="INFO", validation_alias="LOG_LEVEL")
+    api_host: str = Field(default="127.0.0.1", validation_alias="API_HOST")
+    api_port: int = Field(default=8000, ge=1, le=65535, validation_alias="API_PORT")
+    fake_dependencies: bool = False
+    cors_allowed_origins: tuple[AnyHttpUrl, ...] = ()
+
+    @field_validator("cors_allowed_origins")
+    @classmethod
+    def reject_cors_wildcard(cls, origins: tuple[AnyHttpUrl, ...]) -> tuple[AnyHttpUrl, ...]:
+        """Require concrete origins so credentials can never combine with a wildcard."""
+        if any(str(origin) == "*" for origin in origins):
+            raise ValueError("CORS origins must be explicit")
+        return origins
+
+
+class DatabaseSettings(StrictSettings):
+    """PostgreSQL connectivity and SQLAlchemy pool limits."""
+
+    model_config = SettingsConfigDict(env_prefix="DATABASE_")
+
+    url: SecretStr | None = None
+    pool_size: int = Field(default=10, ge=1, le=100)
+    max_overflow: int = Field(default=10, ge=0, le=100)
+    pool_timeout_seconds: PositiveSeconds = 10.0
+    command_timeout_seconds: PositiveSeconds = 30.0
+    echo: bool = False
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def normalize_blank_url(cls, value: object) -> object:
+        """Treat an intentionally blank example value as unconfigured."""
+        return None if value == "" else value
+
+    @field_validator("url")
+    @classmethod
+    def validate_asyncpg_url(cls, value: SecretStr | None) -> SecretStr | None:
+        """Require the SQLAlchemy asyncpg driver and a concrete database host."""
+        if value is None:
+            return None
+        parsed = urlsplit(value.get_secret_value())
+        if parsed.scheme != "postgresql+asyncpg" or parsed.hostname is None:
+            raise ValueError("DATABASE_URL must use postgresql+asyncpg:// with a host")
+        return value
+
+
+class RedisSettings(StrictSettings):
+    """Redis connection and namespace settings."""
+
+    model_config = SettingsConfigDict(env_prefix="REDIS_")
+
+    url: SecretStr | None = None
+    key_prefix: str = "aiwg"
+    connect_timeout_seconds: PositiveSeconds = 3.0
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def normalize_blank_url(cls, value: object) -> object:
+        """Treat an intentionally blank example value as unconfigured."""
+        return None if value == "" else value
+
+    @field_validator("url")
+    @classmethod
+    def validate_redis_url(cls, value: SecretStr | None) -> SecretStr | None:
+        """Require a supported Redis transport and concrete host."""
+        if value is None:
+            return None
+        parsed = urlsplit(value.get_secret_value())
+        if parsed.scheme not in {"redis", "rediss"} or parsed.hostname is None:
+            raise ValueError("REDIS_URL must use redis:// or rediss:// with a host")
+        return value
+
+
+class TemporalSettings(StrictSettings):
+    """Temporal endpoint and control-plane workflow defaults."""
+
+    model_config = SettingsConfigDict(env_prefix="TEMPORAL_")
+
+    address: str = "127.0.0.1:7233"
+    namespace: str = "default"
+    task_queue: str = "control-plane"
+    connect_timeout_seconds: PositiveSeconds = 5.0
+
+    @field_validator("address")
+    @classmethod
+    def validate_address(cls, value: str) -> str:
+        """Require an explicit host and port for the trusted Temporal endpoint."""
+        parsed = urlsplit(f"tcp://{value}")
+        if parsed.hostname is None or parsed.port is None:
+            raise ValueError("TEMPORAL_ADDRESS must contain a host and port")
+        return value
+
+
+class MinioSettings(StrictSettings):
+    """S3-compatible artifact storage settings."""
+
+    model_config = SettingsConfigDict(env_prefix="MINIO_")
+
+    endpoint: AnyHttpUrl = AnyHttpUrl("http://127.0.0.1:9000")
+    access_key: SecretStr | None = None
+    secret_key: SecretStr | None = None
+    secure: bool = False
+    connect_timeout_seconds: PositiveSeconds = 5.0
+
+
+class QdrantSettings(StrictSettings):
+    """Vector service endpoint settings used for diagnostics and future clients."""
+
+    model_config = SettingsConfigDict(env_prefix="QDRANT_")
+
+    url: AnyHttpUrl = AnyHttpUrl("http://127.0.0.1:6333")
+    api_key: SecretStr | None = None
+    connect_timeout_seconds: PositiveSeconds = 5.0
+
+
+class OllamaSettings(StrictSettings):
+    """Private inference endpoint and model identities."""
+
+    model_config = SettingsConfigDict(env_prefix="OLLAMA_")
+
+    url: AnyHttpUrl = AnyHttpUrl("http://127.0.0.1:11434")
+    vision_model: ModelName = "qwen3-vl:8b"
+    generation_model: ModelName = "qwen3-coder:30b"
+    embedding_model: ModelName = "qwen3-embedding:0.6b"
+    connect_timeout_seconds: PositiveSeconds = 5.0
+
+
+class SecuritySettings(StrictSettings):
+    """Transport and middleware security policy."""
+
+    model_config = SettingsConfigDict(env_prefix="SECURITY_")
+
+    trusted_hosts: tuple[str, ...] = ("localhost", "127.0.0.1", "testserver")
+    force_https: bool = True
+    enable_docs: bool = False
+    request_id_header: str = Field(default="X-Request-ID", pattern=r"^[A-Za-z][A-Za-z0-9-]{0,63}$")
+    max_request_body_bytes: int = Field(default=1_048_576, ge=1_024, le=10_485_760)
+
+    @field_validator("trusted_hosts")
+    @classmethod
+    def reject_wildcard_hosts(cls, hosts: tuple[str, ...]) -> tuple[str, ...]:
+        """Prevent accidental deployment with an unrestricted Host header policy."""
+        if not hosts or "*" in hosts:
+            raise ValueError("SECURITY_TRUSTED_HOSTS must contain explicit hosts")
+        return hosts
+
+
+class ScanningSettings(StrictSettings):
+    """Control-plane validation limits for future scan commands."""
+
+    model_config = SettingsConfigDict(env_prefix="SCANNING_")
+
+    max_pages_per_scan: int = Field(default=100, ge=1, le=10_000)
+    max_depth: int = Field(default=5, ge=0, le=20)
+    requests_per_second: float = Field(default=1.0, gt=0, le=20)
+    workflow_timeout_seconds: int = Field(default=7_200, ge=60, le=86_400)
+
+
+class GenerationSettings(StrictSettings):
+    """Control-plane validation limits for future generation commands."""
+
+    model_config = SettingsConfigDict(env_prefix="GENERATION_")
+
+    max_pages_per_site: int = Field(default=50, ge=1, le=500)
+    max_repair_attempts: int = Field(default=3, ge=0, le=10)
+    workflow_timeout_seconds: int = Field(default=3_600, ge=60, le=86_400)
+
+
+class Settings(StrictSettings):
+    """Complete immutable settings graph assembled from independent sections."""
+
+    application: ApplicationSettings = Field(default_factory=ApplicationSettings)
+    database: DatabaseSettings = Field(default_factory=DatabaseSettings)
+    redis: RedisSettings = Field(default_factory=RedisSettings)
+    temporal: TemporalSettings = Field(default_factory=TemporalSettings)
+    minio: MinioSettings = Field(default_factory=MinioSettings)
+    qdrant: QdrantSettings = Field(default_factory=QdrantSettings)
+    ollama: OllamaSettings = Field(default_factory=OllamaSettings)
+    security: SecuritySettings = Field(default_factory=SecuritySettings)
+    scanning: ScanningSettings = Field(default_factory=ScanningSettings)
+    generation: GenerationSettings = Field(default_factory=GenerationSettings)
+
+
+@lru_cache(maxsize=1)
+def get_settings() -> Settings:
+    """Load and cache the process settings graph."""
+    return Settings()
+
+
+def clear_settings_cache() -> None:
+    """Clear cached settings for tests that deliberately change the environment."""
+    get_settings.cache_clear()

@@ -1,3 +1,14 @@
 # API Documentation
 
 Control-plane API conventions, authentication, authorization, versioning, idempotency, pagination, errors, asynchronous job semantics, and generated specifications belong here.
+
+The control plane exposes domain contracts under `/api/v1`. Process health remains unversioned under `/health` so container and orchestration probes do not depend on a domain API version.
+
+Errors use `application/problem+json` with stable `code` and `request_id` extensions. Validation responses include sanitized parameter locations and reasons but never echo rejected input. Successful versioned responses use typed envelopes; collection routes will use bounded offset-pagination primitives until a domain requires an explicitly designed cursor.
+
+| Method | Path                   | Purpose                                           |
+| ------ | ---------------------- | ------------------------------------------------- |
+| `GET`  | `/health/live`         | Process liveness without dependency I/O           |
+| `GET`  | `/health/ready`        | Critical control-plane dependency readiness       |
+| `GET`  | `/health/dependencies` | Critical and worker-facing dependency diagnostics |
+| `GET`  | `/api/v1/version`      | API contract and service build identity           |
