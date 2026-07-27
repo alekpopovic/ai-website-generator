@@ -44,6 +44,31 @@ uv run alembic -c apps/api/alembic.ini downgrade -1
 
 Never run migrations automatically inside request handling. Deployment orchestration applies reviewed migrations as a separate operation.
 
+The shared persistence layer uses request-scoped async sessions with one explicit transaction.
+Repositories and services stage or flush changes but never commit. UUID primary keys, UTC-aware
+timestamps, named constraints, string status fields, safe JSONB values, and optimistic versions for
+editable records are defined under `platform_api.persistence`.
+
+To create the single local developer identity after migrations, run the explicit idempotent seed:
+
+```console
+task seed-local-user
+```
+
+The command is rejected outside `APP_ENV=development` and accepts only `@localhost` or
+`@local.test` email addresses. It creates no sample projects, jobs, tokens, or product data. Because
+authentication is not implemented yet, the account deliberately has no password hash.
+
+PostgreSQL integration tests require an explicitly disposable database whose name ends in `_test`:
+
+```console
+INTEGRATION_DATABASE_URL=postgresql+asyncpg://user:password@127.0.0.1/ai_website_generator_test \
+INTEGRATION_DATABASE_RESET_ALLOWED=true task integration-test
+```
+
+The integration fixture upgrades and downgrades the Alembic graph in that database. Never point it
+at a development, staging, or production database.
+
 ## Request and error contracts
 
 All domain routes belong below `/api/v1` and use Pydantic request and response models with forbidden unknown fields where appropriate. Dependencies are regular functions in `platform_api.dependencies`, making infrastructure replacement explicit and testable.

@@ -18,6 +18,7 @@ dependencies = [
 
 [project.scripts]
 platform-api = "platform_api.cli:main"
+platform-seed-local-user = "platform_api.seed:main"
 
 [build-system]
 requires = ["hatchling==1.31.0"]

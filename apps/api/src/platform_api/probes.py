@@ -13,7 +13,6 @@ from urllib.parse import unquote, urlsplit
 
 import httpx2
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import text
 
 from platform_api.config import Settings
 from platform_api.database import DatabaseManager
@@ -136,8 +135,7 @@ def real_probe_registry(
     async def database_check() -> None:
         if database is None:
             raise RuntimeError("Database is not configured")
-        async with database.engine.connect() as connection:
-            await connection.execute(text("SELECT 1"))
+        await database.check_health()
 
     async def redis_check() -> None:
         if settings.redis.url is None:

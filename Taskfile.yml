@@ -65,6 +65,11 @@ tasks:
       - uv run python infrastructure/scripts/export_openapi.py --output packages/web/api-client/openapi.json
       - pnpm run generate-api-client
 
+  seed-local-user:
+    desc: Explicitly create the idempotent local-only developer identity
+    cmds:
+      - uv run platform-seed-local-user
+
   verify-generated-api-client:
     desc: Fail when committed OpenAPI or generated Angular client artifacts are stale
     cmds:

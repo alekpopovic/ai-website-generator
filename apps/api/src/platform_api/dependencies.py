@@ -34,17 +34,21 @@ async def probe_registry_dependency(
     return resources.probes
 
 
-async def database_session_dependency(
+async def database_transaction_dependency(
     resources: Annotated[ApplicationResources, Depends(resources_dependency)],
 ) -> AsyncIterator[AsyncSession]:
-    """Yield one request-scoped SQLAlchemy session."""
+    """Yield one request-scoped transaction that commits or rolls back atomically."""
     if resources.database is None:
         raise DependencyUnavailableError("database")
-    async for session in resources.database.session():
+    async with resources.database.transaction() as session:
         yield session
 
 
 SettingsDependency = Annotated[Settings, Depends(settings_dependency)]
 ResourcesDependency = Annotated[ApplicationResources, Depends(resources_dependency)]
 ProbeRegistryDependency = Annotated[ProbeRegistry, Depends(probe_registry_dependency)]
-DatabaseSessionDependency = Annotated[AsyncSession, Depends(database_session_dependency)]
+DatabaseTransactionDependency = Annotated[AsyncSession, Depends(database_transaction_dependency)]
+
+# Compatibility name for routes created before the transaction boundary was explicit.
+database_session_dependency = database_transaction_dependency
+DatabaseSessionDependency = DatabaseTransactionDependency
