@@ -52,3 +52,18 @@ def test_openapi_exposes_model_readiness_and_worker_dispatched_warmup() -> None:
         schema["paths"]["/api/v1/admin/models/{model_role}/warm-up"]["post"]["operationId"]
         == "warmUpConfiguredModel"
     )
+
+
+def test_openapi_exposes_streaming_scan_target_import_contract() -> None:
+    schema = create_test_app().openapi()
+    base = "/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/target-imports"
+    operation = schema["paths"][base]["post"]
+
+    assert operation["operationId"] == "importScanCampaignTargets"
+    assert {"text/plain", "text/csv", "application/csv"} <= set(operation["requestBody"]["content"])
+    assert schema["paths"][f"{base}/{{import_id}}/commit"]["post"]["operationId"] == (
+        "commitScanTargetImport"
+    )
+    assert schema["paths"][f"{base}/{{import_id}}/errors.csv"]["get"]["operationId"] == (
+        "exportScanTargetImportErrors"
+    )

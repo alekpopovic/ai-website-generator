@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddScanCampaignTargetData, AddScanCampaignTargetErrors, AddScanCampaignTargetResponses, ArchiveProjectData, ArchiveProjectErrors, ArchiveProjectResponses, CancelScanCampaignData, CancelScanCampaignErrors, CancelScanCampaignResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateScanCampaignData, CreateScanCampaignErrors, CreateScanCampaignResponses, DeleteDraftScanCampaignData, DeleteDraftScanCampaignErrors, DeleteDraftScanCampaignResponses, DeleteDraftScanCampaignTargetData, DeleteDraftScanCampaignTargetErrors, DeleteDraftScanCampaignTargetResponses, GetApiVersionData, GetApiVersionErrors, GetApiVersionResponses, GetConfiguredModelReadinessData, GetConfiguredModelReadinessErrors, GetConfiguredModelReadinessResponses, GetCurrentUserData, GetCurrentUserErrors, GetCurrentUserResponses, GetDependencyHealthData, GetDependencyHealthErrors, GetDependencyHealthResponses, GetLivenessData, GetLivenessErrors, GetLivenessResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetScanCampaignData, GetScanCampaignErrors, GetScanCampaignResponses, GetScanCampaignSummaryData, GetScanCampaignSummaryErrors, GetScanCampaignSummaryResponses, GetVectorCollectionStatisticsData, GetVectorCollectionStatisticsErrors, GetVectorCollectionStatisticsResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListScanCampaignFailuresData, ListScanCampaignFailuresErrors, ListScanCampaignFailuresResponses, ListScanCampaignPagesData, ListScanCampaignPagesErrors, ListScanCampaignPagesResponses, ListScanCampaignsData, ListScanCampaignsErrors, ListScanCampaignsResponses, ListScanCampaignTargetsData, ListScanCampaignTargetsErrors, ListScanCampaignTargetsResponses, LoginData, LoginErrors, LoginResponses, LogoutAllData, LogoutAllErrors, LogoutAllResponses, LogoutData, LogoutErrors, LogoutResponses, PauseScanCampaignData, PauseScanCampaignErrors, PauseScanCampaignResponses, RefreshAccessTokenData, RefreshAccessTokenErrors, RefreshAccessTokenResponses, RegisterData, RegisterErrors, RegisterResponses, RequestPasswordResetData, RequestPasswordResetErrors, RequestPasswordResetResponses, ResetPasswordData, ResetPasswordErrors, ResetPasswordResponses, RestoreProjectData, RestoreProjectErrors, RestoreProjectResponses, ResumeScanCampaignData, ResumeScanCampaignErrors, ResumeScanCampaignResponses, RetryScanCampaignFailuresData, RetryScanCampaignFailuresErrors, RetryScanCampaignFailuresResponses, StartScanCampaignData, StartScanCampaignErrors, StartScanCampaignResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateScanCampaignData, UpdateScanCampaignErrors, UpdateScanCampaignResponses, VerifyEmailData, VerifyEmailErrors, VerifyEmailResponses, WarmUpConfiguredModelData, WarmUpConfiguredModelErrors, WarmUpConfiguredModelResponses } from './types.gen';
+import type { AddScanCampaignTargetData, AddScanCampaignTargetErrors, AddScanCampaignTargetResponses, ArchiveProjectData, ArchiveProjectErrors, ArchiveProjectResponses, CancelScanCampaignData, CancelScanCampaignErrors, CancelScanCampaignResponses, CommitScanTargetImportData, CommitScanTargetImportErrors, CommitScanTargetImportResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateScanCampaignData, CreateScanCampaignErrors, CreateScanCampaignResponses, DeleteDraftScanCampaignData, DeleteDraftScanCampaignErrors, DeleteDraftScanCampaignResponses, DeleteDraftScanCampaignTargetData, DeleteDraftScanCampaignTargetErrors, DeleteDraftScanCampaignTargetResponses, ExportScanTargetImportErrorsData, ExportScanTargetImportErrorsErrors, ExportScanTargetImportErrorsResponses, GetApiVersionData, GetApiVersionErrors, GetApiVersionResponses, GetConfiguredModelReadinessData, GetConfiguredModelReadinessErrors, GetConfiguredModelReadinessResponses, GetCurrentUserData, GetCurrentUserErrors, GetCurrentUserResponses, GetDependencyHealthData, GetDependencyHealthErrors, GetDependencyHealthResponses, GetLivenessData, GetLivenessErrors, GetLivenessResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetScanCampaignData, GetScanCampaignErrors, GetScanCampaignResponses, GetScanCampaignSummaryData, GetScanCampaignSummaryErrors, GetScanCampaignSummaryResponses, GetScanTargetImportData, GetScanTargetImportErrors, GetScanTargetImportResponses, GetVectorCollectionStatisticsData, GetVectorCollectionStatisticsErrors, GetVectorCollectionStatisticsResponses, ImportScanCampaignTargetsData, ImportScanCampaignTargetsErrors, ImportScanCampaignTargetsResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListScanCampaignFailuresData, ListScanCampaignFailuresErrors, ListScanCampaignFailuresResponses, ListScanCampaignPagesData, ListScanCampaignPagesErrors, ListScanCampaignPagesResponses, ListScanCampaignsData, ListScanCampaignsErrors, ListScanCampaignsResponses, ListScanCampaignTargetsData, ListScanCampaignTargetsErrors, ListScanCampaignTargetsResponses, LoginData, LoginErrors, LoginResponses, LogoutAllData, LogoutAllErrors, LogoutAllResponses, LogoutData, LogoutErrors, LogoutResponses, PauseScanCampaignData, PauseScanCampaignErrors, PauseScanCampaignResponses, RefreshAccessTokenData, RefreshAccessTokenErrors, RefreshAccessTokenResponses, RegisterData, RegisterErrors, RegisterResponses, RequestPasswordResetData, RequestPasswordResetErrors, RequestPasswordResetResponses, ResetPasswordData, ResetPasswordErrors, ResetPasswordResponses, RestoreProjectData, RestoreProjectErrors, RestoreProjectResponses, ResumeScanCampaignData, ResumeScanCampaignErrors, ResumeScanCampaignResponses, RetryScanCampaignFailuresData, RetryScanCampaignFailuresErrors, RetryScanCampaignFailuresResponses, StartScanCampaignData, StartScanCampaignErrors, StartScanCampaignResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateScanCampaignData, UpdateScanCampaignErrors, UpdateScanCampaignResponses, VerifyEmailData, VerifyEmailErrors, VerifyEmailResponses, WarmUpConfiguredModelData, WarmUpConfiguredModelErrors, WarmUpConfiguredModelResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -437,6 +437,59 @@ export class ScanCampaigns {
         return (options.client ?? client).get<GetScanCampaignSummaryResponses, GetScanCampaignSummaryErrors, ThrowOnError>({
             security: [{ scheme: 'bearer', type: 'http' }],
             url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/summary',
+            ...options
+        });
+    }
+    
+    /**
+     * Import Scan Campaign Targets
+     */
+    public importScanCampaignTargets<ThrowOnError extends boolean = false>(options: Options<ImportScanCampaignTargetsData, ThrowOnError>): RequestResult<ImportScanCampaignTargetsResponses, ImportScanCampaignTargetsErrors, ThrowOnError> {
+        return (options.client ?? client).post<ImportScanCampaignTargetsResponses, ImportScanCampaignTargetsErrors, ThrowOnError>({
+            bodySerializer: null,
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/target-imports',
+            ...options,
+            headers: {
+                'Content-Type': 'application/csv',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Get Scan Target Import
+     */
+    public getScanTargetImport<ThrowOnError extends boolean = false>(options: Options<GetScanTargetImportData, ThrowOnError>): RequestResult<GetScanTargetImportResponses, GetScanTargetImportErrors, ThrowOnError> {
+        return (options.client ?? client).get<GetScanTargetImportResponses, GetScanTargetImportErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/target-imports/{import_id}',
+            ...options
+        });
+    }
+    
+    /**
+     * Commit Scan Target Import
+     */
+    public commitScanTargetImport<ThrowOnError extends boolean = false>(options: Options<CommitScanTargetImportData, ThrowOnError>): RequestResult<CommitScanTargetImportResponses, CommitScanTargetImportErrors, ThrowOnError> {
+        return (options.client ?? client).post<CommitScanTargetImportResponses, CommitScanTargetImportErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/target-imports/{import_id}/commit',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Export Scan Target Import Errors
+     */
+    public exportScanTargetImportErrors<ThrowOnError extends boolean = false>(options: Options<ExportScanTargetImportErrorsData, ThrowOnError>): RequestResult<ExportScanTargetImportErrorsResponses, ExportScanTargetImportErrorsErrors, ThrowOnError> {
+        return (options.client ?? client).get<ExportScanTargetImportErrorsResponses, ExportScanTargetImportErrorsErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/target-imports/{import_id}/errors.csv',
             ...options
         });
     }

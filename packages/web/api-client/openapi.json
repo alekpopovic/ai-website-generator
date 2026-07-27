@@ -2210,6 +2210,172 @@
         "title": "ScanTargetCreateRequest",
         "type": "object"
       },
+      "ScanTargetImportCommitRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "authorization_attested": {
+            "const": true,
+            "title": "Authorization Attested",
+            "type": "boolean"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "authorization_attested"
+        ],
+        "title": "ScanTargetImportCommitRequest",
+        "type": "object"
+      },
+      "ScanTargetImportResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "accepted_count": {
+            "title": "Accepted Count",
+            "type": "integer"
+          },
+          "allow_ip_literals": {
+            "title": "Allow Ip Literals",
+            "type": "boolean"
+          },
+          "already_present_count": {
+            "title": "Already Present Count",
+            "type": "integer"
+          },
+          "authorization_attested_at": {
+            "format": "date-time",
+            "title": "Authorization Attested At",
+            "type": "string"
+          },
+          "blocked_count": {
+            "title": "Blocked Count",
+            "type": "integer"
+          },
+          "campaign_id": {
+            "format": "uuid",
+            "title": "Campaign Id",
+            "type": "string"
+          },
+          "committed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Committed At"
+          },
+          "committed_count": {
+            "title": "Committed Count",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dry_run": {
+            "title": "Dry Run",
+            "type": "boolean"
+          },
+          "duplicate_count": {
+            "title": "Duplicate Count",
+            "type": "integer"
+          },
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filename"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "invalid_count": {
+            "title": "Invalid Count",
+            "type": "integer"
+          },
+          "media_type": {
+            "title": "Media Type",
+            "type": "string"
+          },
+          "processed_rows": {
+            "title": "Processed Rows",
+            "type": "integer"
+          },
+          "source_type": {
+            "enum": [
+              "paste",
+              "text",
+              "csv"
+            ],
+            "title": "Source Type",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "validating",
+              "completed",
+              "committed",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "total_rows": {
+            "title": "Total Rows",
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "campaign_id",
+          "source_type",
+          "filename",
+          "media_type",
+          "dry_run",
+          "authorization_attested_at",
+          "allow_ip_literals",
+          "status",
+          "total_rows",
+          "processed_rows",
+          "accepted_count",
+          "duplicate_count",
+          "invalid_count",
+          "blocked_count",
+          "already_present_count",
+          "committed_count",
+          "committed_at",
+          "created_at",
+          "updated_at",
+          "version"
+        ],
+        "title": "ScanTargetImportResponse",
+        "type": "object"
+      },
       "ScanTargetResponse": {
         "additionalProperties": false,
         "properties": {
@@ -5284,6 +5450,520 @@
           }
         ],
         "summary": "Get Scan Campaign Summary",
+        "tags": [
+          "scan-campaigns"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/target-imports": {
+      "post": {
+        "operationId": "importScanCampaignTargets",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "campaign_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Campaign Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "source_type",
+            "required": true,
+            "schema": {
+              "enum": [
+                "paste",
+                "text",
+                "csv"
+              ],
+              "title": "Source Type",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "authorization_attested",
+            "required": true,
+            "schema": {
+              "title": "Authorization Attested",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "dry_run",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Dry Run",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filename",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 255,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filename"
+            }
+          },
+          {
+            "in": "query",
+            "name": "allow_ip_literals",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Allow Ip Literals",
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/csv": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            },
+            "text/csv": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            },
+            "text/plain": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanTargetImportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Import Scan Campaign Targets",
+        "tags": [
+          "scan-campaigns"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/target-imports/{import_id}": {
+      "get": {
+        "operationId": "getScanTargetImport",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "campaign_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Campaign Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "import_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Import Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanTargetImportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get Scan Target Import",
+        "tags": [
+          "scan-campaigns"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/target-imports/{import_id}/commit": {
+      "post": {
+        "operationId": "commitScanTargetImport",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "campaign_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Campaign Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "import_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Import Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanTargetImportCommitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanTargetImportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Commit Scan Target Import",
+        "tags": [
+          "scan-campaigns"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/target-imports/{import_id}/errors.csv": {
+      "get": {
+        "operationId": "exportScanTargetImportErrors",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "campaign_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Campaign Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "import_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Import Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Export Scan Target Import Errors",
         "tags": [
           "scan-campaigns"
         ]

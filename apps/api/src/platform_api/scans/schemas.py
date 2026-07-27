@@ -32,6 +32,9 @@ PageScanStatus = Literal["pending", "rendering", "succeeded", "failed", "cancell
 FailureStage = Literal["control", "crawl", "browser", "analysis", "embedding"]
 CampaignSort = Literal["created_at", "name", "updated_at"]
 SortOrder = Literal["asc", "desc"]
+TargetImportSource = Literal["paste", "text", "csv"]
+TargetImportStatus = Literal["validating", "completed", "committed", "failed"]
+TargetImportOutcome = Literal["accepted", "duplicate", "invalid", "blocked", "already_present"]
 
 
 class ScanModel(BaseModel):
@@ -236,6 +239,54 @@ class ScanTargetResponse(ScanModel):
     created_at: datetime
     updated_at: datetime
     version: int
+
+
+class ScanTargetImportResponse(ScanModel):
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)
+
+    id: UUID
+    campaign_id: UUID
+    source_type: TargetImportSource
+    filename: str | None
+    media_type: str
+    dry_run: bool
+    authorization_attested_at: datetime
+    allow_ip_literals: bool
+    status: TargetImportStatus
+    total_rows: int
+    processed_rows: int
+    accepted_count: int
+    duplicate_count: int
+    invalid_count: int
+    blocked_count: int
+    already_present_count: int
+    committed_count: int
+    committed_at: datetime | None
+    created_at: datetime
+    updated_at: datetime
+    version: int
+
+
+class ScanTargetImportRowResponse(ScanModel):
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)
+
+    id: UUID
+    import_id: UUID
+    row_number: int
+    raw_value: str
+    normalized_url: str | None
+    source_domain: str | None
+    metadata: dict[str, object] = Field(validation_alias="row_metadata")
+    outcome: TargetImportOutcome
+    reason_code: str | None
+    reason_message: str | None
+    target_id: UUID | None
+    created_at: datetime
+
+
+class ScanTargetImportCommitRequest(ScanModel):
+    version: int = Field(ge=1)
+    authorization_attested: Literal[True]
 
 
 class CrawlPageResponse(ScanModel):

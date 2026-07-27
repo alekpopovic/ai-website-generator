@@ -24,3 +24,6 @@ administrator authorization contract.
 
 See [Scan campaigns](scan-campaigns.md) for project ownership, configuration, lifecycle controls,
 targets, page projections, failures, and the control-only Temporal dispatch contract.
+
+See [scan-target imports](scan-target-imports.md) for streamed TXT/CSV validation, dry-run commits,
+row-level outcomes, and error export.

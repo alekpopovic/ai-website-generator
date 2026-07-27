@@ -219,6 +219,7 @@ class ScanCampaign(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, 
     crawl_pages: Mapped[list[CrawlPage]] = relationship(back_populates="campaign")
     page_scans: Mapped[list[PageScan]] = relationship(back_populates="campaign")
     failures: Mapped[list[ScanFailure]] = relationship(back_populates="campaign")
+    target_imports: Mapped[list[ScanTargetImport]] = relationship(back_populates="campaign")
 
 
 class ScanTarget(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base):
@@ -231,20 +232,115 @@ class ScanTarget(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Ba
             name="status_allowed",
         ),
         Index("ix_scan_targets_campaign_id_status", "campaign_id", "status"),
+        Index("ix_scan_targets_campaign_id_source_domain", "campaign_id", "source_domain"),
         UniqueConstraint("campaign_id", "normalized_url"),
     )
 
     campaign_id: Mapped[UUID] = mapped_column(
         ForeignKey("scan_campaigns.id", ondelete="CASCADE"), nullable=False
     )
+    import_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("scan_target_imports.id", ondelete="SET NULL")
+    )
+    import_row_number: Mapped[int | None] = mapped_column(Integer)
     url: Mapped[str] = mapped_column(String(2_048), nullable=False)
     normalized_url: Mapped[str] = mapped_column(String(2_048), nullable=False)
     source_domain: Mapped[str] = mapped_column(String(253), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
+    import_metadata: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")
+    )
 
     campaign: Mapped[ScanCampaign] = relationship(back_populates="targets")
     crawl_pages: Mapped[list[CrawlPage]] = relationship(back_populates="target")
     failures: Mapped[list[ScanFailure]] = relationship(back_populates="target")
+
+
+class ScanTargetImport(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base):
+    """Bounded target-import run with durable progress and summary counters."""
+
+    __tablename__ = "scan_target_imports"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('validating', 'completed', 'committed', 'failed')",
+            name="status_allowed",
+        ),
+        CheckConstraint("source_type IN ('paste', 'text', 'csv')", name="source_type_allowed"),
+        CheckConstraint("total_rows BETWEEN 0 AND 50000", name="total_rows_bounded"),
+        CheckConstraint("processed_rows BETWEEN 0 AND 50000", name="processed_rows_bounded"),
+        CheckConstraint(
+            "accepted_count >= 0 AND duplicate_count >= 0 AND invalid_count >= 0 "
+            "AND blocked_count >= 0 AND already_present_count >= 0 AND committed_count >= 0",
+            name="counts_non_negative",
+        ),
+        CheckConstraint("committed_count <= accepted_count", name="committed_not_above_accepted"),
+        Index("ix_scan_target_imports_campaign_id_created_at", "campaign_id", "created_at"),
+    )
+
+    campaign_id: Mapped[UUID] = mapped_column(
+        ForeignKey("scan_campaigns.id", ondelete="CASCADE"), nullable=False
+    )
+    requested_by_user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
+    )
+    source_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    filename: Mapped[str | None] = mapped_column(String(255))
+    media_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    dry_run: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    authorization_attested_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    allow_ip_literals: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="validating")
+    total_rows: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    processed_rows: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    accepted_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    duplicate_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    invalid_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    blocked_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    already_present_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    committed_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    committed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    campaign: Mapped[ScanCampaign] = relationship(back_populates="target_imports")
+    rows: Mapped[list[ScanTargetImportRow]] = relationship(back_populates="target_import")
+
+
+class ScanTargetImportRow(UUIDPrimaryKeyMixin, Base):
+    """One source row and its deterministic, typed validation outcome."""
+
+    __tablename__ = "scan_target_import_rows"
+    __table_args__ = (
+        CheckConstraint(
+            "outcome IN ('accepted', 'duplicate', 'invalid', 'blocked', 'already_present')",
+            name="outcome_allowed",
+        ),
+        CheckConstraint("row_number BETWEEN 1 AND 50000", name="row_number_bounded"),
+        UniqueConstraint("import_id", "row_number"),
+        Index("ix_scan_target_import_rows_import_id_outcome", "import_id", "outcome"),
+    )
+
+    import_id: Mapped[UUID] = mapped_column(
+        ForeignKey("scan_target_imports.id", ondelete="CASCADE"), nullable=False
+    )
+    row_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    raw_value: Mapped[str] = mapped_column(String(2_048), nullable=False)
+    normalized_url: Mapped[str | None] = mapped_column(String(2_048))
+    source_domain: Mapped[str | None] = mapped_column(String(253))
+    row_metadata: Mapped[JsonValue] = mapped_column(
+        "metadata", SafeJSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")
+    )
+    outcome: Mapped[str] = mapped_column(String(32), nullable=False)
+    reason_code: Mapped[str | None] = mapped_column(String(64))
+    reason_message: Mapped[str | None] = mapped_column(String(500))
+    target_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("scan_targets.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=text("CURRENT_TIMESTAMP")
+    )
+
+    target_import: Mapped[ScanTargetImport] = relationship(back_populates="rows")
 
 
 class CrawlPage(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base):

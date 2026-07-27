@@ -131,6 +131,11 @@ Every scan and derivative record carries tenant and source identifiers, authoriz
 
 Provenance gates control retrieval, dataset eligibility, retention, publication, and removal. Audit records distinguish user decisions from automated transformations. Removal and licensing changes propagate through durable workflows to affected derived data according to policy.
 
+Scan-target imports retain their authorization attestation, source type, sanitized filename, source
+row number, normalized domain, bounded CSV metadata, and typed validation outcome. Dry-run rows are
+durable before target creation, so accepted inputs and rejected or blocked inputs remain auditable
+without performing DNS or HTTP requests during intake.
+
 ## 12. Generated-site security model
 
 Generated sites are assembled only from a versioned component registry, escaped Jinja2 templates, validated design tokens, and controlled JavaScript authored and reviewed in this repository. `SiteSpec` fields use strict schemas, bounded values, URL policies, and explicit component discriminators; unknown fields and components are rejected.

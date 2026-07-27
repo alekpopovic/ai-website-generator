@@ -1140,6 +1140,110 @@ export type ScanTargetCreateRequest = {
 };
 
 /**
+ * ScanTargetImportCommitRequest
+ */
+export type ScanTargetImportCommitRequest = {
+    /**
+     * Authorization Attested
+     */
+    authorization_attested: true;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * ScanTargetImportResponse
+ */
+export type ScanTargetImportResponse = {
+    /**
+     * Accepted Count
+     */
+    accepted_count: number;
+    /**
+     * Allow Ip Literals
+     */
+    allow_ip_literals: boolean;
+    /**
+     * Already Present Count
+     */
+    already_present_count: number;
+    /**
+     * Authorization Attested At
+     */
+    authorization_attested_at: string;
+    /**
+     * Blocked Count
+     */
+    blocked_count: number;
+    /**
+     * Campaign Id
+     */
+    campaign_id: string;
+    /**
+     * Committed At
+     */
+    committed_at: string | null;
+    /**
+     * Committed Count
+     */
+    committed_count: number;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Dry Run
+     */
+    dry_run: boolean;
+    /**
+     * Duplicate Count
+     */
+    duplicate_count: number;
+    /**
+     * Filename
+     */
+    filename: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Invalid Count
+     */
+    invalid_count: number;
+    /**
+     * Media Type
+     */
+    media_type: string;
+    /**
+     * Processed Rows
+     */
+    processed_rows: number;
+    /**
+     * Source Type
+     */
+    source_type: 'paste' | 'text' | 'csv';
+    /**
+     * Status
+     */
+    status: 'validating' | 'completed' | 'committed' | 'failed';
+    /**
+     * Total Rows
+     */
+    total_rows: number;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * ScanTargetResponse
  */
 export type ScanTargetResponse = {
@@ -2701,6 +2805,237 @@ export type GetScanCampaignSummaryResponses = {
 };
 
 export type GetScanCampaignSummaryResponse = GetScanCampaignSummaryResponses[keyof GetScanCampaignSummaryResponses];
+
+export type ImportScanCampaignTargetsData = {
+    body: Blob | File;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+    };
+    query: {
+        /**
+         * Source Type
+         */
+        source_type: 'paste' | 'text' | 'csv';
+        /**
+         * Authorization Attested
+         */
+        authorization_attested: boolean;
+        /**
+         * Dry Run
+         */
+        dry_run?: boolean;
+        /**
+         * Filename
+         */
+        filename?: string | null;
+        /**
+         * Allow Ip Literals
+         */
+        allow_ip_literals?: boolean;
+    };
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/target-imports';
+};
+
+export type ImportScanCampaignTargetsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Content Too Large
+     */
+    413: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type ImportScanCampaignTargetsError = ImportScanCampaignTargetsErrors[keyof ImportScanCampaignTargetsErrors];
+
+export type ImportScanCampaignTargetsResponses = {
+    /**
+     * Successful Response
+     */
+    201: ScanTargetImportResponse;
+};
+
+export type ImportScanCampaignTargetsResponse = ImportScanCampaignTargetsResponses[keyof ImportScanCampaignTargetsResponses];
+
+export type GetScanTargetImportData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+        /**
+         * Import Id
+         */
+        import_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/target-imports/{import_id}';
+};
+
+export type GetScanTargetImportErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type GetScanTargetImportError = GetScanTargetImportErrors[keyof GetScanTargetImportErrors];
+
+export type GetScanTargetImportResponses = {
+    /**
+     * Successful Response
+     */
+    200: ScanTargetImportResponse;
+};
+
+export type GetScanTargetImportResponse = GetScanTargetImportResponses[keyof GetScanTargetImportResponses];
+
+export type CommitScanTargetImportData = {
+    body: ScanTargetImportCommitRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+        /**
+         * Import Id
+         */
+        import_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/target-imports/{import_id}/commit';
+};
+
+export type CommitScanTargetImportErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type CommitScanTargetImportError = CommitScanTargetImportErrors[keyof CommitScanTargetImportErrors];
+
+export type CommitScanTargetImportResponses = {
+    /**
+     * Successful Response
+     */
+    200: ScanTargetImportResponse;
+};
+
+export type CommitScanTargetImportResponse = CommitScanTargetImportResponses[keyof CommitScanTargetImportResponses];
+
+export type ExportScanTargetImportErrorsData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+        /**
+         * Import Id
+         */
+        import_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/target-imports/{import_id}/errors.csv';
+};
+
+export type ExportScanTargetImportErrorsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type ExportScanTargetImportErrorsError = ExportScanTargetImportErrorsErrors[keyof ExportScanTargetImportErrorsErrors];
+
+export type ExportScanTargetImportErrorsResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
 
 export type ListScanCampaignTargetsData = {
     body?: never;

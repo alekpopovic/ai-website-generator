@@ -12,7 +12,15 @@ from alembic import command
 from alembic.config import Config
 from platform_api.config import DatabaseSettings, clear_settings_cache
 from platform_api.database import DatabaseManager
-from platform_api.persistence.models import AuditLog, Project, ScanCampaign, ScanTarget, User
+from platform_api.persistence.models import (
+    AuditLog,
+    Project,
+    ScanCampaign,
+    ScanTarget,
+    ScanTargetImport,
+    ScanTargetImportRow,
+    User,
+)
 from pydantic import SecretStr
 from sqlalchemy import select
 
@@ -151,20 +159,59 @@ async def test_scan_campaign_and_target_constraints_persist_in_postgresql(
             )
             session.add(campaign)
             await session.flush()
+            target_import = ScanTargetImport(
+                campaign_id=campaign.id,
+                requested_by_user_id=user.id,
+                source_type="csv",
+                filename="targets.csv",
+                media_type="text/csv",
+                dry_run=False,
+                authorization_attested_at=datetime.now(UTC),
+                allow_ip_literals=False,
+                status="committed",
+                total_rows=1,
+                processed_rows=1,
+                accepted_count=1,
+                duplicate_count=0,
+                invalid_count=0,
+                blocked_count=0,
+                already_present_count=0,
+                committed_count=1,
+            )
+            session.add(target_import)
+            await session.flush()
+            target = ScanTarget(
+                campaign_id=campaign.id,
+                import_id=target_import.id,
+                import_row_number=2,
+                url="https://example.com/",
+                normalized_url="https://example.com/",
+                source_domain="example.com",
+                status="pending",
+                import_metadata={"category": "fixture"},
+            )
+            session.add(target)
+            await session.flush()
             session.add(
-                ScanTarget(
-                    campaign_id=campaign.id,
-                    url="https://example.com/",
+                ScanTargetImportRow(
+                    import_id=target_import.id,
+                    row_number=2,
+                    raw_value="example.com",
                     normalized_url="https://example.com/",
                     source_domain="example.com",
-                    status="pending",
+                    row_metadata={"category": "fixture"},
+                    outcome="accepted",
+                    target_id=target.id,
                 )
             )
 
         async with manager.session() as session:
             stored = await session.scalar(select(ScanCampaign))
             target = await session.scalar(select(ScanTarget))
+            imported_row = await session.scalar(select(ScanTargetImportRow))
             assert stored is not None and stored.respect_robots_txt
             assert target is not None and target.campaign_id == stored.id
+            assert target.import_metadata == {"category": "fixture"}
+            assert imported_row is not None and imported_row.row_number == 2
     finally:
         await manager.close()

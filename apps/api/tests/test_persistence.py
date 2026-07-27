@@ -21,6 +21,7 @@ from platform_api.persistence.models import (
     ScanCampaign,
     ScanFailure,
     ScanTarget,
+    ScanTargetImport,
     User,
 )
 from platform_api.persistence.pagination import apply_pagination
@@ -44,6 +45,8 @@ def test_metadata_contains_named_foundation_tables_and_constraints() -> None:
         "crawl_pages",
         "page_scans",
         "scan_failures",
+        "scan_target_imports",
+        "scan_target_import_rows",
     }
     assert Base.metadata.tables["users"].primary_key.name == "pk_users"
     assert all(
@@ -64,13 +67,14 @@ def test_statuses_are_strings_and_editable_records_are_versioned() -> None:
         "scan_targets",
         "crawl_pages",
         "page_scans",
+        "scan_target_imports",
     ):
         status_type = Base.metadata.tables[table_name].c.status.type
         assert isinstance(status_type, String)
         assert not isinstance(status_type, Enum)
     assert User.__mapper__.version_id_col is User.__table__.c.version
     assert Project.__mapper__.version_id_col is Project.__table__.c.version
-    for model in (ScanCampaign, ScanTarget, CrawlPage, PageScan, ScanFailure):
+    for model in (ScanCampaign, ScanTarget, CrawlPage, PageScan, ScanFailure, ScanTargetImport):
         assert model.__mapper__.version_id_col is model.__table__.c.version
 
 

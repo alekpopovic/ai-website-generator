@@ -83,7 +83,14 @@ export const routes: Routes = [
     children: [
       featureRoute('dashboard', 'Dashboard', 'Monitor platform work and recent activity.'),
       ...projectRoutes(),
-      featureRoute('scanner', 'Scanner', 'Configure authorized website discovery and scanning.'),
+      {
+        path: 'scanner',
+        title: 'Import scan targets',
+        loadComponent: () =>
+          import('./features/scanner/scan-target-import-page.component').then(
+            (module) => module.ScanTargetImportPageComponent,
+          ),
+      },
       featureRoute('datasets', 'Datasets', 'Review governed datasets and their provenance.'),
       featureRoute('models', 'Models', 'Review configured inference and embedding models.'),
       featureRoute(
@@ -162,6 +169,14 @@ function projectRoutes(): Routes {
         ),
       children: [
         section('generated-sites', 'Generated sites', 'Generated site versions will appear here.'),
+        {
+          path: 'scans/:campaignId/import-targets',
+          title: 'Import scan targets',
+          loadComponent: () =>
+            import('./features/scanner/scan-target-import-page.component').then(
+              (module) => module.ScanTargetImportPageComponent,
+            ),
+        },
         section('scans', 'Scans', 'Project scans will appear here.'),
         section('datasets', 'Datasets', 'Project datasets will appear here.'),
         section('assets', 'Assets', 'Project assets will appear here.'),

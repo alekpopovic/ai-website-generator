@@ -194,6 +194,104 @@ p {
   font-size: 0.85rem;
 }
 
+.target-paste {
+  min-height: 15rem;
+}
+
+.surface-card {
+  border: 1px solid #e0e4ed;
+  border-radius: 1rem;
+  background: white;
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.responsive-form-grid,
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+}
+
+.choice-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  border: 0;
+  padding: 0;
+}
+
+.choice-group legend {
+  margin-bottom: 0.65rem;
+}
+
+.choice-group label,
+.attestation-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.attestation-field {
+  max-width: 58rem;
+  color: #344054;
+  line-height: 1.5;
+}
+
+.attestation-field input,
+.choice-group input {
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.2rem;
+}
+
+.file-input {
+  min-height: 2.8rem;
+  border: 1px dashed #98a2b3;
+  border-radius: 0.6rem;
+  padding: 0.65rem;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.upload-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #475467;
+  font-size: 0.85rem;
+}
+
+.upload-progress progress {
+  width: min(24rem, 75%);
+}
+
+.summary-grid {
+  margin: 0;
+}
+
+.summary-grid div {
+  border-radius: 0.75rem;
+  background: #f7f8fc;
+  padding: 1rem;
+}
+
+.summary-grid dt {
+  color: #667085;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.summary-grid dd {
+  margin: 0.25rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
 .field-hint,
 .field-error {
   margin: 0;

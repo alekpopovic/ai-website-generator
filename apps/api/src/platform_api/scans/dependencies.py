@@ -26,6 +26,8 @@ from platform_api.scans.schemas import (
     SortOrder,
 )
 from platform_api.scans.service import ScanCampaignService
+from platform_api.scans.target_import_repositories import ScanTargetImportRepository
+from platform_api.scans.target_import_service import ScanTargetImportService
 
 
 async def scan_campaign_service_dependency(
@@ -43,6 +45,20 @@ async def scan_campaign_service_dependency(
 
 ScanCampaignServiceDependency = Annotated[
     ScanCampaignService, Depends(scan_campaign_service_dependency)
+]
+
+
+async def scan_target_import_service_dependency(
+    session: DatabaseTransactionDependency,
+) -> ScanTargetImportService:
+    return ScanTargetImportService(
+        ScanTargetImportRepository(session),
+        AuditLogService(SqlAlchemyAuditLogRepository(session)),
+    )
+
+
+ScanTargetImportServiceDependency = Annotated[
+    ScanTargetImportService, Depends(scan_target_import_service_dependency)
 ]
 
 
