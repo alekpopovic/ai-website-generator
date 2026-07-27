@@ -47,4 +47,5 @@ Private object-storage keys are not exposed by page responses.
 
 Start and retry require an idempotency key. Temporal receives only UUIDs and compact control data.
 The workflow currently performs no crawling; it holds durable control state and accepts pause,
-resume, and cancel signals.
+resume, and cancel signals. The crawl worker now exposes a target-level Temporal activity, but campaign
+fan-out to that activity remains a subsequent orchestration step.

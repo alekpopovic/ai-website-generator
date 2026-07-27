@@ -61,6 +61,7 @@ _CONFIGURATION_FIELDS = (
     "include_url_patterns",
     "exclude_url_patterns",
     "tracking_query_parameters",
+    "store_raw_html",
     "timeout_limits",
     "artifact_retention_policy",
 )

@@ -33,6 +33,12 @@ token lock. Lock renew/release scripts compare the random owner token, preventin
 releasing another worker's lease. Effective delay is the stricter of the campaign delay and a parsed
 robots delay. Activities heartbeat while waiting and release leases during cancellation cleanup.
 
+Scrapy runs in a one-target subprocess. Automatic redirects, cookies, and telnet are disabled; the
+project downloader middleware validates every initial request and redirect before download and rejects
+page responses outside the configured HTML MIME allowlist. Production scanner firewall policy remains
+required because Scrapy's standard downloader cannot guarantee application-level socket pinning on
+every supported platform.
+
 Network firewalls remain mandatory: crawler workers should have scanner-egress access only, while
 Redis remains on the backend network. See [outbound network safety](outbound-network-safety.md) for
 browser-level residual risks and firewall policy.

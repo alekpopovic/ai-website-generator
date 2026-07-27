@@ -65,7 +65,8 @@ The current implementation establishes campaign configuration, targets, page/vie
 projections, ownership-scoped APIs, lifecycle transitions, durable workflow control, and the shared
 crawl-policy evaluation boundary. Domain robots snapshots and effective per-page decisions have
 durable provenance fields. Starting a campaign still dispatches a control-only Temporal workflow after
-PostgreSQL commits; no crawl, browser, analysis, or embedding activity is implemented yet. See
+PostgreSQL commits. A target-level crawl activity and isolated Scrapy subprocess are implemented, but
+campaign target fan-out and browser, analysis, or embedding activities are not yet wired. See
 [Scan campaign API](../api/scan-campaigns.md), [Crawl policy](../security/crawl-policy.md), and
 [ADR 0013](../adr/0013-crawl-policy-and-provenance.md).
 

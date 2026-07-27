@@ -14,6 +14,7 @@ from platform_api.config import DatabaseSettings, clear_settings_cache
 from platform_api.database import DatabaseManager
 from platform_api.persistence.models import (
     AuditLog,
+    CrawlPage,
     CrawlPolicyRecord,
     Project,
     ScanCampaign,
@@ -209,6 +210,34 @@ async def test_scan_campaign_and_target_constraints_persist_in_postgresql(
                 effective_policy={"respect_robots_txt": True, "policy_version": 1},
             )
             session.add(policy_record)
+            await session.flush()
+            session.add(
+                CrawlPage(
+                    campaign_id=campaign.id,
+                    target_id=target.id,
+                    crawl_policy_record_id=policy_record.id,
+                    url="https://example.com/pricing/?utm_source=test",
+                    normalized_url="https://example.com/pricing/",
+                    final_url="https://example.com/pricing/",
+                    source_domain="example.com",
+                    depth=1,
+                    status="fetched",
+                    robots_allowed=True,
+                    crawl_decision_code="allowed",
+                    crawl_policy_provenance={"policy_version": 1},
+                    http_status=200,
+                    content_type="text/html",
+                    content_sha256="b" * 64,
+                    title="Pricing",
+                    meta_description="Fixture pricing page",
+                    language="en",
+                    content_length=123,
+                    discovery_source="sitemap",
+                    parent_url="https://example.com/sitemap.xml",
+                    discovered_at=datetime.now(UTC),
+                    fetched_at=datetime.now(UTC),
+                )
+            )
             session.add(
                 ScanTargetImportRow(
                     import_id=target_import.id,
@@ -227,6 +256,7 @@ async def test_scan_campaign_and_target_constraints_persist_in_postgresql(
             stored_target = await session.scalar(select(ScanTarget))
             imported_row = await session.scalar(select(ScanTargetImportRow))
             stored_policy = await session.scalar(select(CrawlPolicyRecord))
+            stored_page = await session.scalar(select(CrawlPage))
             assert stored is not None and stored.respect_robots_txt
             assert stored_target is not None and stored_target.campaign_id == stored.id
             assert stored_target.import_metadata == {"category": "fixture"}
@@ -236,5 +266,7 @@ async def test_scan_campaign_and_target_constraints_persist_in_postgresql(
                 "respect_robots_txt": True,
                 "policy_version": 1,
             }
+            assert stored_page is not None and stored_page.title == "Pricing"
+            assert stored_page.discovery_source == "sitemap"
     finally:
         await manager.close()

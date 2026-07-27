@@ -71,6 +71,18 @@ class ActivityResult:
 
 
 @dataclass(frozen=True, slots=True)
+class CrawlTargetInput:
+    """Minimal crawl subprocess command; configuration remains database-owned."""
+
+    campaign_id: str
+    scan_target_id: str
+
+    def __post_init__(self) -> None:
+        _validate_uuid("campaign_id", self.campaign_id)
+        _validate_uuid("scan_target_id", self.scan_target_id)
+
+
+@dataclass(frozen=True, slots=True)
 class WorkflowResult:
     """Terminal compact workflow result."""
 

@@ -48,11 +48,24 @@ task workflow-worker
 
 The service registers `ScanCampaignWorkflow`, `DatasetBuildWorkflow`, `SiteGenerationWorkflow`,
 `TrainingRunWorkflow`, and the administrator-only `ModelWarmupWorkflow` on `control`. Other business
-activities remain future work.
+activities remain future work except for the target-level Scrapy crawl activity.
 
 `ScanCampaignWorkflow` is intentionally control-only in the current increment. It retains durable
 queued/paused/cancelling control state and accepts pause, resume, and cancel signals, but it has no
-crawl, browser, AI, embedding, or completion activities.
+campaign fan-out, browser, AI, embedding, or completion activities. The implemented
+`crawl-scan-target` activity is registered separately on `crawl` and receives only campaign and target
+UUIDs.
+
+Start the crawler activity worker in another terminal:
+
+```sh
+task crawler-worker
+```
+
+Each activity creates a dedicated `platform-crawler-subprocess`, heartbeats bounded page counts, and
+terminates that child on cancellation. The child owns one Twisted reactor lifecycle, reloads campaign
+configuration from PostgreSQL, and writes through crawler repository services. Its stdout protocol is
+bounded JSON progress only; stderr is drained and never copied into application logs.
 
 Model warm-up requires the private AI activity worker in another terminal:
 

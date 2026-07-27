@@ -208,6 +208,7 @@ class ScanCampaign(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, 
     tracking_query_parameters: Mapped[JsonValue] = mapped_column(
         SafeJSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
     )
+    store_raw_html: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     timeout_limits: Mapped[JsonValue] = mapped_column(
         SafeJSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")
     )
@@ -407,6 +408,12 @@ class CrawlPage(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Bas
         CheckConstraint(
             "http_status IS NULL OR http_status BETWEEN 100 AND 599", name="http_status_valid"
         ),
+        CheckConstraint(
+            "content_length IS NULL OR content_length >= 0", name="content_length_non_negative"
+        ),
+        CheckConstraint(
+            "discovery_source IN ('seed', 'sitemap', 'link')", name="discovery_source_allowed"
+        ),
         Index("ix_crawl_pages_campaign_id_status", "campaign_id", "status"),
         Index("ix_crawl_pages_target_id_depth", "target_id", "depth"),
         UniqueConstraint("campaign_id", "normalized_url"),
@@ -426,6 +433,7 @@ class CrawlPage(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Bas
     )
     url: Mapped[str] = mapped_column(String(2_048), nullable=False)
     normalized_url: Mapped[str] = mapped_column(String(2_048), nullable=False)
+    final_url: Mapped[str | None] = mapped_column(String(2_048))
     source_domain: Mapped[str] = mapped_column(String(253), nullable=False)
     depth: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="discovered")
@@ -437,6 +445,12 @@ class CrawlPage(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Bas
     http_status: Mapped[int | None] = mapped_column(Integer)
     content_type: Mapped[str | None] = mapped_column(String(255))
     content_sha256: Mapped[str | None] = mapped_column(String(64))
+    title: Mapped[str | None] = mapped_column(String(500))
+    meta_description: Mapped[str | None] = mapped_column(String(1_000))
+    language: Mapped[str | None] = mapped_column(String(35))
+    content_length: Mapped[int | None] = mapped_column(Integer)
+    discovery_source: Mapped[str] = mapped_column(String(32), nullable=False, default="link")
+    parent_url: Mapped[str | None] = mapped_column(String(2_048))
     response_artifact_key: Mapped[str | None] = mapped_column(String(1_024))
     discovered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     fetched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -499,6 +513,7 @@ class ScanFailure(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, B
         CheckConstraint("attempt >= 1", name="attempt_positive"),
         Index("ix_scan_failures_campaign_id_resolved_at", "campaign_id", "resolved_at"),
         Index("ix_scan_failures_campaign_id_retryable", "campaign_id", "retryable"),
+        UniqueConstraint("campaign_id", "failure_key"),
     )
 
     campaign_id: Mapped[UUID] = mapped_column(
@@ -516,6 +531,7 @@ class ScanFailure(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, B
     stage: Mapped[str] = mapped_column(String(32), nullable=False)
     error_code: Mapped[str] = mapped_column(String(100), nullable=False)
     message: Mapped[str] = mapped_column(String(1_000), nullable=False)
+    failure_key: Mapped[str | None] = mapped_column(String(64))
     retryable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     attempt: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

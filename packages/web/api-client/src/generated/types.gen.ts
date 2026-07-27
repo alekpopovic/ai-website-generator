@@ -109,6 +109,10 @@ export type CrawlPageWithScansResponse = {
      */
     campaign_id: string;
     /**
+     * Content Length
+     */
+    content_length: number | null;
+    /**
      * Content Sha256
      */
     content_sha256: string | null;
@@ -143,9 +147,17 @@ export type CrawlPageWithScansResponse = {
      */
     discovered_at: string;
     /**
+     * Discovery Source
+     */
+    discovery_source: string;
+    /**
      * Fetched At
      */
     fetched_at: string | null;
+    /**
+     * Final Url
+     */
+    final_url: string | null;
     /**
      * Http Status
      */
@@ -154,6 +166,14 @@ export type CrawlPageWithScansResponse = {
      * Id
      */
     id: string;
+    /**
+     * Language
+     */
+    language: string | null;
+    /**
+     * Meta Description
+     */
+    meta_description: string | null;
     /**
      * Normalized Url
      */
@@ -166,6 +186,10 @@ export type CrawlPageWithScansResponse = {
      * Parent Page Id
      */
     parent_page_id: string | null;
+    /**
+     * Parent Url
+     */
+    parent_url: string | null;
     /**
      * Robots Allowed
      */
@@ -182,6 +206,10 @@ export type CrawlPageWithScansResponse = {
      * Target Id
      */
     target_id: string;
+    /**
+     * Title
+     */
+    title: string | null;
     /**
      * Updated At
      */
@@ -881,6 +909,10 @@ export type ScanCampaignCreateRequest = {
      * Respect Robots Txt
      */
     respect_robots_txt?: true;
+    /**
+     * Store Raw Html
+     */
+    store_raw_html?: boolean;
     timeout_limits?: ScanTimeoutLimits;
     /**
      * Tracking Query Parameters
@@ -971,6 +1003,10 @@ export type ScanCampaignResponse = {
      * Status
      */
     status: 'draft' | 'queued' | 'running' | 'pausing' | 'paused' | 'cancelling' | 'cancelled' | 'succeeded' | 'partially_succeeded' | 'failed';
+    /**
+     * Store Raw Html
+     */
+    store_raw_html?: boolean;
     timeout_limits?: ScanTimeoutLimits;
     /**
      * Tracking Query Parameters
@@ -1094,6 +1130,10 @@ export type ScanCampaignUpdateRequest = {
      * Respect Robots Txt
      */
     respect_robots_txt?: true | null;
+    /**
+     * Store Raw Html
+     */
+    store_raw_html?: boolean | null;
     timeout_limits?: ScanTimeoutLimits | null;
     /**
      * Tracking Query Parameters

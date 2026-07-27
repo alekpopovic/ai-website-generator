@@ -1,6 +1,11 @@
 """Shared Temporal foundations for the control plane and workers."""
 
-from platform_workflows.commands import CompactWorkflowInput, ModelWarmupInput, WorkflowResult
+from platform_workflows.commands import (
+    CompactWorkflowInput,
+    CrawlTargetInput,
+    ModelWarmupInput,
+    WorkflowResult,
+)
 from platform_workflows.dispatcher import (
     FakeWorkflowDispatcher,
     TemporalWorkflowDispatcher,
@@ -19,6 +24,7 @@ from platform_workflows.workflows import (
 
 __all__ = [
     "CompactWorkflowInput",
+    "CrawlTargetInput",
     "DatasetBuildWorkflow",
     "FakeWorkflowDispatcher",
     "ModelRole",

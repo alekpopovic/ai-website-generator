@@ -163,6 +163,17 @@
             "title": "Campaign Id",
             "type": "string"
           },
+          "content_length": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Length"
+          },
           "content_sha256": {
             "anyOf": [
               {
@@ -227,6 +238,10 @@
             "title": "Discovered At",
             "type": "string"
           },
+          "discovery_source": {
+            "title": "Discovery Source",
+            "type": "string"
+          },
           "fetched_at": {
             "anyOf": [
               {
@@ -238,6 +253,17 @@
               }
             ],
             "title": "Fetched At"
+          },
+          "final_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Url"
           },
           "http_status": {
             "anyOf": [
@@ -254,6 +280,28 @@
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "meta_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta Description"
           },
           "normalized_url": {
             "title": "Normalized Url",
@@ -278,6 +326,17 @@
               }
             ],
             "title": "Parent Page Id"
+          },
+          "parent_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Url"
           },
           "robots_allowed": {
             "anyOf": [
@@ -310,6 +369,17 @@
             "title": "Target Id",
             "type": "string"
           },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
           "updated_at": {
             "format": "date-time",
             "title": "Updated At",
@@ -332,6 +402,7 @@
           "crawl_policy_record_id",
           "url",
           "normalized_url",
+          "final_url",
           "source_domain",
           "depth",
           "status",
@@ -341,6 +412,12 @@
           "http_status",
           "content_type",
           "content_sha256",
+          "title",
+          "meta_description",
+          "language",
+          "content_length",
+          "discovery_source",
+          "parent_url",
           "discovered_at",
           "fetched_at",
           "created_at",
@@ -1605,6 +1682,11 @@
             "title": "Respect Robots Txt",
             "type": "boolean"
           },
+          "store_raw_html": {
+            "default": false,
+            "title": "Store Raw Html",
+            "type": "boolean"
+          },
           "timeout_limits": {
             "$ref": "#/components/schemas/ScanTimeoutLimits",
             "default": {
@@ -1810,6 +1892,11 @@
             ],
             "title": "Status",
             "type": "string"
+          },
+          "store_raw_html": {
+            "default": false,
+            "title": "Store Raw Html",
+            "type": "boolean"
           },
           "timeout_limits": {
             "$ref": "#/components/schemas/ScanTimeoutLimits",
@@ -2146,6 +2233,17 @@
               }
             ],
             "title": "Respect Robots Txt"
+          },
+          "store_raw_html": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store Raw Html"
           },
           "timeout_limits": {
             "anyOf": [

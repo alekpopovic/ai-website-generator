@@ -87,6 +87,7 @@ class CampaignConfiguration(ScanModel):
         "ref",
         "referrer",
     )
+    store_raw_html: bool = False
     timeout_limits: ScanTimeoutLimits = ScanTimeoutLimits()
     artifact_retention_policy: ArtifactRetentionPolicy = ArtifactRetentionPolicy()
 
@@ -191,6 +192,7 @@ class ScanCampaignUpdateRequest(ScanModel):
     include_url_patterns: tuple[str, ...] | None = None
     exclude_url_patterns: tuple[str, ...] | None = None
     tracking_query_parameters: tuple[str, ...] | None = None
+    store_raw_html: bool | None = None
     timeout_limits: ScanTimeoutLimits | None = None
     artifact_retention_policy: ArtifactRetentionPolicy | None = None
 
@@ -343,6 +345,7 @@ class CrawlPageResponse(ScanModel):
     crawl_policy_record_id: UUID | None
     url: str
     normalized_url: str
+    final_url: str | None
     source_domain: str
     depth: int
     status: CrawlPageStatus
@@ -352,6 +355,12 @@ class CrawlPageResponse(ScanModel):
     http_status: int | None
     content_type: str | None
     content_sha256: str | None
+    title: str | None
+    meta_description: str | None
+    language: str | None
+    content_length: int | None
+    discovery_source: str
+    parent_url: str | None
     discovered_at: datetime
     fetched_at: datetime | None
     created_at: datetime
