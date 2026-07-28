@@ -36,6 +36,7 @@ def test_metadata_contains_named_foundation_tables_and_constraints() -> None:
     """Alembic sees every initial table through one naming convention."""
     assert set(Base.metadata.tables) == {
         "audit_logs",
+        "analysis_runs",
         "auth_action_tokens",
         "job_events",
         "projects",
@@ -47,9 +48,12 @@ def test_metadata_contains_named_foundation_tables_and_constraints() -> None:
         "crawl_pages",
         "crawl_policy_records",
         "page_scans",
+        "page_profiles",
         "scan_failures",
         "scan_target_imports",
         "scan_target_import_rows",
+        "section_patterns",
+        "website_profiles",
     }
     assert Base.metadata.tables["users"].primary_key.name == "pk_users"
     assert all(

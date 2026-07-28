@@ -27,3 +27,6 @@ targets, page projections, failures, and the control-only Temporal dispatch cont
 
 See [scan-target imports](scan-target-imports.md) for streamed TXT/CSV validation, dry-run commits,
 row-level outcomes, and error export.
+
+See [analysis profiles](analysis-profiles.md) for historical structured analysis, deterministic
+section retrieval documents, duplicate lineage, and owner-audited curation.

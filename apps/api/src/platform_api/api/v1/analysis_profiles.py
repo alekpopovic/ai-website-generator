@@ -1,0 +1,222 @@
+"""Owner-scoped normalized profile and section-pattern review endpoints."""
+
+from __future__ import annotations
+
+from typing import Annotated, Literal
+from uuid import UUID
+
+from fastapi import APIRouter, Query, Request
+
+from platform_api.analysis.dependencies import AnalysisProfileServiceDependency
+from platform_api.analysis.schemas import (
+    AnalysisRunResponse,
+    CurationRequest,
+    PageProfileResponse,
+    SectionPatternResponse,
+    WebsiteProfileResponse,
+)
+from platform_api.auth.dependencies import CurrentUserDependency
+from platform_api.errors import problem_responses, request_id_from
+from platform_api.models.common import PageResponse, PaginationMeta, PaginationParams, ResponseMeta
+
+router = APIRouter(prefix="/projects/{project_id}/analysis")
+
+
+@router.get(
+    "/page-profiles",
+    response_model=PageResponse[PageProfileResponse],
+    operation_id="listPageProfiles",
+    responses=problem_responses(401, 404, 422, 503),
+)
+async def list_page_profiles(
+    project_id: UUID,
+    request: Request,
+    user: CurrentUserDependency,
+    service: AnalysisProfileServiceDependency,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    current_only: bool = True,
+) -> PageResponse[PageProfileResponse]:
+    page = await service.list_pages(
+        project_id, user.id, limit=limit, offset=offset, current_only=current_only
+    )
+    return _page(request, page.items, page.total, offset, limit)
+
+
+@router.get(
+    "/page-profiles/{profile_id}",
+    response_model=PageProfileResponse,
+    operation_id="getPageProfile",
+    responses=problem_responses(401, 404, 503),
+)
+async def get_page_profile(
+    project_id: UUID,
+    profile_id: UUID,
+    user: CurrentUserDependency,
+    service: AnalysisProfileServiceDependency,
+) -> PageProfileResponse:
+    return await service.get_page(project_id, profile_id, user.id)
+
+
+@router.patch(
+    "/page-profiles/{profile_id}/curation",
+    response_model=PageProfileResponse,
+    operation_id="curatePageProfile",
+    responses=problem_responses(401, 404, 409, 422, 503),
+)
+async def curate_page_profile(
+    project_id: UUID,
+    profile_id: UUID,
+    payload: CurationRequest,
+    request: Request,
+    user: CurrentUserDependency,
+    service: AnalysisProfileServiceDependency,
+) -> PageProfileResponse:
+    return await service.curate_page(
+        project_id, profile_id, payload, owner_id=user.id, request_id=request_id_from(request)
+    )
+
+
+@router.get(
+    "/website-profiles",
+    response_model=PageResponse[WebsiteProfileResponse],
+    operation_id="listWebsiteProfiles",
+    responses=problem_responses(401, 404, 422, 503),
+)
+async def list_website_profiles(
+    project_id: UUID,
+    request: Request,
+    user: CurrentUserDependency,
+    service: AnalysisProfileServiceDependency,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    current_only: bool = True,
+) -> PageResponse[WebsiteProfileResponse]:
+    page = await service.list_websites(
+        project_id, user.id, limit=limit, offset=offset, current_only=current_only
+    )
+    return _page(request, page.items, page.total, offset, limit)
+
+
+@router.get(
+    "/website-profiles/{profile_id}",
+    response_model=WebsiteProfileResponse,
+    operation_id="getWebsiteProfile",
+    responses=problem_responses(401, 404, 503),
+)
+async def get_website_profile(
+    project_id: UUID,
+    profile_id: UUID,
+    user: CurrentUserDependency,
+    service: AnalysisProfileServiceDependency,
+) -> WebsiteProfileResponse:
+    return await service.get_website(project_id, profile_id, user.id)
+
+
+@router.patch(
+    "/website-profiles/{profile_id}/curation",
+    response_model=WebsiteProfileResponse,
+    operation_id="curateWebsiteProfile",
+    responses=problem_responses(401, 404, 409, 422, 503),
+)
+async def curate_website_profile(
+    project_id: UUID,
+    profile_id: UUID,
+    payload: CurationRequest,
+    request: Request,
+    user: CurrentUserDependency,
+    service: AnalysisProfileServiceDependency,
+) -> WebsiteProfileResponse:
+    return await service.curate_website(
+        project_id, profile_id, payload, owner_id=user.id, request_id=request_id_from(request)
+    )
+
+
+@router.get(
+    "/section-patterns",
+    response_model=PageResponse[SectionPatternResponse],
+    operation_id="listSectionPatterns",
+    responses=problem_responses(401, 404, 422, 503),
+)
+async def list_section_patterns(
+    project_id: UUID,
+    request: Request,
+    user: CurrentUserDependency,
+    service: AnalysisProfileServiceDependency,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    section_type: Annotated[str | None, Query(min_length=1, max_length=32)] = None,
+    approval_state: Literal["needs_review", "approved", "rejected"] | None = None,
+) -> PageResponse[SectionPatternResponse]:
+    page = await service.list_patterns(
+        project_id,
+        user.id,
+        limit=limit,
+        offset=offset,
+        section_type=section_type,
+        approval_state=approval_state,
+    )
+    return _page(request, page.items, page.total, offset, limit)
+
+
+@router.get(
+    "/section-patterns/{pattern_id}",
+    response_model=SectionPatternResponse,
+    operation_id="getSectionPattern",
+    responses=problem_responses(401, 404, 503),
+)
+async def get_section_pattern(
+    project_id: UUID,
+    pattern_id: UUID,
+    user: CurrentUserDependency,
+    service: AnalysisProfileServiceDependency,
+) -> SectionPatternResponse:
+    return await service.get_pattern(project_id, pattern_id, user.id)
+
+
+@router.patch(
+    "/section-patterns/{pattern_id}/curation",
+    response_model=SectionPatternResponse,
+    operation_id="curateSectionPattern",
+    responses=problem_responses(401, 404, 409, 422, 503),
+)
+async def curate_section_pattern(
+    project_id: UUID,
+    pattern_id: UUID,
+    payload: CurationRequest,
+    request: Request,
+    user: CurrentUserDependency,
+    service: AnalysisProfileServiceDependency,
+) -> SectionPatternResponse:
+    return await service.curate_pattern(
+        project_id, pattern_id, payload, owner_id=user.id, request_id=request_id_from(request)
+    )
+
+
+@router.get(
+    "/runs",
+    response_model=PageResponse[AnalysisRunResponse],
+    operation_id="listAnalysisRuns",
+    responses=problem_responses(401, 404, 422, 503),
+)
+async def list_analysis_runs(
+    project_id: UUID,
+    request: Request,
+    user: CurrentUserDependency,
+    service: AnalysisProfileServiceDependency,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> PageResponse[AnalysisRunResponse]:
+    page = await service.list_runs(project_id, user.id, limit=limit, offset=offset)
+    return _page(request, page.items, page.total, offset, limit)
+
+
+def _page[ItemT](
+    request: Request, items: tuple[ItemT, ...], total: int, offset: int, limit: int
+) -> PageResponse[ItemT]:
+    params = PaginationParams(offset=offset, limit=limit)
+    return PageResponse(
+        items=list(items),
+        pagination=PaginationMeta.from_params(params, total),
+        meta=ResponseMeta(request_id=request_id_from(request)),
+    )

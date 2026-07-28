@@ -750,6 +750,223 @@ class ScanArtifact(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, 
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class AnalysisRun(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    """Append-only record of one structured analyzer invocation."""
+
+    __tablename__ = "analysis_runs"
+    __table_args__ = (
+        CheckConstraint("output_kind IN ('page', 'website')", name="output_kind_allowed"),
+        CheckConstraint("status IN ('succeeded', 'failed', 'cancelled')", name="status_allowed"),
+        CheckConstraint(
+            "provenance_state IN ('authorized', 'restricted', 'removal_pending', 'removed')",
+            name="provenance_state_allowed",
+        ),
+        CheckConstraint("schema_version >= 1", name="schema_version_positive"),
+        CheckConstraint("attempts >= 1", name="attempts_positive"),
+        CheckConstraint("latency_ms >= 0", name="latency_nonnegative"),
+        Index("ix_analysis_runs_project_created", "project_id", "created_at"),
+        Index("ix_analysis_runs_page_created", "source_page_id", "created_at"),
+    )
+
+    project_id: Mapped[UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
+    )
+    campaign_id: Mapped[UUID] = mapped_column(
+        ForeignKey("scan_campaigns.id", ondelete="CASCADE"), nullable=False
+    )
+    source_website_id: Mapped[UUID] = mapped_column(
+        ForeignKey("scan_targets.id", ondelete="CASCADE"), nullable=False
+    )
+    source_page_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("crawl_pages.id", ondelete="CASCADE")
+    )
+    output_kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="succeeded")
+    prompt_version: Mapped[str] = mapped_column(String(100), nullable=False)
+    analyzer_version: Mapped[str] = mapped_column(String(100), nullable=False)
+    strategy: Mapped[str] = mapped_column(String(64), nullable=False)
+    model_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    model_digest: Mapped[str] = mapped_column(String(200), nullable=False)
+    schema_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    latency_ms: Mapped[int] = mapped_column(Integer, nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    used_fallback: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    provenance_state: Mapped[str] = mapped_column(String(32), nullable=False, default="authorized")
+    result_sha256: Mapped[str | None] = mapped_column(String(64))
+    failure_code: Mapped[str | None] = mapped_column(String(100))
+
+
+class PageProfile(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base):
+    """Historical normalized page profile with exactly one current row per source page."""
+
+    __tablename__ = "page_profiles"
+    __table_args__ = (
+        CheckConstraint(
+            "approval_state IN ('needs_review', 'approved', 'rejected')",
+            name="approval_state_allowed",
+        ),
+        CheckConstraint(
+            "provenance_state IN ('authorized', 'restricted', 'removal_pending', 'removed')",
+            name="provenance_state_allowed",
+        ),
+        CheckConstraint("confidence BETWEEN 0 AND 1", name="confidence_valid"),
+        Index("ix_page_profiles_project_current", "project_id", "is_current"),
+        Index("ix_page_profiles_page_type", "project_id", "page_type"),
+        Index(
+            "uq_page_profiles_current_source_page",
+            "source_page_id",
+            unique=True,
+            postgresql_where=text("is_current IS TRUE"),
+        ),
+        UniqueConstraint("analysis_run_id"),
+    )
+
+    project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"))
+    campaign_id: Mapped[UUID] = mapped_column(
+        ForeignKey("scan_campaigns.id", ondelete="CASCADE"), nullable=False
+    )
+    source_website_id: Mapped[UUID] = mapped_column(
+        ForeignKey("scan_targets.id", ondelete="CASCADE"), nullable=False
+    )
+    source_page_id: Mapped[UUID] = mapped_column(
+        ForeignKey("crawl_pages.id", ondelete="CASCADE"), nullable=False
+    )
+    analysis_run_id: Mapped[UUID] = mapped_column(
+        ForeignKey("analysis_runs.id", ondelete="CASCADE"), nullable=False
+    )
+    profile_json: Mapped[JsonValue] = mapped_column(SafeJSONB, nullable=False)
+    page_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    category: Mapped[str] = mapped_column(String(64), nullable=False)
+    language: Mapped[str] = mapped_column(String(35), nullable=False)
+    style_tags: Mapped[JsonValue] = mapped_column(SafeJSONB, nullable=False, default=list)
+    confidence: Mapped[float] = mapped_column(Float, nullable=False)
+    schema_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    analyzer_version: Mapped[str] = mapped_column(String(100), nullable=False)
+    model_digest: Mapped[str] = mapped_column(String(200), nullable=False)
+    approval_state: Mapped[str] = mapped_column(String(32), nullable=False, default="needs_review")
+    provenance_state: Mapped[str] = mapped_column(String(32), nullable=False, default="authorized")
+    is_current: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    reviewed_by_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    review_note: Mapped[str | None] = mapped_column(String(500))
+
+
+class WebsiteProfile(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base):
+    """Historical aggregate website profile."""
+
+    __tablename__ = "website_profiles"
+    __table_args__ = (
+        CheckConstraint(
+            "approval_state IN ('needs_review', 'approved', 'rejected')",
+            name="approval_state_allowed",
+        ),
+        CheckConstraint(
+            "provenance_state IN ('authorized', 'restricted', 'removal_pending', 'removed')",
+            name="provenance_state_allowed",
+        ),
+        CheckConstraint("confidence BETWEEN 0 AND 1", name="confidence_valid"),
+        Index("ix_website_profiles_project_current", "project_id", "is_current"),
+        Index(
+            "uq_website_profiles_current_source_website",
+            "source_website_id",
+            unique=True,
+            postgresql_where=text("is_current IS TRUE"),
+        ),
+        UniqueConstraint("analysis_run_id"),
+    )
+
+    project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"))
+    campaign_id: Mapped[UUID] = mapped_column(
+        ForeignKey("scan_campaigns.id", ondelete="CASCADE"), nullable=False
+    )
+    source_website_id: Mapped[UUID] = mapped_column(
+        ForeignKey("scan_targets.id", ondelete="CASCADE"), nullable=False
+    )
+    analysis_run_id: Mapped[UUID] = mapped_column(
+        ForeignKey("analysis_runs.id", ondelete="CASCADE"), nullable=False
+    )
+    profile_json: Mapped[JsonValue] = mapped_column(SafeJSONB, nullable=False)
+    category: Mapped[str] = mapped_column(String(64), nullable=False)
+    language: Mapped[str] = mapped_column(String(35), nullable=False)
+    style_tags: Mapped[JsonValue] = mapped_column(SafeJSONB, nullable=False, default=list)
+    confidence: Mapped[float] = mapped_column(Float, nullable=False)
+    schema_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    analyzer_version: Mapped[str] = mapped_column(String(100), nullable=False)
+    model_digest: Mapped[str] = mapped_column(String(200), nullable=False)
+    approval_state: Mapped[str] = mapped_column(String(32), nullable=False, default="needs_review")
+    provenance_state: Mapped[str] = mapped_column(String(32), nullable=False, default="authorized")
+    is_current: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    reviewed_by_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    review_note: Mapped[str | None] = mapped_column(String(500))
+
+
+class SectionPattern(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base):
+    """Independent abstract section suitable for curated vector retrieval."""
+
+    __tablename__ = "section_patterns"
+    __table_args__ = (
+        CheckConstraint(
+            "approval_state IN ('needs_review', 'approved', 'rejected')",
+            name="approval_state_allowed",
+        ),
+        CheckConstraint(
+            "provenance_state IN ('authorized', 'restricted', 'removal_pending', 'removed')",
+            name="provenance_state_allowed",
+        ),
+        CheckConstraint("confidence BETWEEN 0 AND 1", name="confidence_valid"),
+        CheckConstraint("section_order BETWEEN 0 AND 255", name="section_order_valid"),
+        Index("ix_section_patterns_project_type", "project_id", "section_type"),
+        Index("ix_section_patterns_hash", "project_id", "pattern_hash"),
+        Index("ix_section_patterns_page_profile", "page_profile_id", "section_order"),
+        UniqueConstraint("page_profile_id", "section_order"),
+    )
+
+    project_id: Mapped[UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"))
+    campaign_id: Mapped[UUID] = mapped_column(
+        ForeignKey("scan_campaigns.id", ondelete="CASCADE"), nullable=False
+    )
+    source_website_id: Mapped[UUID] = mapped_column(
+        ForeignKey("scan_targets.id", ondelete="CASCADE"), nullable=False
+    )
+    source_page_id: Mapped[UUID] = mapped_column(
+        ForeignKey("crawl_pages.id", ondelete="CASCADE"), nullable=False
+    )
+    analysis_run_id: Mapped[UUID] = mapped_column(
+        ForeignKey("analysis_runs.id", ondelete="CASCADE"), nullable=False
+    )
+    page_profile_id: Mapped[UUID] = mapped_column(
+        ForeignKey("page_profiles.id", ondelete="CASCADE"), nullable=False
+    )
+    duplicate_of_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("section_patterns.id", ondelete="SET NULL")
+    )
+    pattern_json: Mapped[JsonValue] = mapped_column(SafeJSONB, nullable=False)
+    section_order: Mapped[int] = mapped_column(Integer, nullable=False)
+    section_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    layout: Mapped[str] = mapped_column(String(32), nullable=False)
+    style_tags: Mapped[JsonValue] = mapped_column(SafeJSONB, nullable=False, default=list)
+    category: Mapped[str] = mapped_column(String(64), nullable=False)
+    language: Mapped[str] = mapped_column(String(35), nullable=False)
+    confidence: Mapped[float] = mapped_column(Float, nullable=False)
+    schema_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    analyzer_version: Mapped[str] = mapped_column(String(100), nullable=False)
+    model_digest: Mapped[str] = mapped_column(String(200), nullable=False)
+    approval_state: Mapped[str] = mapped_column(String(32), nullable=False, default="needs_review")
+    provenance_state: Mapped[str] = mapped_column(String(32), nullable=False, default="authorized")
+    retrieval_document: Mapped[str] = mapped_column(String(4_000), nullable=False)
+    pattern_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    reviewed_by_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    review_note: Mapped[str | None] = mapped_column(String(500))
+
+
 class ScanFailure(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base):
     """Sanitized, retry-addressable scan failure projection."""
 

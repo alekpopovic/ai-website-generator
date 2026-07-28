@@ -31,6 +31,347 @@
         "title": "AccessTokenResponse",
         "type": "object"
       },
+      "AccessibilityObservation": {
+        "additionalProperties": false,
+        "description": "Sanitized accessibility finding described through controlled codes.",
+        "properties": {
+          "affected_count": {
+            "default": 1,
+            "description": "Number of deterministic observations.",
+            "maximum": 10000.0,
+            "minimum": 1.0,
+            "title": "Affected Count",
+            "type": "integer"
+          },
+          "category": {
+            "description": "Controlled accessibility review category.",
+            "enum": [
+              "landmarks",
+              "headings",
+              "contrast",
+              "forms",
+              "images",
+              "keyboard",
+              "motion",
+              "unknown"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "code": {
+            "description": "Stable observation code without copied page content.",
+            "enum": [
+              "missing-landmark",
+              "heading-order",
+              "contrast-risk",
+              "missing-form-label",
+              "missing-alt-purpose",
+              "focus-risk",
+              "motion-risk",
+              "positive-observation",
+              "unknown"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "confidence": {
+            "description": "Confidence from zero to one for this observation.",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          },
+          "schema_version": {
+            "const": 1,
+            "default": 1,
+            "description": "Normalized analysis schema version.",
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "severity": {
+            "description": "Review severity; it is not a conformance certification.",
+            "enum": [
+              "positive",
+              "info",
+              "warning",
+              "error"
+            ],
+            "title": "Severity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "category",
+          "code",
+          "severity",
+          "confidence"
+        ],
+        "title": "AccessibilityObservation",
+        "type": "object"
+      },
+      "AnalysisConfidence": {
+        "additionalProperties": false,
+        "description": "Explicit confidence values for independently reviewable analysis dimensions.",
+        "properties": {
+          "accessibility": {
+            "description": "Accessibility observation confidence.",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Accessibility",
+            "type": "number"
+          },
+          "design_tokens": {
+            "description": "Visual token confidence.",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Design Tokens",
+            "type": "number"
+          },
+          "overall": {
+            "description": "Overall normalized confidence.",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Overall",
+            "type": "number"
+          },
+          "responsive_behavior": {
+            "description": "Responsive inference confidence.",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Responsive Behavior",
+            "type": "number"
+          },
+          "schema_version": {
+            "const": 1,
+            "default": 1,
+            "description": "Normalized analysis schema version.",
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "structure": {
+            "description": "Section and component confidence.",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Structure",
+            "type": "number"
+          }
+        },
+        "required": [
+          "overall",
+          "structure",
+          "design_tokens",
+          "responsive_behavior",
+          "accessibility"
+        ],
+        "title": "AnalysisConfidence",
+        "type": "object"
+      },
+      "AnalysisProvenance": {
+        "additionalProperties": false,
+        "description": "Identifier-only lineage for the deterministic and model analysis inputs.",
+        "properties": {
+          "analyzed_at": {
+            "description": "Timezone-aware analysis completion timestamp.",
+            "format": "date-time",
+            "title": "Analyzed At",
+            "type": "string"
+          },
+          "analyzer_version": {
+            "description": "Bounded structured analyzer version.",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Analyzer Version",
+            "type": "string"
+          },
+          "artifact_sha256": {
+            "description": "Artifact role to SHA-256 mapping without bucket names, keys, or URLs.",
+            "maxProperties": 500,
+            "patternProperties": {
+              "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$": {
+                "type": "string"
+              }
+            },
+            "propertyNames": {
+              "maxLength": 64,
+              "minLength": 1
+            },
+            "title": "Artifact Sha256",
+            "type": "object"
+          },
+          "campaign_id": {
+            "description": "Database ID of the owning scan campaign.",
+            "format": "uuid",
+            "title": "Campaign Id",
+            "type": "string"
+          },
+          "deterministic_only": {
+            "description": "True when the profile was created without model inference.",
+            "title": "Deterministic Only",
+            "type": "boolean"
+          },
+          "extractor_version": {
+            "description": "Bounded deterministic extractor version.",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Extractor Version",
+            "type": "string"
+          },
+          "page_scan_ids": {
+            "description": "Ordered page-scan IDs used as inputs; no binary payloads are embedded.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Page Scan Ids",
+            "type": "array"
+          },
+          "scanner_version": {
+            "description": "Bounded browser scanner implementation version.",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Scanner Version",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": 1,
+            "default": 1,
+            "description": "Normalized analysis schema version.",
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "source_website_id": {
+            "description": "Database ID of the authorized source website.",
+            "format": "uuid",
+            "title": "Source Website Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_website_id",
+          "campaign_id",
+          "page_scan_ids",
+          "scanner_version",
+          "extractor_version",
+          "analyzer_version",
+          "analyzed_at",
+          "deterministic_only"
+        ],
+        "title": "AnalysisProvenance",
+        "type": "object"
+      },
+      "AnalysisRunResponse": {
+        "properties": {
+          "analyzer_version": {
+            "title": "Analyzer Version",
+            "type": "string"
+          },
+          "attempts": {
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "campaign_id": {
+            "format": "uuid",
+            "title": "Campaign Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "latency_ms": {
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "model_digest": {
+            "title": "Model Digest",
+            "type": "string"
+          },
+          "model_name": {
+            "title": "Model Name",
+            "type": "string"
+          },
+          "output_kind": {
+            "title": "Output Kind",
+            "type": "string"
+          },
+          "project_id": {
+            "format": "uuid",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "prompt_version": {
+            "title": "Prompt Version",
+            "type": "string"
+          },
+          "provenance_state": {
+            "title": "Provenance State",
+            "type": "string"
+          },
+          "schema_version": {
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "source_page_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Page Id"
+          },
+          "source_website_id": {
+            "format": "uuid",
+            "title": "Source Website Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "strategy": {
+            "title": "Strategy",
+            "type": "string"
+          },
+          "used_fallback": {
+            "title": "Used Fallback",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "campaign_id",
+          "source_website_id",
+          "source_page_id",
+          "output_kind",
+          "status",
+          "prompt_version",
+          "analyzer_version",
+          "strategy",
+          "model_name",
+          "model_digest",
+          "schema_version",
+          "latency_ms",
+          "attempts",
+          "used_fallback",
+          "provenance_state",
+          "created_at"
+        ],
+        "title": "AnalysisRunResponse",
+        "type": "object"
+      },
       "ApiResponse_ModelReadinessData_": {
         "additionalProperties": false,
         "properties": {
@@ -225,6 +566,173 @@
         ],
         "title": "CampaignVersionRequest",
         "type": "object"
+      },
+      "ColorToken": {
+        "additionalProperties": false,
+        "description": "One normalized color candidate with a registry-safe token name.",
+        "properties": {
+          "frequency": {
+            "default": 1,
+            "description": "Number of deterministic extraction observations supporting the token.",
+            "maximum": 100000.0,
+            "minimum": 1.0,
+            "title": "Frequency",
+            "type": "integer"
+          },
+          "name": {
+            "description": "Stable kebab-case token name, never a brand label.",
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+            "title": "Name",
+            "type": "string"
+          },
+          "value": {
+            "description": "Validated hexadecimal, RGB(A), or HSL(A) CSS color value.",
+            "maxLength": 64,
+            "minLength": 4,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "value"
+        ],
+        "title": "ColorToken",
+        "type": "object"
+      },
+      "ColorTokens": {
+        "additionalProperties": false,
+        "description": "Bounded palette inferred from rendered style frequencies.",
+        "properties": {
+          "palette": {
+            "default": [],
+            "description": "Ordered palette candidates, most frequent first.",
+            "items": {
+              "$ref": "#/components/schemas/ColorToken"
+            },
+            "maxItems": 24,
+            "title": "Palette",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": 1,
+            "default": 1,
+            "description": "Normalized analysis schema version.",
+            "title": "Schema Version",
+            "type": "integer"
+          }
+        },
+        "title": "ColorTokens",
+        "type": "object"
+      },
+      "ComponentName": {
+        "description": "Controlled abstract component vocabulary; never executable component source.",
+        "enum": [
+          "nav-link",
+          "heading",
+          "body-copy",
+          "button",
+          "badge",
+          "card",
+          "statistic",
+          "feature-item",
+          "service-item",
+          "media-placeholder",
+          "gallery-grid",
+          "testimonial-card",
+          "case-study-card",
+          "pricing-tier",
+          "comparison-table",
+          "accordion",
+          "contact-form",
+          "link-list",
+          "unknown"
+        ],
+        "title": "ComponentName",
+        "type": "string"
+      },
+      "ComponentPattern": {
+        "additionalProperties": false,
+        "description": "Abstract registered component occurrence, never source code or executable markup.",
+        "properties": {
+          "component_name": {
+            "$ref": "#/components/schemas/ComponentName",
+            "description": "Controlled component registry name."
+          },
+          "copy_purpose": {
+            "$ref": "#/components/schemas/CopyPurpose",
+            "description": "Communication purpose instead of source copy."
+          },
+          "layout": {
+            "default": "unknown",
+            "description": "Controlled abstract layout mode.",
+            "enum": [
+              "block",
+              "inline",
+              "flex-row",
+              "flex-column",
+              "grid",
+              "overlay",
+              "unknown"
+            ],
+            "title": "Layout",
+            "type": "string"
+          },
+          "order": {
+            "description": "Zero-based order within its parent section.",
+            "maximum": 255.0,
+            "minimum": 0.0,
+            "title": "Order",
+            "type": "integer"
+          },
+          "repeat_count": {
+            "default": 1,
+            "description": "Observed bounded repetition count.",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Repeat Count",
+            "type": "integer"
+          },
+          "schema_version": {
+            "const": 1,
+            "default": 1,
+            "description": "Normalized analysis schema version.",
+            "title": "Schema Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "component_name",
+          "order",
+          "copy_purpose"
+        ],
+        "title": "ComponentPattern",
+        "type": "object"
+      },
+      "CopyPurpose": {
+        "description": "Abstract communication goal used instead of source website text.",
+        "enum": [
+          "identity",
+          "navigation",
+          "value-proposition",
+          "build-trust",
+          "explain-benefits",
+          "describe-services",
+          "quantify-outcomes",
+          "editorial-content",
+          "showcase-work",
+          "social-proof",
+          "compare-options",
+          "answer-objections",
+          "conversion",
+          "contact",
+          "legal-navigation",
+          "unknown"
+        ],
+        "title": "CopyPurpose",
+        "type": "string"
       },
       "CrawlPageDetailResponse": {
         "additionalProperties": false,
@@ -1707,6 +2215,43 @@
         "title": "CrawlPageWithScansResponse",
         "type": "object"
       },
+      "CurationRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "approval_state": {
+            "enum": [
+              "needs_review",
+              "approved",
+              "rejected"
+            ],
+            "title": "Approval State",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "approval_state",
+          "version"
+        ],
+        "title": "CurationRequest",
+        "type": "object"
+      },
       "DeduplicationStatistics": {
         "additionalProperties": false,
         "properties": {
@@ -1833,6 +2378,48 @@
         "title": "DependencyState",
         "type": "string"
       },
+      "DesignTokens": {
+        "additionalProperties": false,
+        "description": "Deterministic visual token projection shared across analyzed pages.",
+        "properties": {
+          "colors": {
+            "$ref": "#/components/schemas/ColorTokens",
+            "description": "Normalized color palette candidates."
+          },
+          "schema_version": {
+            "const": 1,
+            "default": 1,
+            "description": "Normalized analysis schema version.",
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "spacing": {
+            "$ref": "#/components/schemas/SpacingTokens",
+            "description": "Normalized spacing and radius scales."
+          },
+          "style_tags": {
+            "default": [],
+            "description": "Abstract, non-brand visual style categories.",
+            "items": {
+              "$ref": "#/components/schemas/StyleTag"
+            },
+            "maxItems": 24,
+            "title": "Style Tags",
+            "type": "array"
+          },
+          "typography": {
+            "$ref": "#/components/schemas/TypographyTokens",
+            "description": "Normalized typography scale."
+          }
+        },
+        "required": [
+          "colors",
+          "typography",
+          "spacing"
+        ],
+        "title": "DesignTokens",
+        "type": "object"
+      },
       "DuplicateGroupResponse": {
         "additionalProperties": false,
         "properties": {
@@ -1911,6 +2498,20 @@
         ],
         "title": "EmbeddingCollectionVersion",
         "type": "object"
+      },
+      "FontCategory": {
+        "description": "Abstract font classification that cannot carry a source-specific family name.",
+        "enum": [
+          "system-sans",
+          "sans-serif",
+          "serif",
+          "monospace",
+          "cursive",
+          "display",
+          "unknown"
+        ],
+        "title": "FontCategory",
+        "type": "string"
       },
       "HTTPValidationError": {
         "properties": {
@@ -2226,6 +2827,236 @@
         "title": "ModelWarmupRequest",
         "type": "object"
       },
+      "PageProfile": {
+        "additionalProperties": false,
+        "description": "AI-normalized page structure containing no source copy or source assets.",
+        "properties": {
+          "accessibility_observations": {
+            "default": [],
+            "description": "Sanitized deterministic accessibility findings.",
+            "items": {
+              "$ref": "#/components/schemas/AccessibilityObservation"
+            },
+            "maxItems": 100,
+            "title": "Accessibility Observations",
+            "type": "array"
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/AnalysisConfidence",
+            "description": "Per-dimension page analysis confidence."
+          },
+          "page_type": {
+            "$ref": "#/components/schemas/PageType",
+            "description": "Controlled deterministic page classification."
+          },
+          "schema_version": {
+            "const": 1,
+            "default": 1,
+            "description": "Normalized analysis schema version.",
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "sections": {
+            "description": "Ordered abstract section patterns.",
+            "items": {
+              "$ref": "#/components/schemas/SectionPattern"
+            },
+            "maxItems": 64,
+            "minItems": 1,
+            "title": "Sections",
+            "type": "array"
+          },
+          "source_page_id": {
+            "description": "Database ID of the normalized crawl page.",
+            "format": "uuid",
+            "title": "Source Page Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_page_id",
+          "page_type",
+          "sections",
+          "confidence"
+        ],
+        "title": "PageProfile",
+        "type": "object"
+      },
+      "PageProfileResponse": {
+        "properties": {
+          "analysis_run_id": {
+            "format": "uuid",
+            "title": "Analysis Run Id",
+            "type": "string"
+          },
+          "analyzer_version": {
+            "title": "Analyzer Version",
+            "type": "string"
+          },
+          "approval_state": {
+            "enum": [
+              "needs_review",
+              "approved",
+              "rejected"
+            ],
+            "title": "Approval State",
+            "type": "string"
+          },
+          "campaign_id": {
+            "format": "uuid",
+            "title": "Campaign Id",
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/PageType"
+          },
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_current": {
+            "title": "Is Current",
+            "type": "boolean"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "model_digest": {
+            "title": "Model Digest",
+            "type": "string"
+          },
+          "page_type": {
+            "$ref": "#/components/schemas/PageType"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/PageProfile"
+          },
+          "project_id": {
+            "format": "uuid",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "provenance_state": {
+            "enum": [
+              "authorized",
+              "restricted",
+              "removal_pending",
+              "removed"
+            ],
+            "title": "Provenance State",
+            "type": "string"
+          },
+          "review_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Note"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "schema_version": {
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "source_page_id": {
+            "format": "uuid",
+            "title": "Source Page Id",
+            "type": "string"
+          },
+          "source_website_id": {
+            "format": "uuid",
+            "title": "Source Website Id",
+            "type": "string"
+          },
+          "style_tags": {
+            "items": {
+              "$ref": "#/components/schemas/StyleTag"
+            },
+            "title": "Style Tags",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "campaign_id",
+          "source_website_id",
+          "source_page_id",
+          "analysis_run_id",
+          "profile",
+          "page_type",
+          "category",
+          "language",
+          "style_tags",
+          "confidence",
+          "schema_version",
+          "analyzer_version",
+          "model_digest",
+          "approval_state",
+          "provenance_state",
+          "is_current",
+          "review_note",
+          "reviewed_at",
+          "created_at",
+          "version"
+        ],
+        "title": "PageProfileResponse",
+        "type": "object"
+      },
+      "PageResponse_AnalysisRunResponse_": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisRunResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "items",
+          "pagination"
+        ],
+        "title": "PageResponse[AnalysisRunResponse]",
+        "type": "object"
+      },
       "PageResponse_CampaignActivityResponse_": {
         "additionalProperties": false,
         "properties": {
@@ -2296,6 +3127,30 @@
           "pagination"
         ],
         "title": "PageResponse[DuplicateGroupResponse]",
+        "type": "object"
+      },
+      "PageResponse_PageProfileResponse_": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PageProfileResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "items",
+          "pagination"
+        ],
+        "title": "PageResponse[PageProfileResponse]",
         "type": "object"
       },
       "PageResponse_ProjectResponse_": {
@@ -2416,6 +3271,54 @@
           "pagination"
         ],
         "title": "PageResponse[ScanTargetResponse]",
+        "type": "object"
+      },
+      "PageResponse_SectionPatternResponse_": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SectionPatternResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "items",
+          "pagination"
+        ],
+        "title": "PageResponse[SectionPatternResponse]",
+        "type": "object"
+      },
+      "PageResponse_WebsiteProfileResponse_": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WebsiteProfileResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "items",
+          "pagination"
+        ],
+        "title": "PageResponse[WebsiteProfileResponse]",
         "type": "object"
       },
       "PageScanDetailResponse": {
@@ -2821,6 +3724,27 @@
         ],
         "title": "PageScanResponse",
         "type": "object"
+      },
+      "PageType": {
+        "enum": [
+          "homepage",
+          "about",
+          "services",
+          "product",
+          "features",
+          "pricing",
+          "contact",
+          "documentation",
+          "blog-index",
+          "article",
+          "case-study",
+          "careers",
+          "legal",
+          "authentication",
+          "unknown"
+        ],
+        "title": "PageType",
+        "type": "string"
       },
       "PaginationMeta": {
         "additionalProperties": false,
@@ -3563,6 +4487,65 @@
           }
         },
         "title": "ResponseMeta",
+        "type": "object"
+      },
+      "ResponsiveBehavior": {
+        "additionalProperties": false,
+        "description": "Observed layout changes across bounded viewport ranges.",
+        "properties": {
+          "affected_components": {
+            "default": [],
+            "description": "Controlled components affected by the change.",
+            "items": {
+              "$ref": "#/components/schemas/ComponentName"
+            },
+            "maxItems": 24,
+            "title": "Affected Components",
+            "type": "array"
+          },
+          "behavior": {
+            "description": "Controlled responsive transformation category.",
+            "enum": [
+              "stack-columns",
+              "collapse-navigation",
+              "wrap-items",
+              "reduce-spacing",
+              "resize-type",
+              "hide-secondary-content",
+              "preserve-layout",
+              "unknown"
+            ],
+            "title": "Behavior",
+            "type": "string"
+          },
+          "maximum_width_px": {
+            "description": "Inclusive upper viewport width for this behavior.",
+            "maximum": 7680.0,
+            "minimum": 240.0,
+            "title": "Maximum Width Px",
+            "type": "integer"
+          },
+          "minimum_width_px": {
+            "description": "Inclusive lower viewport width for this behavior.",
+            "maximum": 7680.0,
+            "minimum": 240.0,
+            "title": "Minimum Width Px",
+            "type": "integer"
+          },
+          "schema_version": {
+            "const": 1,
+            "default": 1,
+            "description": "Normalized analysis schema version.",
+            "title": "Schema Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "minimum_width_px",
+          "maximum_width_px",
+          "behavior"
+        ],
+        "title": "ResponsiveBehavior",
         "type": "object"
       },
       "ScanArtifactResponse": {
@@ -4908,6 +5891,297 @@
         "title": "ScanTimeoutLimits",
         "type": "object"
       },
+      "SectionPattern": {
+        "additionalProperties": false,
+        "description": "Ordered abstract page section using only controlled pattern vocabularies.",
+        "properties": {
+          "components": {
+            "default": [],
+            "description": "Ordered controlled component patterns.",
+            "items": {
+              "$ref": "#/components/schemas/ComponentPattern"
+            },
+            "maxItems": 64,
+            "title": "Components",
+            "type": "array"
+          },
+          "copy_purpose": {
+            "$ref": "#/components/schemas/CopyPurpose",
+            "description": "Abstract copy goal, never copied source text."
+          },
+          "layout": {
+            "description": "Controlled high-level section layout.",
+            "enum": [
+              "single-column",
+              "two-column",
+              "three-column",
+              "multi-column",
+              "grid",
+              "split",
+              "overlay",
+              "unknown"
+            ],
+            "title": "Layout",
+            "type": "string"
+          },
+          "order": {
+            "description": "Zero-based page section order.",
+            "maximum": 255.0,
+            "minimum": 0.0,
+            "title": "Order",
+            "type": "integer"
+          },
+          "responsive_behaviors": {
+            "default": [],
+            "description": "Ordered non-overlapping responsive behaviors.",
+            "items": {
+              "$ref": "#/components/schemas/ResponsiveBehavior"
+            },
+            "maxItems": 16,
+            "title": "Responsive Behaviors",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": 1,
+            "default": 1,
+            "description": "Normalized analysis schema version.",
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "section_type": {
+            "$ref": "#/components/schemas/SectionType",
+            "description": "Controlled section registry type."
+          }
+        },
+        "required": [
+          "section_type",
+          "order",
+          "copy_purpose",
+          "layout"
+        ],
+        "title": "SectionPattern",
+        "type": "object"
+      },
+      "SectionPatternResponse": {
+        "properties": {
+          "analysis_run_id": {
+            "format": "uuid",
+            "title": "Analysis Run Id",
+            "type": "string"
+          },
+          "analyzer_version": {
+            "title": "Analyzer Version",
+            "type": "string"
+          },
+          "approval_state": {
+            "enum": [
+              "needs_review",
+              "approved",
+              "rejected"
+            ],
+            "title": "Approval State",
+            "type": "string"
+          },
+          "campaign_id": {
+            "format": "uuid",
+            "title": "Campaign Id",
+            "type": "string"
+          },
+          "category": {
+            "$ref": "#/components/schemas/PageType"
+          },
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "duplicate_of_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duplicate Of Id"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "layout": {
+            "enum": [
+              "single-column",
+              "two-column",
+              "three-column",
+              "multi-column",
+              "grid",
+              "split",
+              "overlay",
+              "unknown"
+            ],
+            "title": "Layout",
+            "type": "string"
+          },
+          "model_digest": {
+            "title": "Model Digest",
+            "type": "string"
+          },
+          "page_profile_id": {
+            "format": "uuid",
+            "title": "Page Profile Id",
+            "type": "string"
+          },
+          "pattern": {
+            "$ref": "#/components/schemas/SectionPattern"
+          },
+          "pattern_hash": {
+            "title": "Pattern Hash",
+            "type": "string"
+          },
+          "project_id": {
+            "format": "uuid",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "provenance_state": {
+            "enum": [
+              "authorized",
+              "restricted",
+              "removal_pending",
+              "removed"
+            ],
+            "title": "Provenance State",
+            "type": "string"
+          },
+          "retrieval_document": {
+            "title": "Retrieval Document",
+            "type": "string"
+          },
+          "review_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Note"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "schema_version": {
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "section_order": {
+            "title": "Section Order",
+            "type": "integer"
+          },
+          "section_type": {
+            "$ref": "#/components/schemas/SectionType"
+          },
+          "source_page_id": {
+            "format": "uuid",
+            "title": "Source Page Id",
+            "type": "string"
+          },
+          "source_website_id": {
+            "format": "uuid",
+            "title": "Source Website Id",
+            "type": "string"
+          },
+          "style_tags": {
+            "items": {
+              "$ref": "#/components/schemas/StyleTag"
+            },
+            "title": "Style Tags",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "campaign_id",
+          "source_website_id",
+          "source_page_id",
+          "analysis_run_id",
+          "page_profile_id",
+          "duplicate_of_id",
+          "pattern",
+          "section_order",
+          "section_type",
+          "layout",
+          "style_tags",
+          "category",
+          "language",
+          "confidence",
+          "schema_version",
+          "analyzer_version",
+          "model_digest",
+          "approval_state",
+          "provenance_state",
+          "retrieval_document",
+          "pattern_hash",
+          "review_note",
+          "reviewed_at",
+          "created_at",
+          "version"
+        ],
+        "title": "SectionPatternResponse",
+        "type": "object"
+      },
+      "SectionType": {
+        "description": "Controlled section registry accepted by deterministic rendering and retrieval.",
+        "enum": [
+          "header",
+          "navigation",
+          "hero",
+          "logo-cloud",
+          "features",
+          "services",
+          "stats",
+          "content",
+          "gallery",
+          "testimonials",
+          "case-studies",
+          "pricing",
+          "comparison",
+          "faq",
+          "cta",
+          "contact",
+          "footer",
+          "unknown"
+        ],
+        "title": "SectionType",
+        "type": "string"
+      },
       "SelectedFailureRetryRequest": {
         "additionalProperties": false,
         "properties": {
@@ -4939,6 +6213,68 @@
         ],
         "title": "SelectedFailureRetryRequest",
         "type": "object"
+      },
+      "SpacingTokens": {
+        "additionalProperties": false,
+        "description": "Positive spacing and shape dimensions normalized to CSS pixels.",
+        "properties": {
+          "radius_px": {
+            "default": [],
+            "description": "Unique ascending border radii in CSS pixels.",
+            "items": {
+              "type": "number"
+            },
+            "maxItems": 16,
+            "title": "Radius Px",
+            "type": "array"
+          },
+          "scale_px": {
+            "default": [],
+            "description": "Unique ascending spacing values in CSS pixels.",
+            "items": {
+              "type": "number"
+            },
+            "maxItems": 24,
+            "title": "Scale Px",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": 1,
+            "default": 1,
+            "description": "Normalized analysis schema version.",
+            "title": "Schema Version",
+            "type": "integer"
+          }
+        },
+        "title": "SpacingTokens",
+        "type": "object"
+      },
+      "StyleTag": {
+        "description": "Controlled non-brand visual character vocabulary.",
+        "enum": [
+          "minimalist",
+          "maximalist",
+          "corporate",
+          "editorial",
+          "playful",
+          "luxury",
+          "technical",
+          "organic",
+          "geometric",
+          "monochrome",
+          "colorful",
+          "high-contrast",
+          "muted",
+          "spacious",
+          "dense",
+          "rounded",
+          "sharp",
+          "flat",
+          "layered",
+          "unknown"
+        ],
+        "title": "StyleTag",
+        "type": "string"
       },
       "TargetSummaryResponse": {
         "additionalProperties": false,
@@ -4977,6 +6313,61 @@
           "unresolved_failure_count"
         ],
         "title": "TargetSummaryResponse",
+        "type": "object"
+      },
+      "TypographyTokens": {
+        "additionalProperties": false,
+        "description": "Abstract typography scale without copied text or brand identity.",
+        "properties": {
+          "font_families": {
+            "default": [],
+            "description": "Ordered generic font categories inferred from computed styles.",
+            "items": {
+              "$ref": "#/components/schemas/FontCategory"
+            },
+            "maxItems": 8,
+            "title": "Font Families",
+            "type": "array"
+          },
+          "font_sizes_px": {
+            "default": [],
+            "description": "Unique positive font sizes in ascending CSS-pixel order.",
+            "items": {
+              "type": "number"
+            },
+            "maxItems": 20,
+            "title": "Font Sizes Px",
+            "type": "array"
+          },
+          "font_weights": {
+            "default": [],
+            "description": "Unique numeric font weights in ascending order.",
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 12,
+            "title": "Font Weights",
+            "type": "array"
+          },
+          "line_heights_px": {
+            "default": [],
+            "description": "Unique positive line heights in ascending CSS-pixel order.",
+            "items": {
+              "type": "number"
+            },
+            "maxItems": 20,
+            "title": "Line Heights Px",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": 1,
+            "default": 1,
+            "description": "Normalized analysis schema version.",
+            "title": "Schema Version",
+            "type": "integer"
+          }
+        },
+        "title": "TypographyTokens",
         "type": "object"
       },
       "UserResponse": {
@@ -5210,6 +6601,191 @@
           "height"
         ],
         "title": "Viewport",
+        "type": "object"
+      },
+      "WebsiteProfile": {
+        "additionalProperties": false,
+        "description": "Versioned normalized website profile and structured model-output contract.",
+        "properties": {
+          "confidence": {
+            "$ref": "#/components/schemas/AnalysisConfidence",
+            "description": "Aggregate website analysis confidence."
+          },
+          "design_tokens": {
+            "$ref": "#/components/schemas/DesignTokens",
+            "description": "Cross-page normalized design tokens."
+          },
+          "pages": {
+            "description": "Bounded normalized representative pages.",
+            "items": {
+              "$ref": "#/components/schemas/PageProfile"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Pages",
+            "type": "array"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/AnalysisProvenance",
+            "description": "Identifier-only source and artifact lineage."
+          },
+          "schema_version": {
+            "const": 1,
+            "default": 1,
+            "description": "Normalized analysis schema version.",
+            "title": "Schema Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "design_tokens",
+          "pages",
+          "confidence",
+          "provenance"
+        ],
+        "title": "WebsiteProfile",
+        "type": "object"
+      },
+      "WebsiteProfileResponse": {
+        "properties": {
+          "analysis_run_id": {
+            "format": "uuid",
+            "title": "Analysis Run Id",
+            "type": "string"
+          },
+          "analyzer_version": {
+            "title": "Analyzer Version",
+            "type": "string"
+          },
+          "approval_state": {
+            "enum": [
+              "needs_review",
+              "approved",
+              "rejected"
+            ],
+            "title": "Approval State",
+            "type": "string"
+          },
+          "campaign_id": {
+            "format": "uuid",
+            "title": "Campaign Id",
+            "type": "string"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_current": {
+            "title": "Is Current",
+            "type": "boolean"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "model_digest": {
+            "title": "Model Digest",
+            "type": "string"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/WebsiteProfile"
+          },
+          "project_id": {
+            "format": "uuid",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "provenance_state": {
+            "enum": [
+              "authorized",
+              "restricted",
+              "removal_pending",
+              "removed"
+            ],
+            "title": "Provenance State",
+            "type": "string"
+          },
+          "review_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Note"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "schema_version": {
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "source_website_id": {
+            "format": "uuid",
+            "title": "Source Website Id",
+            "type": "string"
+          },
+          "style_tags": {
+            "items": {
+              "$ref": "#/components/schemas/StyleTag"
+            },
+            "title": "Style Tags",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "campaign_id",
+          "source_website_id",
+          "analysis_run_id",
+          "profile",
+          "category",
+          "language",
+          "style_tags",
+          "confidence",
+          "schema_version",
+          "analyzer_version",
+          "model_digest",
+          "approval_state",
+          "provenance_state",
+          "is_current",
+          "review_note",
+          "reviewed_at",
+          "created_at",
+          "version"
+        ],
+        "title": "WebsiteProfileResponse",
         "type": "object"
       }
     },
@@ -6272,6 +7848,1057 @@
         "summary": "Update Project",
         "tags": [
           "projects"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/analysis/page-profiles": {
+      "get": {
+        "operationId": "listPageProfiles",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "current_only",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Current Only",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponse_PageProfileResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List Page Profiles",
+        "tags": [
+          "analysis-profiles"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/analysis/page-profiles/{profile_id}": {
+      "get": {
+        "operationId": "getPageProfile",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageProfileResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get Page Profile",
+        "tags": [
+          "analysis-profiles"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/analysis/page-profiles/{profile_id}/curation": {
+      "patch": {
+        "operationId": "curatePageProfile",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CurationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageProfileResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Curate Page Profile",
+        "tags": [
+          "analysis-profiles"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/analysis/runs": {
+      "get": {
+        "operationId": "listAnalysisRuns",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponse_AnalysisRunResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List Analysis Runs",
+        "tags": [
+          "analysis-profiles"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/analysis/section-patterns": {
+      "get": {
+        "operationId": "listSectionPatterns",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "section_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 32,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Section Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "approval_state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "needs_review",
+                    "approved",
+                    "rejected"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Approval State"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponse_SectionPatternResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List Section Patterns",
+        "tags": [
+          "analysis-profiles"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/analysis/section-patterns/{pattern_id}": {
+      "get": {
+        "operationId": "getSectionPattern",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "pattern_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Pattern Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionPatternResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get Section Pattern",
+        "tags": [
+          "analysis-profiles"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/analysis/section-patterns/{pattern_id}/curation": {
+      "patch": {
+        "operationId": "curateSectionPattern",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "pattern_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Pattern Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CurationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionPatternResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Curate Section Pattern",
+        "tags": [
+          "analysis-profiles"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/analysis/website-profiles": {
+      "get": {
+        "operationId": "listWebsiteProfiles",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "current_only",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Current Only",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponse_WebsiteProfileResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List Website Profiles",
+        "tags": [
+          "analysis-profiles"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/analysis/website-profiles/{profile_id}": {
+      "get": {
+        "operationId": "getWebsiteProfile",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteProfileResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get Website Profile",
+        "tags": [
+          "analysis-profiles"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/analysis/website-profiles/{profile_id}/curation": {
+      "patch": {
+        "operationId": "curateWebsiteProfile",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CurationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebsiteProfileResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Curate Website Profile",
+        "tags": [
+          "analysis-profiles"
         ]
       }
     },

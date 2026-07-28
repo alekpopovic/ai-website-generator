@@ -13,6 +13,7 @@ dependencies = [
     "httpx2==2.7.0",
     "opentelemetry-api==1.44.0",
     "platform-clients",
+    "platform-schemas",
     "platform-workflows",
     "pydantic==2.13.4",
     "pydantic-settings==2.14.2",
@@ -39,4 +40,5 @@ package = true
 
 [tool.uv.sources]
 platform-clients = { workspace = true }
+platform-schemas = { workspace = true }
 platform-workflows = { workspace = true }

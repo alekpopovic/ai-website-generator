@@ -27,6 +27,242 @@ export type AccessTokenResponse = {
 };
 
 /**
+ * AccessibilityObservation
+ *
+ * Sanitized accessibility finding described through controlled codes.
+ */
+export type AccessibilityObservation = {
+    /**
+     * Affected Count
+     *
+     * Number of deterministic observations.
+     */
+    affected_count?: number;
+    /**
+     * Category
+     *
+     * Controlled accessibility review category.
+     */
+    category: 'landmarks' | 'headings' | 'contrast' | 'forms' | 'images' | 'keyboard' | 'motion' | 'unknown';
+    /**
+     * Code
+     *
+     * Stable observation code without copied page content.
+     */
+    code: 'missing-landmark' | 'heading-order' | 'contrast-risk' | 'missing-form-label' | 'missing-alt-purpose' | 'focus-risk' | 'motion-risk' | 'positive-observation' | 'unknown';
+    /**
+     * Confidence
+     *
+     * Confidence from zero to one for this observation.
+     */
+    confidence: number;
+    /**
+     * Schema Version
+     *
+     * Normalized analysis schema version.
+     */
+    schema_version?: 1;
+    /**
+     * Severity
+     *
+     * Review severity; it is not a conformance certification.
+     */
+    severity: 'positive' | 'info' | 'warning' | 'error';
+};
+
+/**
+ * AnalysisConfidence
+ *
+ * Explicit confidence values for independently reviewable analysis dimensions.
+ */
+export type AnalysisConfidence = {
+    /**
+     * Accessibility
+     *
+     * Accessibility observation confidence.
+     */
+    accessibility: number;
+    /**
+     * Design Tokens
+     *
+     * Visual token confidence.
+     */
+    design_tokens: number;
+    /**
+     * Overall
+     *
+     * Overall normalized confidence.
+     */
+    overall: number;
+    /**
+     * Responsive Behavior
+     *
+     * Responsive inference confidence.
+     */
+    responsive_behavior: number;
+    /**
+     * Schema Version
+     *
+     * Normalized analysis schema version.
+     */
+    schema_version?: 1;
+    /**
+     * Structure
+     *
+     * Section and component confidence.
+     */
+    structure: number;
+};
+
+/**
+ * AnalysisProvenance
+ *
+ * Identifier-only lineage for the deterministic and model analysis inputs.
+ */
+export type AnalysisProvenance = {
+    /**
+     * Analyzed At
+     *
+     * Timezone-aware analysis completion timestamp.
+     */
+    analyzed_at: string;
+    /**
+     * Analyzer Version
+     *
+     * Bounded structured analyzer version.
+     */
+    analyzer_version: string;
+    /**
+     * Artifact Sha256
+     *
+     * Artifact role to SHA-256 mapping without bucket names, keys, or URLs.
+     */
+    artifact_sha256?: {
+        [key: string]: unknown | string;
+    };
+    /**
+     * Campaign Id
+     *
+     * Database ID of the owning scan campaign.
+     */
+    campaign_id: string;
+    /**
+     * Deterministic Only
+     *
+     * True when the profile was created without model inference.
+     */
+    deterministic_only: boolean;
+    /**
+     * Extractor Version
+     *
+     * Bounded deterministic extractor version.
+     */
+    extractor_version: string;
+    /**
+     * Page Scan Ids
+     *
+     * Ordered page-scan IDs used as inputs; no binary payloads are embedded.
+     */
+    page_scan_ids: Array<string>;
+    /**
+     * Scanner Version
+     *
+     * Bounded browser scanner implementation version.
+     */
+    scanner_version: string;
+    /**
+     * Schema Version
+     *
+     * Normalized analysis schema version.
+     */
+    schema_version?: 1;
+    /**
+     * Source Website Id
+     *
+     * Database ID of the authorized source website.
+     */
+    source_website_id: string;
+};
+
+/**
+ * AnalysisRunResponse
+ */
+export type AnalysisRunResponse = {
+    /**
+     * Analyzer Version
+     */
+    analyzer_version: string;
+    /**
+     * Attempts
+     */
+    attempts: number;
+    /**
+     * Campaign Id
+     */
+    campaign_id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Latency Ms
+     */
+    latency_ms: number;
+    /**
+     * Model Digest
+     */
+    model_digest: string;
+    /**
+     * Model Name
+     */
+    model_name: string;
+    /**
+     * Output Kind
+     */
+    output_kind: string;
+    /**
+     * Project Id
+     */
+    project_id: string;
+    /**
+     * Prompt Version
+     */
+    prompt_version: string;
+    /**
+     * Provenance State
+     */
+    provenance_state: string;
+    /**
+     * Schema Version
+     */
+    schema_version: number;
+    /**
+     * Source Page Id
+     */
+    source_page_id: string | null;
+    /**
+     * Source Website Id
+     */
+    source_website_id: string;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Strategy
+     */
+    strategy: string;
+    /**
+     * Used Fallback
+     */
+    used_fallback: boolean;
+};
+
+/**
  * ApiResponse[ModelReadinessData]
  */
 export type ApiResponseModelReadinessData = {
@@ -145,6 +381,106 @@ export type CampaignVersionRequest = {
      */
     version: number;
 };
+
+/**
+ * ColorToken
+ *
+ * One normalized color candidate with a registry-safe token name.
+ */
+export type ColorToken = {
+    /**
+     * Frequency
+     *
+     * Number of deterministic extraction observations supporting the token.
+     */
+    frequency?: number;
+    /**
+     * Name
+     *
+     * Stable kebab-case token name, never a brand label.
+     */
+    name: string;
+    /**
+     * Value
+     *
+     * Validated hexadecimal, RGB(A), or HSL(A) CSS color value.
+     */
+    value: string;
+};
+
+/**
+ * ColorTokens
+ *
+ * Bounded palette inferred from rendered style frequencies.
+ */
+export type ColorTokens = {
+    /**
+     * Palette
+     *
+     * Ordered palette candidates, most frequent first.
+     */
+    palette?: Array<ColorToken>;
+    /**
+     * Schema Version
+     *
+     * Normalized analysis schema version.
+     */
+    schema_version?: 1;
+};
+
+/**
+ * ComponentName
+ *
+ * Controlled abstract component vocabulary; never executable component source.
+ */
+export type ComponentName = 'nav-link' | 'heading' | 'body-copy' | 'button' | 'badge' | 'card' | 'statistic' | 'feature-item' | 'service-item' | 'media-placeholder' | 'gallery-grid' | 'testimonial-card' | 'case-study-card' | 'pricing-tier' | 'comparison-table' | 'accordion' | 'contact-form' | 'link-list' | 'unknown';
+
+/**
+ * ComponentPattern
+ *
+ * Abstract registered component occurrence, never source code or executable markup.
+ */
+export type ComponentPattern = {
+    /**
+     * Controlled component registry name.
+     */
+    component_name: ComponentName;
+    /**
+     * Communication purpose instead of source copy.
+     */
+    copy_purpose: CopyPurpose;
+    /**
+     * Layout
+     *
+     * Controlled abstract layout mode.
+     */
+    layout?: 'block' | 'inline' | 'flex-row' | 'flex-column' | 'grid' | 'overlay' | 'unknown';
+    /**
+     * Order
+     *
+     * Zero-based order within its parent section.
+     */
+    order: number;
+    /**
+     * Repeat Count
+     *
+     * Observed bounded repetition count.
+     */
+    repeat_count?: number;
+    /**
+     * Schema Version
+     *
+     * Normalized analysis schema version.
+     */
+    schema_version?: 1;
+};
+
+/**
+ * CopyPurpose
+ *
+ * Abstract communication goal used instead of source website text.
+ */
+export type CopyPurpose = 'identity' | 'navigation' | 'value-proposition' | 'build-trust' | 'explain-benefits' | 'describe-services' | 'quantify-outcomes' | 'editorial-content' | 'showcase-work' | 'social-proof' | 'compare-options' | 'answer-objections' | 'conversion' | 'contact' | 'legal-navigation' | 'unknown';
 
 /**
  * CrawlPageDetailResponse
@@ -718,6 +1054,24 @@ export type CrawlPageWithScansResponse = {
 };
 
 /**
+ * CurationRequest
+ */
+export type CurationRequest = {
+    /**
+     * Approval State
+     */
+    approval_state: 'needs_review' | 'approved' | 'rejected';
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * DeduplicationStatistics
  */
 export type DeduplicationStatistics = {
@@ -805,6 +1159,38 @@ export type DependencyHealthResponse = {
 export type DependencyState = 'available' | 'unavailable';
 
 /**
+ * DesignTokens
+ *
+ * Deterministic visual token projection shared across analyzed pages.
+ */
+export type DesignTokens = {
+    /**
+     * Normalized color palette candidates.
+     */
+    colors: ColorTokens;
+    /**
+     * Schema Version
+     *
+     * Normalized analysis schema version.
+     */
+    schema_version?: 1;
+    /**
+     * Normalized spacing and radius scales.
+     */
+    spacing: SpacingTokens;
+    /**
+     * Style Tags
+     *
+     * Abstract, non-brand visual style categories.
+     */
+    style_tags?: Array<StyleTag>;
+    /**
+     * Normalized typography scale.
+     */
+    typography: TypographyTokens;
+};
+
+/**
  * DuplicateGroupResponse
  */
 export type DuplicateGroupResponse = {
@@ -855,6 +1241,13 @@ export type EmbeddingCollectionVersion = {
      */
     serialization_schema_version: number;
 };
+
+/**
+ * FontCategory
+ *
+ * Abstract font classification that cannot carry a source-specific family name.
+ */
+export type FontCategory = 'system-sans' | 'sans-serif' | 'serif' | 'monospace' | 'cursive' | 'display' | 'unknown';
 
 /**
  * HTTPValidationError
@@ -1044,6 +1437,143 @@ export type ModelWarmupRequest = {
 };
 
 /**
+ * PageProfile
+ *
+ * AI-normalized page structure containing no source copy or source assets.
+ */
+export type PageProfile = {
+    /**
+     * Accessibility Observations
+     *
+     * Sanitized deterministic accessibility findings.
+     */
+    accessibility_observations?: Array<AccessibilityObservation>;
+    /**
+     * Per-dimension page analysis confidence.
+     */
+    confidence: AnalysisConfidence;
+    /**
+     * Controlled deterministic page classification.
+     */
+    page_type: PageType;
+    /**
+     * Schema Version
+     *
+     * Normalized analysis schema version.
+     */
+    schema_version?: 1;
+    /**
+     * Sections
+     *
+     * Ordered abstract section patterns.
+     */
+    sections: Array<SectionPattern>;
+    /**
+     * Source Page Id
+     *
+     * Database ID of the normalized crawl page.
+     */
+    source_page_id: string;
+};
+
+/**
+ * PageProfileResponse
+ */
+export type PageProfileResponse = {
+    /**
+     * Analysis Run Id
+     */
+    analysis_run_id: string;
+    /**
+     * Analyzer Version
+     */
+    analyzer_version: string;
+    /**
+     * Approval State
+     */
+    approval_state: 'needs_review' | 'approved' | 'rejected';
+    /**
+     * Campaign Id
+     */
+    campaign_id: string;
+    category: PageType;
+    /**
+     * Confidence
+     */
+    confidence: number;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Is Current
+     */
+    is_current: boolean;
+    /**
+     * Language
+     */
+    language: string;
+    /**
+     * Model Digest
+     */
+    model_digest: string;
+    page_type: PageType;
+    profile: PageProfile;
+    /**
+     * Project Id
+     */
+    project_id: string;
+    /**
+     * Provenance State
+     */
+    provenance_state: 'authorized' | 'restricted' | 'removal_pending' | 'removed';
+    /**
+     * Review Note
+     */
+    review_note: string | null;
+    /**
+     * Reviewed At
+     */
+    reviewed_at: string | null;
+    /**
+     * Schema Version
+     */
+    schema_version: number;
+    /**
+     * Source Page Id
+     */
+    source_page_id: string;
+    /**
+     * Source Website Id
+     */
+    source_website_id: string;
+    /**
+     * Style Tags
+     */
+    style_tags: Array<StyleTag>;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * PageResponse[AnalysisRunResponse]
+ */
+export type PageResponseAnalysisRunResponse = {
+    /**
+     * Items
+     */
+    items: Array<AnalysisRunResponse>;
+    meta?: ResponseMeta;
+    pagination: PaginationMeta;
+};
+
+/**
  * PageResponse[CampaignActivityResponse]
  */
 export type PageResponseCampaignActivityResponse = {
@@ -1075,6 +1605,18 @@ export type PageResponseDuplicateGroupResponse = {
      * Items
      */
     items: Array<DuplicateGroupResponse>;
+    meta?: ResponseMeta;
+    pagination: PaginationMeta;
+};
+
+/**
+ * PageResponse[PageProfileResponse]
+ */
+export type PageResponsePageProfileResponse = {
+    /**
+     * Items
+     */
+    items: Array<PageProfileResponse>;
     meta?: ResponseMeta;
     pagination: PaginationMeta;
 };
@@ -1135,6 +1677,30 @@ export type PageResponseScanTargetResponse = {
      * Items
      */
     items: Array<ScanTargetResponse>;
+    meta?: ResponseMeta;
+    pagination: PaginationMeta;
+};
+
+/**
+ * PageResponse[SectionPatternResponse]
+ */
+export type PageResponseSectionPatternResponse = {
+    /**
+     * Items
+     */
+    items: Array<SectionPatternResponse>;
+    meta?: ResponseMeta;
+    pagination: PaginationMeta;
+};
+
+/**
+ * PageResponse[WebsiteProfileResponse]
+ */
+export type PageResponseWebsiteProfileResponse = {
+    /**
+     * Items
+     */
+    items: Array<WebsiteProfileResponse>;
     meta?: ResponseMeta;
     pagination: PaginationMeta;
 };
@@ -1322,6 +1888,11 @@ export type PageScanResponse = {
      */
     viewport_width: number;
 };
+
+/**
+ * PageType
+ */
+export type PageType = 'homepage' | 'about' | 'services' | 'product' | 'features' | 'pricing' | 'contact' | 'documentation' | 'blog-index' | 'article' | 'case-study' | 'careers' | 'legal' | 'authentication' | 'unknown';
 
 /**
  * PaginationMeta
@@ -1699,6 +2270,44 @@ export type ResponseMeta = {
      * Request Id
      */
     request_id?: string | null;
+};
+
+/**
+ * ResponsiveBehavior
+ *
+ * Observed layout changes across bounded viewport ranges.
+ */
+export type ResponsiveBehavior = {
+    /**
+     * Affected Components
+     *
+     * Controlled components affected by the change.
+     */
+    affected_components?: Array<ComponentName>;
+    /**
+     * Behavior
+     *
+     * Controlled responsive transformation category.
+     */
+    behavior: 'stack-columns' | 'collapse-navigation' | 'wrap-items' | 'reduce-spacing' | 'resize-type' | 'hide-secondary-content' | 'preserve-layout' | 'unknown';
+    /**
+     * Maximum Width Px
+     *
+     * Inclusive upper viewport width for this behavior.
+     */
+    maximum_width_px: number;
+    /**
+     * Minimum Width Px
+     *
+     * Inclusive lower viewport width for this behavior.
+     */
+    minimum_width_px: number;
+    /**
+     * Schema Version
+     *
+     * Normalized analysis schema version.
+     */
+    schema_version?: 1;
 };
 
 /**
@@ -2338,6 +2947,164 @@ export type ScanTimeoutLimits = {
 };
 
 /**
+ * SectionPattern
+ *
+ * Ordered abstract page section using only controlled pattern vocabularies.
+ */
+export type SectionPattern = {
+    /**
+     * Components
+     *
+     * Ordered controlled component patterns.
+     */
+    components?: Array<ComponentPattern>;
+    /**
+     * Abstract copy goal, never copied source text.
+     */
+    copy_purpose: CopyPurpose;
+    /**
+     * Layout
+     *
+     * Controlled high-level section layout.
+     */
+    layout: 'single-column' | 'two-column' | 'three-column' | 'multi-column' | 'grid' | 'split' | 'overlay' | 'unknown';
+    /**
+     * Order
+     *
+     * Zero-based page section order.
+     */
+    order: number;
+    /**
+     * Responsive Behaviors
+     *
+     * Ordered non-overlapping responsive behaviors.
+     */
+    responsive_behaviors?: Array<ResponsiveBehavior>;
+    /**
+     * Schema Version
+     *
+     * Normalized analysis schema version.
+     */
+    schema_version?: 1;
+    /**
+     * Controlled section registry type.
+     */
+    section_type: SectionType;
+};
+
+/**
+ * SectionPatternResponse
+ */
+export type SectionPatternResponse = {
+    /**
+     * Analysis Run Id
+     */
+    analysis_run_id: string;
+    /**
+     * Analyzer Version
+     */
+    analyzer_version: string;
+    /**
+     * Approval State
+     */
+    approval_state: 'needs_review' | 'approved' | 'rejected';
+    /**
+     * Campaign Id
+     */
+    campaign_id: string;
+    category: PageType;
+    /**
+     * Confidence
+     */
+    confidence: number;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Duplicate Of Id
+     */
+    duplicate_of_id: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Language
+     */
+    language: string;
+    /**
+     * Layout
+     */
+    layout: 'single-column' | 'two-column' | 'three-column' | 'multi-column' | 'grid' | 'split' | 'overlay' | 'unknown';
+    /**
+     * Model Digest
+     */
+    model_digest: string;
+    /**
+     * Page Profile Id
+     */
+    page_profile_id: string;
+    pattern: SectionPattern;
+    /**
+     * Pattern Hash
+     */
+    pattern_hash: string;
+    /**
+     * Project Id
+     */
+    project_id: string;
+    /**
+     * Provenance State
+     */
+    provenance_state: 'authorized' | 'restricted' | 'removal_pending' | 'removed';
+    /**
+     * Retrieval Document
+     */
+    retrieval_document: string;
+    /**
+     * Review Note
+     */
+    review_note: string | null;
+    /**
+     * Reviewed At
+     */
+    reviewed_at: string | null;
+    /**
+     * Schema Version
+     */
+    schema_version: number;
+    /**
+     * Section Order
+     */
+    section_order: number;
+    section_type: SectionType;
+    /**
+     * Source Page Id
+     */
+    source_page_id: string;
+    /**
+     * Source Website Id
+     */
+    source_website_id: string;
+    /**
+     * Style Tags
+     */
+    style_tags: Array<StyleTag>;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * SectionType
+ *
+ * Controlled section registry accepted by deterministic rendering and retrieval.
+ */
+export type SectionType = 'header' | 'navigation' | 'hero' | 'logo-cloud' | 'features' | 'services' | 'stats' | 'content' | 'gallery' | 'testimonials' | 'case-studies' | 'pricing' | 'comparison' | 'faq' | 'cta' | 'contact' | 'footer' | 'unknown';
+
+/**
  * SelectedFailureRetryRequest
  */
 export type SelectedFailureRetryRequest = {
@@ -2354,6 +3121,39 @@ export type SelectedFailureRetryRequest = {
      */
     version: number;
 };
+
+/**
+ * SpacingTokens
+ *
+ * Positive spacing and shape dimensions normalized to CSS pixels.
+ */
+export type SpacingTokens = {
+    /**
+     * Radius Px
+     *
+     * Unique ascending border radii in CSS pixels.
+     */
+    radius_px?: Array<number>;
+    /**
+     * Scale Px
+     *
+     * Unique ascending spacing values in CSS pixels.
+     */
+    scale_px?: Array<number>;
+    /**
+     * Schema Version
+     *
+     * Normalized analysis schema version.
+     */
+    schema_version?: 1;
+};
+
+/**
+ * StyleTag
+ *
+ * Controlled non-brand visual character vocabulary.
+ */
+export type StyleTag = 'minimalist' | 'maximalist' | 'corporate' | 'editorial' | 'playful' | 'luxury' | 'technical' | 'organic' | 'geometric' | 'monochrome' | 'colorful' | 'high-contrast' | 'muted' | 'spacious' | 'dense' | 'rounded' | 'sharp' | 'flat' | 'layered' | 'unknown';
 
 /**
  * TargetSummaryResponse
@@ -2380,6 +3180,44 @@ export type TargetSummaryResponse = {
      * Unresolved Failure Count
      */
     unresolved_failure_count: number;
+};
+
+/**
+ * TypographyTokens
+ *
+ * Abstract typography scale without copied text or brand identity.
+ */
+export type TypographyTokens = {
+    /**
+     * Font Families
+     *
+     * Ordered generic font categories inferred from computed styles.
+     */
+    font_families?: Array<FontCategory>;
+    /**
+     * Font Sizes Px
+     *
+     * Unique positive font sizes in ascending CSS-pixel order.
+     */
+    font_sizes_px?: Array<number>;
+    /**
+     * Font Weights
+     *
+     * Unique numeric font weights in ascending order.
+     */
+    font_weights?: Array<number>;
+    /**
+     * Line Heights Px
+     *
+     * Unique positive line heights in ascending CSS-pixel order.
+     */
+    line_heights_px?: Array<number>;
+    /**
+     * Schema Version
+     *
+     * Normalized analysis schema version.
+     */
+    schema_version?: 1;
 };
 
 /**
@@ -2537,6 +3375,121 @@ export type Viewport = {
      * Width
      */
     width: number;
+};
+
+/**
+ * WebsiteProfile
+ *
+ * Versioned normalized website profile and structured model-output contract.
+ */
+export type WebsiteProfile = {
+    /**
+     * Aggregate website analysis confidence.
+     */
+    confidence: AnalysisConfidence;
+    /**
+     * Cross-page normalized design tokens.
+     */
+    design_tokens: DesignTokens;
+    /**
+     * Pages
+     *
+     * Bounded normalized representative pages.
+     */
+    pages: Array<PageProfile>;
+    /**
+     * Identifier-only source and artifact lineage.
+     */
+    provenance: AnalysisProvenance;
+    /**
+     * Schema Version
+     *
+     * Normalized analysis schema version.
+     */
+    schema_version?: 1;
+};
+
+/**
+ * WebsiteProfileResponse
+ */
+export type WebsiteProfileResponse = {
+    /**
+     * Analysis Run Id
+     */
+    analysis_run_id: string;
+    /**
+     * Analyzer Version
+     */
+    analyzer_version: string;
+    /**
+     * Approval State
+     */
+    approval_state: 'needs_review' | 'approved' | 'rejected';
+    /**
+     * Campaign Id
+     */
+    campaign_id: string;
+    /**
+     * Category
+     */
+    category: string;
+    /**
+     * Confidence
+     */
+    confidence: number;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Is Current
+     */
+    is_current: boolean;
+    /**
+     * Language
+     */
+    language: string;
+    /**
+     * Model Digest
+     */
+    model_digest: string;
+    profile: WebsiteProfile;
+    /**
+     * Project Id
+     */
+    project_id: string;
+    /**
+     * Provenance State
+     */
+    provenance_state: 'authorized' | 'restricted' | 'removal_pending' | 'removed';
+    /**
+     * Review Note
+     */
+    review_note: string | null;
+    /**
+     * Reviewed At
+     */
+    reviewed_at: string | null;
+    /**
+     * Schema Version
+     */
+    schema_version: number;
+    /**
+     * Source Website Id
+     */
+    source_website_id: string;
+    /**
+     * Style Tags
+     */
+    style_tags: Array<StyleTag>;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 export type WarmUpConfiguredModelData = {
@@ -3107,6 +4060,514 @@ export type UpdateProjectResponses = {
 };
 
 export type UpdateProjectResponse = UpdateProjectResponses[keyof UpdateProjectResponses];
+
+export type ListPageProfilesData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+    };
+    query?: {
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Current Only
+         */
+        current_only?: boolean;
+    };
+    url: '/api/v1/projects/{project_id}/analysis/page-profiles';
+};
+
+export type ListPageProfilesErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type ListPageProfilesError = ListPageProfilesErrors[keyof ListPageProfilesErrors];
+
+export type ListPageProfilesResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageResponsePageProfileResponse;
+};
+
+export type ListPageProfilesResponse = ListPageProfilesResponses[keyof ListPageProfilesResponses];
+
+export type GetPageProfileData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Profile Id
+         */
+        profile_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/analysis/page-profiles/{profile_id}';
+};
+
+export type GetPageProfileErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type GetPageProfileError = GetPageProfileErrors[keyof GetPageProfileErrors];
+
+export type GetPageProfileResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageProfileResponse;
+};
+
+export type GetPageProfileResponse = GetPageProfileResponses[keyof GetPageProfileResponses];
+
+export type CuratePageProfileData = {
+    body: CurationRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Profile Id
+         */
+        profile_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/analysis/page-profiles/{profile_id}/curation';
+};
+
+export type CuratePageProfileErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type CuratePageProfileError = CuratePageProfileErrors[keyof CuratePageProfileErrors];
+
+export type CuratePageProfileResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageProfileResponse;
+};
+
+export type CuratePageProfileResponse = CuratePageProfileResponses[keyof CuratePageProfileResponses];
+
+export type ListAnalysisRunsData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+    };
+    query?: {
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/projects/{project_id}/analysis/runs';
+};
+
+export type ListAnalysisRunsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type ListAnalysisRunsError = ListAnalysisRunsErrors[keyof ListAnalysisRunsErrors];
+
+export type ListAnalysisRunsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageResponseAnalysisRunResponse;
+};
+
+export type ListAnalysisRunsResponse = ListAnalysisRunsResponses[keyof ListAnalysisRunsResponses];
+
+export type ListSectionPatternsData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+    };
+    query?: {
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Section Type
+         */
+        section_type?: string | null;
+        /**
+         * Approval State
+         */
+        approval_state?: 'needs_review' | 'approved' | 'rejected' | null;
+    };
+    url: '/api/v1/projects/{project_id}/analysis/section-patterns';
+};
+
+export type ListSectionPatternsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type ListSectionPatternsError = ListSectionPatternsErrors[keyof ListSectionPatternsErrors];
+
+export type ListSectionPatternsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageResponseSectionPatternResponse;
+};
+
+export type ListSectionPatternsResponse = ListSectionPatternsResponses[keyof ListSectionPatternsResponses];
+
+export type GetSectionPatternData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Pattern Id
+         */
+        pattern_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/analysis/section-patterns/{pattern_id}';
+};
+
+export type GetSectionPatternErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type GetSectionPatternError = GetSectionPatternErrors[keyof GetSectionPatternErrors];
+
+export type GetSectionPatternResponses = {
+    /**
+     * Successful Response
+     */
+    200: SectionPatternResponse;
+};
+
+export type GetSectionPatternResponse = GetSectionPatternResponses[keyof GetSectionPatternResponses];
+
+export type CurateSectionPatternData = {
+    body: CurationRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Pattern Id
+         */
+        pattern_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/analysis/section-patterns/{pattern_id}/curation';
+};
+
+export type CurateSectionPatternErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type CurateSectionPatternError = CurateSectionPatternErrors[keyof CurateSectionPatternErrors];
+
+export type CurateSectionPatternResponses = {
+    /**
+     * Successful Response
+     */
+    200: SectionPatternResponse;
+};
+
+export type CurateSectionPatternResponse = CurateSectionPatternResponses[keyof CurateSectionPatternResponses];
+
+export type ListWebsiteProfilesData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+    };
+    query?: {
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Current Only
+         */
+        current_only?: boolean;
+    };
+    url: '/api/v1/projects/{project_id}/analysis/website-profiles';
+};
+
+export type ListWebsiteProfilesErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type ListWebsiteProfilesError = ListWebsiteProfilesErrors[keyof ListWebsiteProfilesErrors];
+
+export type ListWebsiteProfilesResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageResponseWebsiteProfileResponse;
+};
+
+export type ListWebsiteProfilesResponse = ListWebsiteProfilesResponses[keyof ListWebsiteProfilesResponses];
+
+export type GetWebsiteProfileData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Profile Id
+         */
+        profile_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/analysis/website-profiles/{profile_id}';
+};
+
+export type GetWebsiteProfileErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type GetWebsiteProfileError = GetWebsiteProfileErrors[keyof GetWebsiteProfileErrors];
+
+export type GetWebsiteProfileResponses = {
+    /**
+     * Successful Response
+     */
+    200: WebsiteProfileResponse;
+};
+
+export type GetWebsiteProfileResponse = GetWebsiteProfileResponses[keyof GetWebsiteProfileResponses];
+
+export type CurateWebsiteProfileData = {
+    body: CurationRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Profile Id
+         */
+        profile_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/analysis/website-profiles/{profile_id}/curation';
+};
+
+export type CurateWebsiteProfileErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type CurateWebsiteProfileError = CurateWebsiteProfileErrors[keyof CurateWebsiteProfileErrors];
+
+export type CurateWebsiteProfileResponses = {
+    /**
+     * Successful Response
+     */
+    200: WebsiteProfileResponse;
+};
+
+export type CurateWebsiteProfileResponse = CurateWebsiteProfileResponses[keyof CurateWebsiteProfileResponses];
 
 export type ArchiveProjectData = {
     body: ProjectVersionRequest;

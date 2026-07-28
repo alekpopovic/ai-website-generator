@@ -44,6 +44,7 @@ export class ProjectDetailShellComponent {
   readonly tabs = [
     { label: 'Generated sites', path: 'generated-sites' },
     { label: 'Scans', path: 'scans' },
+    { label: 'Analysis', path: 'analysis' },
     { label: 'Datasets', path: 'datasets' },
     { label: 'Assets', path: 'assets' },
     { label: 'Settings', path: 'settings' },

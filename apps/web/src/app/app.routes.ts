@@ -232,6 +232,14 @@ function projectRoutes(): Routes {
           ],
         },
         section('datasets', 'Datasets', 'Project datasets will appear here.'),
+        {
+          path: 'analysis',
+          title: 'Analysis profiles',
+          loadComponent: () =>
+            import('./features/analysis/analysis-review-page.component').then(
+              (module) => module.AnalysisReviewPageComponent,
+            ),
+        },
         section('assets', 'Assets', 'Project assets will appear here.'),
         section('settings', 'Settings', 'Use Edit project to change workspace defaults.'),
         { path: '', pathMatch: 'full', redirectTo: 'generated-sites' },

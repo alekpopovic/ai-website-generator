@@ -205,6 +205,54 @@ p {
   padding: clamp(1rem, 3vw, 1.5rem);
 }
 
+.analysis-pattern-grid {
+  display: grid;
+  grid-template-columns: minmax(20rem, 1.1fr) minmax(18rem, 0.9fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.analysis-inspector {
+  border-left: 1px solid #e0e4ed;
+  padding-left: 1.25rem;
+}
+
+.retrieval-document {
+  border-radius: 0.65rem;
+  background: #f5f7fb;
+  padding: 0.8rem;
+  color: #39445a;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.table-link-button {
+  border: 0;
+  background: transparent;
+  color: #5145cd;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0;
+}
+
+.selected-row {
+  background: #f3f1ff;
+}
+
+@media (max-width: 900px) {
+  .analysis-pattern-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .analysis-inspector {
+    border-top: 1px solid #e0e4ed;
+    border-left: 0;
+    padding-top: 1.25rem;
+    padding-left: 0;
+  }
+}
+
 .responsive-form-grid,
 .summary-grid {
   display: grid;
