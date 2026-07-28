@@ -585,8 +585,20 @@ class PageScan(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base
             name="status_allowed",
         ),
         CheckConstraint("attempt >= 1", name="attempt_positive"),
+        CheckConstraint(
+            "capture_schema_version IS NULL OR capture_schema_version >= 1",
+            name="capture_schema_version_positive",
+        ),
+        CheckConstraint(
+            "document_width IS NULL OR document_width >= 1", name="document_width_positive"
+        ),
+        CheckConstraint(
+            "document_height IS NULL OR document_height >= 1", name="document_height_positive"
+        ),
         Index("ix_page_scans_campaign_id_status", "campaign_id", "status"),
+        Index("ix_page_scans_configuration_hash", "configuration_hash"),
         UniqueConstraint("crawl_page_id", "viewport", "attempt"),
+        UniqueConstraint("crawl_page_id", "viewport", "configuration_hash"),
     )
 
     campaign_id: Mapped[UUID] = mapped_column(
@@ -603,6 +615,39 @@ class PageScan(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base
     screenshot_artifact_key: Mapped[str | None] = mapped_column(String(1_024))
     rendered_html_artifact_key: Mapped[str | None] = mapped_column(String(1_024))
     analysis_artifact_key: Mapped[str | None] = mapped_column(String(1_024))
+    viewport_screenshot_artifact_key: Mapped[str | None] = mapped_column(String(1_024))
+    configuration_hash: Mapped[str | None] = mapped_column(String(64))
+    capture_schema_version: Mapped[int | None] = mapped_column(Integer)
+    browser_version: Mapped[str | None] = mapped_column(String(64))
+    final_url: Mapped[str | None] = mapped_column(String(2_048))
+    artifact_checksums: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")
+    )
+    response_metadata: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")
+    )
+    page_title: Mapped[str | None] = mapped_column(String(500))
+    meta_description: Mapped[str | None] = mapped_column(String(1_000))
+    canonical_url: Mapped[str | None] = mapped_column(String(2_048))
+    language: Mapped[str | None] = mapped_column(String(35))
+    visible_text_summary: Mapped[str | None] = mapped_column(String(4_000))
+    console_errors: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+    )
+    page_errors: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+    )
+    failed_requests: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+    )
+    external_host_manifest: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+    )
+    document_width: Mapped[int | None] = mapped_column(Integer)
+    document_height: Mapped[int | None] = mapped_column(Integer)
+    screenshot_width: Mapped[int | None] = mapped_column(Integer)
+    screenshot_height: Mapped[int | None] = mapped_column(Integer)
+    full_page_truncated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 

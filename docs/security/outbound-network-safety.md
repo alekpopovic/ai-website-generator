@@ -40,6 +40,13 @@ image, media, XHR, fetch, EventSource, and WebSocket URL. Reject unhandled schem
 after each bounded job. Never grant browser processes platform credentials or mount secret-bearing
 files.
 
+The implemented browser worker applies these context and routing controls, uses a capability-free,
+read-only `pwuser` container, and bounds Chromium contexts, memory, PIDs, screenshots, HTML, and time.
+Compose network separation is a development topology rather than a production egress firewall. A
+deployment is incomplete until scanner policy permits only DNS plus validated public TCP 80/443 and
+denies backend, cluster, metadata, RFC1918, link-local, and other private address ranges independently
+of Chromium interception.
+
 ## Production firewall and proxy policy
 
 Application checks must be backed by a fail-closed egress layer:

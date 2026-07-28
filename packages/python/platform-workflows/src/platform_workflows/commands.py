@@ -83,6 +83,18 @@ class CrawlTargetInput:
 
 
 @dataclass(frozen=True, slots=True)
+class RenderPageInput:
+    """Minimal browser-render command; PostgreSQL owns URL and capture configuration."""
+
+    campaign_id: str
+    crawl_page_id: str
+
+    def __post_init__(self) -> None:
+        _validate_uuid("campaign_id", self.campaign_id)
+        _validate_uuid("crawl_page_id", self.crawl_page_id)
+
+
+@dataclass(frozen=True, slots=True)
 class WorkflowResult:
     """Terminal compact workflow result."""
 

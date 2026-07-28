@@ -67,6 +67,18 @@ terminates that child on cancellation. The child owns one Twisted reactor lifecy
 configuration from PostgreSQL, and writes through crawler repository services. Its stdout protocol is
 bounded JSON progress only; stderr is drained and never copied into application logs.
 
+Start the browser activity worker after installing the locked Chromium revision:
+
+```sh
+uv run playwright install chromium
+task browser-worker
+```
+
+It polls `browser`, receives only campaign/page UUIDs, keeps one Chromium process warm, and creates a
+fresh isolated context per desktop or mobile capture. Heartbeats contain only stage names and counts.
+The current control-only scan workflow does not fan out representative pages yet; activities can be
+exercised directly in integration tests until that orchestration prompt is implemented.
+
 Model warm-up requires the private AI activity worker in another terminal:
 
 ```sh

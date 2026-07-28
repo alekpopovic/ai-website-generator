@@ -85,6 +85,11 @@ tasks:
     cmds:
       - uv run platform-crawler-worker
 
+  browser-worker:
+    desc: Run the isolated Playwright activity worker on the browser queue
+    cmds:
+      - uv run platform-browser-worker
+
   crawler-fingerprint-backfill:
     desc: Recalculate deterministic duplicate groups from persisted page fingerprints
     cmds:

@@ -1,6 +1,8 @@
 # Local Development Stack
 
-The root `compose.yaml` runs infrastructure dependencies only. FastAPI, Angular, and worker application containers will be added in later implementation stages. All published ports bind to `127.0.0.1` by default; changing `DEV_BIND_ADDRESS` expands the trust boundary and requires a deliberate security review.
+The root `compose.yaml` runs infrastructure dependencies by default. The browser worker is an opt-in
+`workers` profile and publishes no port. All published ports bind to `127.0.0.1` by default; changing
+`DEV_BIND_ADDRESS` expands the trust boundary and requires a deliberate security review.
 
 ## Services and published ports
 
@@ -25,6 +27,11 @@ No service is bound to a non-loopback interface by default. Data services still 
 The `frontend-api` and `backend` networks are Docker-internal networks with no direct external route. Databases and infrastructure APIs attach only to `backend`. Developer-facing UIs and the mail service bridge `frontend-api` to the minimum backend dependency they need.
 
 The fixture website attaches to `scanner-egress`, a distinct network intended for future crawler and browser workers. It has no route to backend data services. The network permits outbound traffic because production-like scanner egress policy requires host-level controls that vary by operating system; future scanner containers must also implement URL validation and SSRF protection.
+
+The optional browser worker joins `backend` for PostgreSQL, Temporal, and MinIO and `scanner-egress`
+for hostile-site access. Application URL interception is mandatory but insufficient on its own;
+production must enforce default-deny egress so a browser exploit cannot reach backend services or
+private networks.
 
 Ollama attaches to `backend` and a separate `model-egress` network so an explicit model pull can reach the registry. It is never attached to `frontend-api`. Angular must use FastAPI rather than a Compose dependency directly.
 

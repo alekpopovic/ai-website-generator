@@ -4,6 +4,7 @@ from platform_workflows.commands import (
     CompactWorkflowInput,
     CrawlTargetInput,
     ModelWarmupInput,
+    RenderPageInput,
     WorkflowResult,
 )
 from platform_workflows.dispatcher import (
@@ -30,6 +31,7 @@ __all__ = [
     "ModelRole",
     "ModelWarmupInput",
     "ModelWarmupWorkflow",
+    "RenderPageInput",
     "ScanCampaignWorkflow",
     "SiteGenerationWorkflow",
     "TaskQueue",
