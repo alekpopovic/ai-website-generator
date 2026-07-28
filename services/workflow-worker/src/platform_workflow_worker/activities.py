@@ -26,6 +26,8 @@ from platform_workflows.commands import (
     ScanListInput,
     ScanProgressInput,
 )
+from platform_workflows.events import JobEvent as PublishedJobEvent
+from platform_workflows.events import JobEventPublisher
 from platform_workflows.heartbeat import ActivityHeartbeat
 from sqlalchemy import select
 from temporalio import activity
@@ -33,9 +35,15 @@ from temporalio.exceptions import ApplicationError
 
 
 class ScanControlActivities:
-    def __init__(self, database: DatabaseManager, qdrant: QdrantSettings) -> None:
+    def __init__(
+        self,
+        database: DatabaseManager,
+        qdrant: QdrantSettings,
+        event_publisher: JobEventPublisher | None = None,
+    ) -> None:
         self._database = database
         self._qdrant = qdrant
+        self._event_publisher = event_publisher
 
     @activity.defn(name="validate-scan-campaign")
     async def validate(self, command: CompactWorkflowInput) -> ScanCampaignPlan:
@@ -159,6 +167,13 @@ class ScanControlActivities:
                         },
                     )
                 )
+        await self._publish_event(
+            campaign_id=campaign_id,
+            project_id=UUID(command.project_id),
+            sequence=sequence,
+            event_type=command.stage,
+            status="running" if command.status == "paused" else command.status,
+        )
         return ActivityResult(record_id=command.campaign_id)
 
     @activity.defn(name="prepare-scan-embedding")
@@ -243,7 +258,43 @@ class ScanControlActivities:
                         },
                     )
                 )
+        await self._publish_event(
+            campaign_id=campaign_id,
+            project_id=UUID(command.project_id),
+            sequence=sequence,
+            event_type="campaign.complete",
+            status=(
+                "cancelled"
+                if status == "cancelled"
+                else "failed"
+                if status == "failed"
+                else "succeeded"
+            ),
+        )
         return ActivityResult(record_id=command.campaign_id)
+
+    async def _publish_event(
+        self,
+        *,
+        campaign_id: UUID,
+        project_id: UUID,
+        sequence: int,
+        event_type: str,
+        status: str,
+    ) -> None:
+        """Wake subscribers only after the durable transaction has committed."""
+        if self._event_publisher is None:
+            return
+        await self._event_publisher.publish(
+            PublishedJobEvent.create(
+                job_id=str(campaign_id),
+                project_id=str(project_id),
+                job_type="scan_campaign",
+                sequence=sequence,
+                event_type=event_type,
+                status=status,
+            )
+        )
 
     def registered(self) -> tuple[Callable[..., Any], ...]:
         return (

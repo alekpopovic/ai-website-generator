@@ -1163,12 +1163,19 @@ class JobEvent(UUIDPrimaryKeyMixin, Base):
             name="status_allowed",
         ),
         CheckConstraint("sequence >= 0", name="sequence_non_negative"),
+        CheckConstraint(
+            "job_type IN ('scan_campaign', 'dataset_build', 'generation', 'validation', 'training')",
+            name="job_type_allowed",
+        ),
         UniqueConstraint("job_id", "sequence"),
         Index("ix_job_events_project_id_created_at", "project_id", "created_at"),
     )
 
     project_id: Mapped[UUID | None] = mapped_column(ForeignKey("projects.id", ondelete="SET NULL"))
     job_id: Mapped[UUID] = mapped_column(nullable=False)
+    job_type: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="scan_campaign", server_default="scan_campaign"
+    )
     sequence: Mapped[int] = mapped_column(nullable=False)
     event_type: Mapped[str] = mapped_column(String(100), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False)

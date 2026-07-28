@@ -13,12 +13,14 @@ import {
 import { Observable, from } from 'rxjs';
 
 import { toAuthenticationError } from './authentication-error';
+import { JobEventStreamService } from '../job-events/job-event-stream.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthenticationService implements ApiRefreshStrategy {
   private readonly api = inject(Auth);
   private readonly tokens = inject(ApiAccessTokenStore);
   private readonly router = inject(Router);
+  private readonly jobEvents = inject(JobEventStreamService);
   private readonly currentUserValue = signal<UserResponse | null>(null);
   private initialized = false;
 
@@ -89,6 +91,7 @@ export class AuthenticationService implements ApiRefreshStrategy {
   }
 
   clearSession(): void {
+    this.jobEvents.closeAll();
     this.tokens.clear();
     this.currentUserValue.set(null);
   }

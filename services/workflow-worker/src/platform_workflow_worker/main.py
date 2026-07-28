@@ -4,10 +4,12 @@ import asyncio
 import logging
 import os
 import signal
+from typing import cast
 
 from platform_api.config import get_settings
 from platform_api.database import DatabaseManager
 from platform_workflows.client import TemporalClientConfig, create_temporal_client
+from platform_workflows.events import RedisJobEventPublisher, RedisStream
 from platform_workflows.queues import TaskQueue
 from platform_workflows.worker import (
     WorkerConfig,
@@ -16,6 +18,7 @@ from platform_workflows.worker import (
     create_worker,
 )
 from platform_workflows.workflows import WORKFLOW_TYPES
+from redis.asyncio import Redis
 
 from platform_workflow_worker.activities import ScanControlActivities
 
@@ -35,7 +38,20 @@ async def run() -> None:
     )
     config = WorkerConfig(task_queue=TaskQueue.CONTROL)
     health = WorkerHealthIndicator("workflow-worker", config.task_queue)
-    activities = ScanControlActivities(database, settings.qdrant)
+    redis: Redis | None = None
+    event_publisher = None
+    if settings.redis.url is not None:
+        redis = Redis.from_url(
+            settings.redis.url.get_secret_value(),
+            socket_connect_timeout=settings.redis.connect_timeout_seconds,
+            decode_responses=False,
+        )
+        event_publisher = RedisJobEventPublisher(
+            cast(RedisStream, redis),
+            prefix=settings.redis.key_prefix,
+            maxlen=settings.redis.job_event_stream_max_length,
+        )
+    activities = ScanControlActivities(database, settings.qdrant, event_publisher)
     worker = create_worker(
         client, config, workflows=WORKFLOW_TYPES, activities=activities.registered()
     )
@@ -63,6 +79,8 @@ async def run() -> None:
         await worker.shutdown()
         await worker_task
     await database.close()
+    if redis is not None:
+        await redis.aclose()
     health.transition(WorkerState.STOPPED)
     logger.info("worker_stopped %s", health.snapshot())
 

@@ -1,6 +1,7 @@
 export {
   API_REFRESH_STRATEGY,
   ApiAccessTokenStore,
+  ApiRefreshCoordinator,
   SKIP_API_AUTH,
   apiBearerInterceptor,
 } from './auth';

@@ -177,9 +177,9 @@ async def test_job_event_fake_records_compact_event() -> None:
         status="running",
     )
 
-    assert await publisher.publish(event) == "fake-1"
+    assert await publisher.publish(event) == "3-0"
     assert publisher.events == [event]
-    assert event.event_id == f"{job_id}:3"
+    assert event.event_id == "3"
 
 
 @pytest.mark.anyio

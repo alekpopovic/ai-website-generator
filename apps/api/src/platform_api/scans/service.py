@@ -95,7 +95,7 @@ class AfterCommitScheduler(Protocol):
 
 
 class ScanCampaignRepositoryContract(Protocol):
-    def add(self, entity: ScanCampaign | ScanTarget) -> None: ...
+    def add(self, entity: ScanCampaign | ScanTarget | JobEvent) -> None: ...
 
     async def delete(self, entity: ScanCampaign | ScanTarget) -> None: ...
 
@@ -953,6 +953,17 @@ class ScanCampaignService:
         campaign.workflow_id = workflow_id(WorkflowKind.SCAN_CAMPAIGN, campaign.id, idempotency_key)
         campaign.workflow_run_id = None
         campaign.completed_at = None
+        self._repository.add(
+            JobEvent(
+                job_id=campaign.id,
+                project_id=campaign.project_id,
+                job_type="scan_campaign",
+                sequence=campaign.workflow_attempt * 1_000_000,
+                event_type="campaign.queued",
+                status="queued",
+                payload={"workflow_attempt": campaign.workflow_attempt},
+            )
+        )
         await self._repository.flush()
         self._record_transition(campaign, owner_id, request_id, action, previous)
 

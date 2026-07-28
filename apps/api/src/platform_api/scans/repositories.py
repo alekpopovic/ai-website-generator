@@ -35,7 +35,7 @@ class ScanCampaignRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    def add(self, entity: ScanCampaign | ScanTarget) -> None:
+    def add(self, entity: ScanCampaign | ScanTarget | JobEvent) -> None:
         self._session.add(entity)
 
     async def delete(self, entity: ScanCampaign | ScanTarget) -> None:

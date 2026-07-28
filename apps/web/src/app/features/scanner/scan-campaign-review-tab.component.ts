@@ -1,13 +1,16 @@
 import { DatePipe, JsonPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import type {
   CampaignActivityResponse,
+  JobEventResponse,
   ScanCampaignSummaryResponse,
   ScanTargetResponse,
 } from '@platform/api-client';
 
 import { ScanReviewApiService } from '../../core/scans/scan-review-api.service';
+import { JobEventStreamService } from '../../core/job-events/job-event-stream.service';
 import { EmptyStateComponent } from '../../shared/states/empty-state.component';
 import { LoadingStateComponent } from '../../shared/states/loading-state.component';
 
@@ -134,17 +137,34 @@ type ReviewTab = 'activity' | 'overview' | 'targets';
 export class ScanCampaignReviewTabComponent {
   private readonly api = inject(ScanReviewApiService);
   private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly events = inject(JobEventStreamService);
   readonly tab = this.route.snapshot.data['tab'] as ReviewTab;
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly summary = signal<ScanCampaignSummaryResponse | null>(null);
   readonly targets = signal<readonly ScanTargetResponse[]>([]);
-  readonly activity = signal<readonly CampaignActivityResponse[]>([]);
+  readonly activity = signal<readonly (CampaignActivityResponse | JobEventResponse)[]>([]);
   private readonly projectId = this.param('projectId');
   private readonly campaignId = this.param('campaignId');
 
   constructor() {
     void this.load();
+    this.events
+      .watch(this.projectId, this.campaignId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (event) => {
+          if (this.tab === 'activity') {
+            this.activity.update((items) => [
+              event,
+              ...items.filter((item) => item.sequence !== event.sequence),
+            ]);
+          } else if (this.tab === 'overview') {
+            void this.refreshSummary();
+          }
+        },
+      });
   }
   count(values: Record<string, number>): number {
     return Object.values(values).reduce((sum, value) => sum + value, 0);
@@ -165,6 +185,13 @@ export class ScanCampaignReviewTabComponent {
       );
     } finally {
       this.loading.set(false);
+    }
+  }
+  private async refreshSummary(): Promise<void> {
+    try {
+      this.summary.set(await this.api.summary(this.projectId, this.campaignId));
+    } catch {
+      // The existing summary remains useful during a transient refresh failure.
     }
   }
   private param(name: string): string {

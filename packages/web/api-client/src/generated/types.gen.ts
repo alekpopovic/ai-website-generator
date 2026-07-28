@@ -1474,6 +1474,68 @@ export type InvalidParameter = {
     reason: string;
 };
 
+/**
+ * JobEventPollResponse
+ *
+ * Bounded polling fallback with an SSE-compatible cursor.
+ */
+export type JobEventPollResponse = {
+    /**
+     * Events
+     */
+    events: Array<JobEventResponse>;
+    /**
+     * Next Event Id
+     */
+    next_event_id: number;
+    /**
+     * Terminal
+     */
+    terminal: boolean;
+};
+
+/**
+ * JobEventResponse
+ *
+ * One sanitized event from the durable PostgreSQL projection.
+ */
+export type JobEventResponse = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Event Type
+     */
+    event_type: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Job Id
+     */
+    job_id: string;
+    /**
+     * Job Type
+     */
+    job_type: 'scan_campaign' | 'dataset_build' | 'generation' | 'validation' | 'training';
+    /**
+     * Payload
+     */
+    payload: {
+        [key: string]: JsonValueOutput;
+    };
+    /**
+     * Sequence
+     */
+    sequence: number;
+    /**
+     * Status
+     */
+    status: 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
+};
+
 export type JsonScalar = boolean | number | number | string | null;
 
 export type JsonValueInput = JsonScalar | Array<JsonValueInput> | {
@@ -5018,6 +5080,133 @@ export type ArchiveProjectResponses = {
 };
 
 export type ArchiveProjectResponse = ArchiveProjectResponses[keyof ArchiveProjectResponses];
+
+export type StreamJobEventsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+        /**
+         * Last-Event-Id
+         */
+        'Last-Event-ID'?: string | null;
+    };
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Job Id
+         */
+        job_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/jobs/{job_id}/events';
+};
+
+export type StreamJobEventsErrors = {
+    /**
+     * Bad Request
+     */
+    400: ProblemDetail;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type StreamJobEventsError = StreamJobEventsErrors[keyof StreamJobEventsErrors];
+
+export type StreamJobEventsResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type PollJobEventsData = {
+    body?: never;
+    headers?: {
+        /**
+         * Authorization
+         */
+        authorization?: string | null;
+    };
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Job Id
+         */
+        job_id: string;
+    };
+    query?: {
+        /**
+         * After
+         */
+        after?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/projects/{project_id}/jobs/{job_id}/events/poll';
+};
+
+export type PollJobEventsErrors = {
+    /**
+     * Bad Request
+     */
+    400: ProblemDetail;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type PollJobEventsError = PollJobEventsErrors[keyof PollJobEventsErrors];
+
+export type PollJobEventsResponses = {
+    /**
+     * Successful Response
+     */
+    200: JobEventPollResponse;
+};
+
+export type PollJobEventsResponse = PollJobEventsResponses[keyof PollJobEventsResponses];
 
 export type RestoreProjectData = {
     body: ProjectVersionRequest;

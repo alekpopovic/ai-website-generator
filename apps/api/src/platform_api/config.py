@@ -94,6 +94,11 @@ class RedisSettings(StrictSettings):
     url: SecretStr | None = None
     key_prefix: str = "aiwg"
     connect_timeout_seconds: PositiveSeconds = 3.0
+    job_event_stream_max_length: int = Field(default=10_000, ge=100, le=1_000_000)
+    job_event_heartbeat_seconds: float = Field(default=15.0, ge=1.0, le=60.0)
+    job_event_authorization_recheck_seconds: float = Field(default=15.0, ge=1.0, le=60.0)
+    job_event_max_streams_per_user: int = Field(default=3, ge=1, le=20)
+    job_event_stream_lease_seconds: int = Field(default=90, ge=30, le=600)
 
     @field_validator("url", mode="before")
     @classmethod

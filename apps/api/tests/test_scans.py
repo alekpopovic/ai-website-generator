@@ -56,12 +56,16 @@ class FakeScanRepository:
         self.targets: dict[UUID, ScanTarget] = {}
         self.pages: dict[UUID, CrawlPage] = {}
         self.failures: dict[UUID, ScanFailure] = {}
+        self.events: list[JobEvent] = []
         self._new: set[UUID] = set()
         self._snapshots: dict[UUID, tuple[object, ...]] = {}
 
-    def add(self, entity: ScanCampaign | ScanTarget) -> None:
+    def add(self, entity: ScanCampaign | ScanTarget | JobEvent) -> None:
         entity.id = uuid4()
         entity.created_at = NOW
+        if isinstance(entity, JobEvent):
+            self.events.append(entity)
+            return
         entity.updated_at = NOW
         entity.version = 1
         self._new.add(entity.id)
@@ -540,6 +544,9 @@ async def test_start_dispatches_compact_workflow_only_after_commit_and_requires_
     assert command.job_id == str(created.id)
     assert command.project_id == str(repository.project.id)
     assert command.input_object_key is None
+    assert [(event.sequence, event.event_type, event.status) for event in repository.events] == [
+        (1_000_000, "campaign.queued", "queued")
+    ]
 
 
 @pytest.mark.anyio
