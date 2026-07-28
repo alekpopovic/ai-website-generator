@@ -1,0 +1,80 @@
+{
+  "$id": "https://schemas.ai-website-generator.local/analysis/v1/accessibility-observation.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Sanitized accessibility finding described through controlled codes.",
+  "properties": {
+    "affected_count": {
+      "default": 1,
+      "description": "Number of deterministic observations.",
+      "maximum": 10000,
+      "minimum": 1,
+      "title": "Affected Count",
+      "type": "integer"
+    },
+    "category": {
+      "description": "Controlled accessibility review category.",
+      "enum": [
+        "landmarks",
+        "headings",
+        "contrast",
+        "forms",
+        "images",
+        "keyboard",
+        "motion",
+        "unknown"
+      ],
+      "title": "Category",
+      "type": "string"
+    },
+    "code": {
+      "description": "Stable observation code without copied page content.",
+      "enum": [
+        "missing-landmark",
+        "heading-order",
+        "contrast-risk",
+        "missing-form-label",
+        "missing-alt-purpose",
+        "focus-risk",
+        "motion-risk",
+        "positive-observation",
+        "unknown"
+      ],
+      "title": "Code",
+      "type": "string"
+    },
+    "confidence": {
+      "description": "Confidence from zero to one for this observation.",
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "description": "Normalized analysis schema version.",
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "severity": {
+      "description": "Review severity; it is not a conformance certification.",
+      "enum": [
+        "positive",
+        "info",
+        "warning",
+        "error"
+      ],
+      "title": "Severity",
+      "type": "string"
+    }
+  },
+  "required": [
+    "category",
+    "code",
+    "severity",
+    "confidence"
+  ],
+  "title": "AccessibilityObservation",
+  "type": "object"
+}

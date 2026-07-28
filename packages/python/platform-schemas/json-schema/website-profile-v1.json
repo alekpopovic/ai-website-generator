@@ -1,0 +1,848 @@
+{
+  "$defs": {
+    "AccessibilityObservation": {
+      "additionalProperties": false,
+      "description": "Sanitized accessibility finding described through controlled codes.",
+      "properties": {
+        "affected_count": {
+          "default": 1,
+          "description": "Number of deterministic observations.",
+          "maximum": 10000,
+          "minimum": 1,
+          "title": "Affected Count",
+          "type": "integer"
+        },
+        "category": {
+          "description": "Controlled accessibility review category.",
+          "enum": [
+            "landmarks",
+            "headings",
+            "contrast",
+            "forms",
+            "images",
+            "keyboard",
+            "motion",
+            "unknown"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "code": {
+          "description": "Stable observation code without copied page content.",
+          "enum": [
+            "missing-landmark",
+            "heading-order",
+            "contrast-risk",
+            "missing-form-label",
+            "missing-alt-purpose",
+            "focus-risk",
+            "motion-risk",
+            "positive-observation",
+            "unknown"
+          ],
+          "title": "Code",
+          "type": "string"
+        },
+        "confidence": {
+          "description": "Confidence from zero to one for this observation.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "description": "Normalized analysis schema version.",
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "severity": {
+          "description": "Review severity; it is not a conformance certification.",
+          "enum": [
+            "positive",
+            "info",
+            "warning",
+            "error"
+          ],
+          "title": "Severity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "category",
+        "code",
+        "severity",
+        "confidence"
+      ],
+      "title": "AccessibilityObservation",
+      "type": "object"
+    },
+    "AnalysisConfidence": {
+      "additionalProperties": false,
+      "description": "Explicit confidence values for independently reviewable analysis dimensions.",
+      "properties": {
+        "accessibility": {
+          "description": "Accessibility observation confidence.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Accessibility",
+          "type": "number"
+        },
+        "design_tokens": {
+          "description": "Visual token confidence.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Design Tokens",
+          "type": "number"
+        },
+        "overall": {
+          "description": "Overall normalized confidence.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Overall",
+          "type": "number"
+        },
+        "responsive_behavior": {
+          "description": "Responsive inference confidence.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Responsive Behavior",
+          "type": "number"
+        },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "description": "Normalized analysis schema version.",
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "structure": {
+          "description": "Section and component confidence.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Structure",
+          "type": "number"
+        }
+      },
+      "required": [
+        "overall",
+        "structure",
+        "design_tokens",
+        "responsive_behavior",
+        "accessibility"
+      ],
+      "title": "AnalysisConfidence",
+      "type": "object"
+    },
+    "AnalysisProvenance": {
+      "additionalProperties": false,
+      "description": "Identifier-only lineage for the deterministic and model analysis inputs.",
+      "properties": {
+        "analyzed_at": {
+          "description": "Timezone-aware analysis completion timestamp.",
+          "format": "date-time",
+          "title": "Analyzed At",
+          "type": "string"
+        },
+        "analyzer_version": {
+          "description": "Bounded structured analyzer version.",
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Analyzer Version",
+          "type": "string"
+        },
+        "artifact_sha256": {
+          "description": "Artifact role to SHA-256 mapping without bucket names, keys, or URLs.",
+          "maxProperties": 500,
+          "patternProperties": {
+            "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$": {
+              "type": "string"
+            }
+          },
+          "propertyNames": {
+            "maxLength": 64,
+            "minLength": 1
+          },
+          "title": "Artifact Sha256",
+          "type": "object"
+        },
+        "campaign_id": {
+          "description": "Database ID of the owning scan campaign.",
+          "format": "uuid",
+          "title": "Campaign Id",
+          "type": "string"
+        },
+        "deterministic_only": {
+          "description": "True when the profile was created without model inference.",
+          "title": "Deterministic Only",
+          "type": "boolean"
+        },
+        "extractor_version": {
+          "description": "Bounded deterministic extractor version.",
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Extractor Version",
+          "type": "string"
+        },
+        "page_scan_ids": {
+          "description": "Ordered page-scan IDs used as inputs; no binary payloads are embedded.",
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maxItems": 100,
+          "minItems": 1,
+          "title": "Page Scan Ids",
+          "type": "array"
+        },
+        "scanner_version": {
+          "description": "Bounded browser scanner implementation version.",
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Scanner Version",
+          "type": "string"
+        },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "description": "Normalized analysis schema version.",
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "source_website_id": {
+          "description": "Database ID of the authorized source website.",
+          "format": "uuid",
+          "title": "Source Website Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_website_id",
+        "campaign_id",
+        "page_scan_ids",
+        "scanner_version",
+        "extractor_version",
+        "analyzer_version",
+        "analyzed_at",
+        "deterministic_only"
+      ],
+      "title": "AnalysisProvenance",
+      "type": "object"
+    },
+    "ColorToken": {
+      "additionalProperties": false,
+      "description": "One normalized color candidate with a registry-safe token name.",
+      "properties": {
+        "frequency": {
+          "default": 1,
+          "description": "Number of deterministic extraction observations supporting the token.",
+          "maximum": 100000,
+          "minimum": 1,
+          "title": "Frequency",
+          "type": "integer"
+        },
+        "name": {
+          "description": "Stable kebab-case token name, never a brand label.",
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "value": {
+          "description": "Validated hexadecimal, RGB(A), or HSL(A) CSS color value.",
+          "maxLength": 64,
+          "minLength": 4,
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ],
+      "title": "ColorToken",
+      "type": "object"
+    },
+    "ColorTokens": {
+      "additionalProperties": false,
+      "description": "Bounded palette inferred from rendered style frequencies.",
+      "properties": {
+        "palette": {
+          "default": [],
+          "description": "Ordered palette candidates, most frequent first.",
+          "items": {
+            "$ref": "#/$defs/ColorToken"
+          },
+          "maxItems": 24,
+          "title": "Palette",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "description": "Normalized analysis schema version.",
+          "title": "Schema Version",
+          "type": "integer"
+        }
+      },
+      "title": "ColorTokens",
+      "type": "object"
+    },
+    "ComponentName": {
+      "description": "Controlled abstract component vocabulary; never executable component source.",
+      "enum": [
+        "nav-link",
+        "heading",
+        "body-copy",
+        "button",
+        "badge",
+        "card",
+        "statistic",
+        "feature-item",
+        "service-item",
+        "media-placeholder",
+        "gallery-grid",
+        "testimonial-card",
+        "case-study-card",
+        "pricing-tier",
+        "comparison-table",
+        "accordion",
+        "contact-form",
+        "link-list",
+        "unknown"
+      ],
+      "title": "ComponentName",
+      "type": "string"
+    },
+    "ComponentPattern": {
+      "additionalProperties": false,
+      "description": "Abstract registered component occurrence, never source code or executable markup.",
+      "properties": {
+        "component_name": {
+          "$ref": "#/$defs/ComponentName",
+          "description": "Controlled component registry name."
+        },
+        "copy_purpose": {
+          "$ref": "#/$defs/CopyPurpose",
+          "description": "Communication purpose instead of source copy."
+        },
+        "layout": {
+          "default": "unknown",
+          "description": "Controlled abstract layout mode.",
+          "enum": [
+            "block",
+            "inline",
+            "flex-row",
+            "flex-column",
+            "grid",
+            "overlay",
+            "unknown"
+          ],
+          "title": "Layout",
+          "type": "string"
+        },
+        "order": {
+          "description": "Zero-based order within its parent section.",
+          "maximum": 255,
+          "minimum": 0,
+          "title": "Order",
+          "type": "integer"
+        },
+        "repeat_count": {
+          "default": 1,
+          "description": "Observed bounded repetition count.",
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Repeat Count",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "description": "Normalized analysis schema version.",
+          "title": "Schema Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "component_name",
+        "order",
+        "copy_purpose"
+      ],
+      "title": "ComponentPattern",
+      "type": "object"
+    },
+    "CopyPurpose": {
+      "description": "Abstract communication goal used instead of source website text.",
+      "enum": [
+        "identity",
+        "navigation",
+        "value-proposition",
+        "build-trust",
+        "explain-benefits",
+        "describe-services",
+        "quantify-outcomes",
+        "editorial-content",
+        "showcase-work",
+        "social-proof",
+        "compare-options",
+        "answer-objections",
+        "conversion",
+        "contact",
+        "legal-navigation",
+        "unknown"
+      ],
+      "title": "CopyPurpose",
+      "type": "string"
+    },
+    "DesignTokens": {
+      "additionalProperties": false,
+      "description": "Deterministic visual token projection shared across analyzed pages.",
+      "properties": {
+        "colors": {
+          "$ref": "#/$defs/ColorTokens",
+          "description": "Normalized color palette candidates."
+        },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "description": "Normalized analysis schema version.",
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "spacing": {
+          "$ref": "#/$defs/SpacingTokens",
+          "description": "Normalized spacing and radius scales."
+        },
+        "style_tags": {
+          "default": [],
+          "description": "Abstract, non-brand visual style categories.",
+          "items": {
+            "$ref": "#/$defs/StyleTag"
+          },
+          "maxItems": 24,
+          "title": "Style Tags",
+          "type": "array"
+        },
+        "typography": {
+          "$ref": "#/$defs/TypographyTokens",
+          "description": "Normalized typography scale."
+        }
+      },
+      "required": [
+        "colors",
+        "typography",
+        "spacing"
+      ],
+      "title": "DesignTokens",
+      "type": "object"
+    },
+    "FontCategory": {
+      "description": "Abstract font classification that cannot carry a source-specific family name.",
+      "enum": [
+        "system-sans",
+        "sans-serif",
+        "serif",
+        "monospace",
+        "cursive",
+        "display",
+        "unknown"
+      ],
+      "title": "FontCategory",
+      "type": "string"
+    },
+    "PageProfile": {
+      "additionalProperties": false,
+      "description": "AI-normalized page structure containing no source copy or source assets.",
+      "properties": {
+        "accessibility_observations": {
+          "default": [],
+          "description": "Sanitized deterministic accessibility findings.",
+          "items": {
+            "$ref": "#/$defs/AccessibilityObservation"
+          },
+          "maxItems": 100,
+          "title": "Accessibility Observations",
+          "type": "array"
+        },
+        "confidence": {
+          "$ref": "#/$defs/AnalysisConfidence",
+          "description": "Per-dimension page analysis confidence."
+        },
+        "page_type": {
+          "$ref": "#/$defs/PageType",
+          "description": "Controlled deterministic page classification."
+        },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "description": "Normalized analysis schema version.",
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "sections": {
+          "description": "Ordered abstract section patterns.",
+          "items": {
+            "$ref": "#/$defs/SectionPattern"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Sections",
+          "type": "array"
+        },
+        "source_page_id": {
+          "description": "Database ID of the normalized crawl page.",
+          "format": "uuid",
+          "title": "Source Page Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_page_id",
+        "page_type",
+        "sections",
+        "confidence"
+      ],
+      "title": "PageProfile",
+      "type": "object"
+    },
+    "PageType": {
+      "enum": [
+        "homepage",
+        "about",
+        "services",
+        "product",
+        "features",
+        "pricing",
+        "contact",
+        "documentation",
+        "blog-index",
+        "article",
+        "case-study",
+        "careers",
+        "legal",
+        "authentication",
+        "unknown"
+      ],
+      "title": "PageType",
+      "type": "string"
+    },
+    "ResponsiveBehavior": {
+      "additionalProperties": false,
+      "description": "Observed layout changes across bounded viewport ranges.",
+      "properties": {
+        "affected_components": {
+          "default": [],
+          "description": "Controlled components affected by the change.",
+          "items": {
+            "$ref": "#/$defs/ComponentName"
+          },
+          "maxItems": 24,
+          "title": "Affected Components",
+          "type": "array"
+        },
+        "behavior": {
+          "description": "Controlled responsive transformation category.",
+          "enum": [
+            "stack-columns",
+            "collapse-navigation",
+            "wrap-items",
+            "reduce-spacing",
+            "resize-type",
+            "hide-secondary-content",
+            "preserve-layout",
+            "unknown"
+          ],
+          "title": "Behavior",
+          "type": "string"
+        },
+        "maximum_width_px": {
+          "description": "Inclusive upper viewport width for this behavior.",
+          "maximum": 7680,
+          "minimum": 240,
+          "title": "Maximum Width Px",
+          "type": "integer"
+        },
+        "minimum_width_px": {
+          "description": "Inclusive lower viewport width for this behavior.",
+          "maximum": 7680,
+          "minimum": 240,
+          "title": "Minimum Width Px",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "description": "Normalized analysis schema version.",
+          "title": "Schema Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "minimum_width_px",
+        "maximum_width_px",
+        "behavior"
+      ],
+      "title": "ResponsiveBehavior",
+      "type": "object"
+    },
+    "SectionPattern": {
+      "additionalProperties": false,
+      "description": "Ordered abstract page section using only controlled pattern vocabularies.",
+      "properties": {
+        "components": {
+          "default": [],
+          "description": "Ordered controlled component patterns.",
+          "items": {
+            "$ref": "#/$defs/ComponentPattern"
+          },
+          "maxItems": 64,
+          "title": "Components",
+          "type": "array"
+        },
+        "copy_purpose": {
+          "$ref": "#/$defs/CopyPurpose",
+          "description": "Abstract copy goal, never copied source text."
+        },
+        "layout": {
+          "description": "Controlled high-level section layout.",
+          "enum": [
+            "single-column",
+            "two-column",
+            "three-column",
+            "multi-column",
+            "grid",
+            "split",
+            "overlay",
+            "unknown"
+          ],
+          "title": "Layout",
+          "type": "string"
+        },
+        "order": {
+          "description": "Zero-based page section order.",
+          "maximum": 255,
+          "minimum": 0,
+          "title": "Order",
+          "type": "integer"
+        },
+        "responsive_behaviors": {
+          "default": [],
+          "description": "Ordered non-overlapping responsive behaviors.",
+          "items": {
+            "$ref": "#/$defs/ResponsiveBehavior"
+          },
+          "maxItems": 16,
+          "title": "Responsive Behaviors",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "description": "Normalized analysis schema version.",
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "section_type": {
+          "$ref": "#/$defs/SectionType",
+          "description": "Controlled section registry type."
+        }
+      },
+      "required": [
+        "section_type",
+        "order",
+        "copy_purpose",
+        "layout"
+      ],
+      "title": "SectionPattern",
+      "type": "object"
+    },
+    "SectionType": {
+      "description": "Controlled section registry accepted by deterministic rendering and retrieval.",
+      "enum": [
+        "header",
+        "navigation",
+        "hero",
+        "logo-cloud",
+        "features",
+        "services",
+        "stats",
+        "content",
+        "gallery",
+        "testimonials",
+        "case-studies",
+        "pricing",
+        "comparison",
+        "faq",
+        "cta",
+        "contact",
+        "footer",
+        "unknown"
+      ],
+      "title": "SectionType",
+      "type": "string"
+    },
+    "SpacingTokens": {
+      "additionalProperties": false,
+      "description": "Positive spacing and shape dimensions normalized to CSS pixels.",
+      "properties": {
+        "radius_px": {
+          "default": [],
+          "description": "Unique ascending border radii in CSS pixels.",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 16,
+          "title": "Radius Px",
+          "type": "array"
+        },
+        "scale_px": {
+          "default": [],
+          "description": "Unique ascending spacing values in CSS pixels.",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 24,
+          "title": "Scale Px",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "description": "Normalized analysis schema version.",
+          "title": "Schema Version",
+          "type": "integer"
+        }
+      },
+      "title": "SpacingTokens",
+      "type": "object"
+    },
+    "StyleTag": {
+      "description": "Controlled non-brand visual character vocabulary.",
+      "enum": [
+        "minimalist",
+        "maximalist",
+        "corporate",
+        "editorial",
+        "playful",
+        "luxury",
+        "technical",
+        "organic",
+        "geometric",
+        "monochrome",
+        "colorful",
+        "high-contrast",
+        "muted",
+        "spacious",
+        "dense",
+        "rounded",
+        "sharp",
+        "flat",
+        "layered",
+        "unknown"
+      ],
+      "title": "StyleTag",
+      "type": "string"
+    },
+    "TypographyTokens": {
+      "additionalProperties": false,
+      "description": "Abstract typography scale without copied text or brand identity.",
+      "properties": {
+        "font_families": {
+          "default": [],
+          "description": "Ordered generic font categories inferred from computed styles.",
+          "items": {
+            "$ref": "#/$defs/FontCategory"
+          },
+          "maxItems": 8,
+          "title": "Font Families",
+          "type": "array"
+        },
+        "font_sizes_px": {
+          "default": [],
+          "description": "Unique positive font sizes in ascending CSS-pixel order.",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 20,
+          "title": "Font Sizes Px",
+          "type": "array"
+        },
+        "font_weights": {
+          "default": [],
+          "description": "Unique numeric font weights in ascending order.",
+          "items": {
+            "type": "integer"
+          },
+          "maxItems": 12,
+          "title": "Font Weights",
+          "type": "array"
+        },
+        "line_heights_px": {
+          "default": [],
+          "description": "Unique positive line heights in ascending CSS-pixel order.",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 20,
+          "title": "Line Heights Px",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "description": "Normalized analysis schema version.",
+          "title": "Schema Version",
+          "type": "integer"
+        }
+      },
+      "title": "TypographyTokens",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.ai-website-generator.local/analysis/v1/website-profile.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Versioned normalized website profile and structured model-output contract.",
+  "properties": {
+    "confidence": {
+      "$ref": "#/$defs/AnalysisConfidence",
+      "description": "Aggregate website analysis confidence."
+    },
+    "design_tokens": {
+      "$ref": "#/$defs/DesignTokens",
+      "description": "Cross-page normalized design tokens."
+    },
+    "pages": {
+      "description": "Bounded normalized representative pages.",
+      "items": {
+        "$ref": "#/$defs/PageProfile"
+      },
+      "maxItems": 100,
+      "minItems": 1,
+      "title": "Pages",
+      "type": "array"
+    },
+    "provenance": {
+      "$ref": "#/$defs/AnalysisProvenance",
+      "description": "Identifier-only source and artifact lineage."
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "description": "Normalized analysis schema version.",
+      "title": "Schema Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "design_tokens",
+    "pages",
+    "confidence",
+    "provenance"
+  ],
+  "title": "WebsiteProfile",
+  "type": "object"
+}

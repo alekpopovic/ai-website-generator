@@ -1,0 +1,97 @@
+{
+  "$id": "https://schemas.ai-website-generator.local/analysis/v1/analysis-provenance.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Identifier-only lineage for the deterministic and model analysis inputs.",
+  "properties": {
+    "analyzed_at": {
+      "description": "Timezone-aware analysis completion timestamp.",
+      "format": "date-time",
+      "title": "Analyzed At",
+      "type": "string"
+    },
+    "analyzer_version": {
+      "description": "Bounded structured analyzer version.",
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Analyzer Version",
+      "type": "string"
+    },
+    "artifact_sha256": {
+      "description": "Artifact role to SHA-256 mapping without bucket names, keys, or URLs.",
+      "maxProperties": 500,
+      "patternProperties": {
+        "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$": {
+          "type": "string"
+        }
+      },
+      "propertyNames": {
+        "maxLength": 64,
+        "minLength": 1
+      },
+      "title": "Artifact Sha256",
+      "type": "object"
+    },
+    "campaign_id": {
+      "description": "Database ID of the owning scan campaign.",
+      "format": "uuid",
+      "title": "Campaign Id",
+      "type": "string"
+    },
+    "deterministic_only": {
+      "description": "True when the profile was created without model inference.",
+      "title": "Deterministic Only",
+      "type": "boolean"
+    },
+    "extractor_version": {
+      "description": "Bounded deterministic extractor version.",
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Extractor Version",
+      "type": "string"
+    },
+    "page_scan_ids": {
+      "description": "Ordered page-scan IDs used as inputs; no binary payloads are embedded.",
+      "items": {
+        "format": "uuid",
+        "type": "string"
+      },
+      "maxItems": 100,
+      "minItems": 1,
+      "title": "Page Scan Ids",
+      "type": "array"
+    },
+    "scanner_version": {
+      "description": "Bounded browser scanner implementation version.",
+      "maxLength": 100,
+      "minLength": 1,
+      "title": "Scanner Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "description": "Normalized analysis schema version.",
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "source_website_id": {
+      "description": "Database ID of the authorized source website.",
+      "format": "uuid",
+      "title": "Source Website Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_website_id",
+    "campaign_id",
+    "page_scan_ids",
+    "scanner_version",
+    "extractor_version",
+    "analyzer_version",
+    "analyzed_at",
+    "deterministic_only"
+  ],
+  "title": "AnalysisProvenance",
+  "type": "object"
+}

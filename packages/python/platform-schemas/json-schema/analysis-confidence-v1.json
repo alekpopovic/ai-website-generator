@@ -1,0 +1,59 @@
+{
+  "$id": "https://schemas.ai-website-generator.local/analysis/v1/analysis-confidence.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Explicit confidence values for independently reviewable analysis dimensions.",
+  "properties": {
+    "accessibility": {
+      "description": "Accessibility observation confidence.",
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Accessibility",
+      "type": "number"
+    },
+    "design_tokens": {
+      "description": "Visual token confidence.",
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Design Tokens",
+      "type": "number"
+    },
+    "overall": {
+      "description": "Overall normalized confidence.",
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Overall",
+      "type": "number"
+    },
+    "responsive_behavior": {
+      "description": "Responsive inference confidence.",
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Responsive Behavior",
+      "type": "number"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "description": "Normalized analysis schema version.",
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "structure": {
+      "description": "Section and component confidence.",
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Structure",
+      "type": "number"
+    }
+  },
+  "required": [
+    "overall",
+    "structure",
+    "design_tokens",
+    "responsive_behavior",
+    "accessibility"
+  ],
+  "title": "AnalysisConfidence",
+  "type": "object"
+}

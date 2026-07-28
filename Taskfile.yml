@@ -65,6 +65,11 @@ tasks:
       - uv run python infrastructure/scripts/export_openapi.py --output packages/web/api-client/openapi.json
       - pnpm run generate-api-client
 
+  generate-analysis-schemas:
+    desc: Deterministically regenerate versioned AI analysis JSON Schema artifacts
+    cmds:
+      - uv run python packages/python/platform-schemas/scripts/generate_json_schemas.py
+
   seed-local-user:
     desc: Explicitly create the idempotent local-only developer identity
     cmds:
@@ -105,6 +110,11 @@ tasks:
     cmds:
       - uv run python infrastructure/scripts/export_openapi.py --output packages/web/api-client/openapi.json --check
       - pnpm --filter '@platform/api-client' run check-generated
+
+  verify-analysis-schemas:
+    desc: Fail when committed AI analysis JSON Schema artifacts are stale
+    cmds:
+      - uv run python packages/python/platform-schemas/scripts/generate_json_schemas.py --check
 
   compose-up:
     desc: Start the local container stack with CPU-only Ollama
@@ -165,3 +175,4 @@ tasks:
       - task: typecheck
       - task: unit-test
       - task: verify-generated-api-client
+      - task: verify-analysis-schemas

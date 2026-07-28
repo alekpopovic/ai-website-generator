@@ -1,0 +1,64 @@
+{
+  "$defs": {
+    "ColorToken": {
+      "additionalProperties": false,
+      "description": "One normalized color candidate with a registry-safe token name.",
+      "properties": {
+        "frequency": {
+          "default": 1,
+          "description": "Number of deterministic extraction observations supporting the token.",
+          "maximum": 100000,
+          "minimum": 1,
+          "title": "Frequency",
+          "type": "integer"
+        },
+        "name": {
+          "description": "Stable kebab-case token name, never a brand label.",
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "value": {
+          "description": "Validated hexadecimal, RGB(A), or HSL(A) CSS color value.",
+          "maxLength": 64,
+          "minLength": 4,
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ],
+      "title": "ColorToken",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.ai-website-generator.local/analysis/v1/color-tokens.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Bounded palette inferred from rendered style frequencies.",
+  "properties": {
+    "palette": {
+      "default": [],
+      "description": "Ordered palette candidates, most frequent first.",
+      "items": {
+        "$ref": "#/$defs/ColorToken"
+      },
+      "maxItems": 24,
+      "title": "Palette",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "description": "Normalized analysis schema version.",
+      "title": "Schema Version",
+      "type": "integer"
+    }
+  },
+  "title": "ColorTokens",
+  "type": "object"
+}

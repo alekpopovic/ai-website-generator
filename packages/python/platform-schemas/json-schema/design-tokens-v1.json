@@ -1,0 +1,237 @@
+{
+  "$defs": {
+    "ColorToken": {
+      "additionalProperties": false,
+      "description": "One normalized color candidate with a registry-safe token name.",
+      "properties": {
+        "frequency": {
+          "default": 1,
+          "description": "Number of deterministic extraction observations supporting the token.",
+          "maximum": 100000,
+          "minimum": 1,
+          "title": "Frequency",
+          "type": "integer"
+        },
+        "name": {
+          "description": "Stable kebab-case token name, never a brand label.",
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "value": {
+          "description": "Validated hexadecimal, RGB(A), or HSL(A) CSS color value.",
+          "maxLength": 64,
+          "minLength": 4,
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ],
+      "title": "ColorToken",
+      "type": "object"
+    },
+    "ColorTokens": {
+      "additionalProperties": false,
+      "description": "Bounded palette inferred from rendered style frequencies.",
+      "properties": {
+        "palette": {
+          "default": [],
+          "description": "Ordered palette candidates, most frequent first.",
+          "items": {
+            "$ref": "#/$defs/ColorToken"
+          },
+          "maxItems": 24,
+          "title": "Palette",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "description": "Normalized analysis schema version.",
+          "title": "Schema Version",
+          "type": "integer"
+        }
+      },
+      "title": "ColorTokens",
+      "type": "object"
+    },
+    "FontCategory": {
+      "description": "Abstract font classification that cannot carry a source-specific family name.",
+      "enum": [
+        "system-sans",
+        "sans-serif",
+        "serif",
+        "monospace",
+        "cursive",
+        "display",
+        "unknown"
+      ],
+      "title": "FontCategory",
+      "type": "string"
+    },
+    "SpacingTokens": {
+      "additionalProperties": false,
+      "description": "Positive spacing and shape dimensions normalized to CSS pixels.",
+      "properties": {
+        "radius_px": {
+          "default": [],
+          "description": "Unique ascending border radii in CSS pixels.",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 16,
+          "title": "Radius Px",
+          "type": "array"
+        },
+        "scale_px": {
+          "default": [],
+          "description": "Unique ascending spacing values in CSS pixels.",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 24,
+          "title": "Scale Px",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "description": "Normalized analysis schema version.",
+          "title": "Schema Version",
+          "type": "integer"
+        }
+      },
+      "title": "SpacingTokens",
+      "type": "object"
+    },
+    "StyleTag": {
+      "description": "Controlled non-brand visual character vocabulary.",
+      "enum": [
+        "minimalist",
+        "maximalist",
+        "corporate",
+        "editorial",
+        "playful",
+        "luxury",
+        "technical",
+        "organic",
+        "geometric",
+        "monochrome",
+        "colorful",
+        "high-contrast",
+        "muted",
+        "spacious",
+        "dense",
+        "rounded",
+        "sharp",
+        "flat",
+        "layered",
+        "unknown"
+      ],
+      "title": "StyleTag",
+      "type": "string"
+    },
+    "TypographyTokens": {
+      "additionalProperties": false,
+      "description": "Abstract typography scale without copied text or brand identity.",
+      "properties": {
+        "font_families": {
+          "default": [],
+          "description": "Ordered generic font categories inferred from computed styles.",
+          "items": {
+            "$ref": "#/$defs/FontCategory"
+          },
+          "maxItems": 8,
+          "title": "Font Families",
+          "type": "array"
+        },
+        "font_sizes_px": {
+          "default": [],
+          "description": "Unique positive font sizes in ascending CSS-pixel order.",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 20,
+          "title": "Font Sizes Px",
+          "type": "array"
+        },
+        "font_weights": {
+          "default": [],
+          "description": "Unique numeric font weights in ascending order.",
+          "items": {
+            "type": "integer"
+          },
+          "maxItems": 12,
+          "title": "Font Weights",
+          "type": "array"
+        },
+        "line_heights_px": {
+          "default": [],
+          "description": "Unique positive line heights in ascending CSS-pixel order.",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 20,
+          "title": "Line Heights Px",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "description": "Normalized analysis schema version.",
+          "title": "Schema Version",
+          "type": "integer"
+        }
+      },
+      "title": "TypographyTokens",
+      "type": "object"
+    }
+  },
+  "$id": "https://schemas.ai-website-generator.local/analysis/v1/design-tokens.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Deterministic visual token projection shared across analyzed pages.",
+  "properties": {
+    "colors": {
+      "$ref": "#/$defs/ColorTokens",
+      "description": "Normalized color palette candidates."
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "description": "Normalized analysis schema version.",
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "spacing": {
+      "$ref": "#/$defs/SpacingTokens",
+      "description": "Normalized spacing and radius scales."
+    },
+    "style_tags": {
+      "default": [],
+      "description": "Abstract, non-brand visual style categories.",
+      "items": {
+        "$ref": "#/$defs/StyleTag"
+      },
+      "maxItems": 24,
+      "title": "Style Tags",
+      "type": "array"
+    },
+    "typography": {
+      "$ref": "#/$defs/TypographyTokens",
+      "description": "Normalized typography scale."
+    }
+  },
+  "required": [
+    "colors",
+    "typography",
+    "spacing"
+  ],
+  "title": "DesignTokens",
+  "type": "object"
+}

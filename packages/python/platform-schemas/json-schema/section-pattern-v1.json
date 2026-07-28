@@ -1,0 +1,266 @@
+{
+  "$defs": {
+    "ComponentName": {
+      "description": "Controlled abstract component vocabulary; never executable component source.",
+      "enum": [
+        "nav-link",
+        "heading",
+        "body-copy",
+        "button",
+        "badge",
+        "card",
+        "statistic",
+        "feature-item",
+        "service-item",
+        "media-placeholder",
+        "gallery-grid",
+        "testimonial-card",
+        "case-study-card",
+        "pricing-tier",
+        "comparison-table",
+        "accordion",
+        "contact-form",
+        "link-list",
+        "unknown"
+      ],
+      "title": "ComponentName",
+      "type": "string"
+    },
+    "ComponentPattern": {
+      "additionalProperties": false,
+      "description": "Abstract registered component occurrence, never source code or executable markup.",
+      "properties": {
+        "component_name": {
+          "$ref": "#/$defs/ComponentName",
+          "description": "Controlled component registry name."
+        },
+        "copy_purpose": {
+          "$ref": "#/$defs/CopyPurpose",
+          "description": "Communication purpose instead of source copy."
+        },
+        "layout": {
+          "default": "unknown",
+          "description": "Controlled abstract layout mode.",
+          "enum": [
+            "block",
+            "inline",
+            "flex-row",
+            "flex-column",
+            "grid",
+            "overlay",
+            "unknown"
+          ],
+          "title": "Layout",
+          "type": "string"
+        },
+        "order": {
+          "description": "Zero-based order within its parent section.",
+          "maximum": 255,
+          "minimum": 0,
+          "title": "Order",
+          "type": "integer"
+        },
+        "repeat_count": {
+          "default": 1,
+          "description": "Observed bounded repetition count.",
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Repeat Count",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "description": "Normalized analysis schema version.",
+          "title": "Schema Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "component_name",
+        "order",
+        "copy_purpose"
+      ],
+      "title": "ComponentPattern",
+      "type": "object"
+    },
+    "CopyPurpose": {
+      "description": "Abstract communication goal used instead of source website text.",
+      "enum": [
+        "identity",
+        "navigation",
+        "value-proposition",
+        "build-trust",
+        "explain-benefits",
+        "describe-services",
+        "quantify-outcomes",
+        "editorial-content",
+        "showcase-work",
+        "social-proof",
+        "compare-options",
+        "answer-objections",
+        "conversion",
+        "contact",
+        "legal-navigation",
+        "unknown"
+      ],
+      "title": "CopyPurpose",
+      "type": "string"
+    },
+    "ResponsiveBehavior": {
+      "additionalProperties": false,
+      "description": "Observed layout changes across bounded viewport ranges.",
+      "properties": {
+        "affected_components": {
+          "default": [],
+          "description": "Controlled components affected by the change.",
+          "items": {
+            "$ref": "#/$defs/ComponentName"
+          },
+          "maxItems": 24,
+          "title": "Affected Components",
+          "type": "array"
+        },
+        "behavior": {
+          "description": "Controlled responsive transformation category.",
+          "enum": [
+            "stack-columns",
+            "collapse-navigation",
+            "wrap-items",
+            "reduce-spacing",
+            "resize-type",
+            "hide-secondary-content",
+            "preserve-layout",
+            "unknown"
+          ],
+          "title": "Behavior",
+          "type": "string"
+        },
+        "maximum_width_px": {
+          "description": "Inclusive upper viewport width for this behavior.",
+          "maximum": 7680,
+          "minimum": 240,
+          "title": "Maximum Width Px",
+          "type": "integer"
+        },
+        "minimum_width_px": {
+          "description": "Inclusive lower viewport width for this behavior.",
+          "maximum": 7680,
+          "minimum": 240,
+          "title": "Minimum Width Px",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "description": "Normalized analysis schema version.",
+          "title": "Schema Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "minimum_width_px",
+        "maximum_width_px",
+        "behavior"
+      ],
+      "title": "ResponsiveBehavior",
+      "type": "object"
+    },
+    "SectionType": {
+      "description": "Controlled section registry accepted by deterministic rendering and retrieval.",
+      "enum": [
+        "header",
+        "navigation",
+        "hero",
+        "logo-cloud",
+        "features",
+        "services",
+        "stats",
+        "content",
+        "gallery",
+        "testimonials",
+        "case-studies",
+        "pricing",
+        "comparison",
+        "faq",
+        "cta",
+        "contact",
+        "footer",
+        "unknown"
+      ],
+      "title": "SectionType",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.ai-website-generator.local/analysis/v1/section-pattern.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Ordered abstract page section using only controlled pattern vocabularies.",
+  "properties": {
+    "components": {
+      "default": [],
+      "description": "Ordered controlled component patterns.",
+      "items": {
+        "$ref": "#/$defs/ComponentPattern"
+      },
+      "maxItems": 64,
+      "title": "Components",
+      "type": "array"
+    },
+    "copy_purpose": {
+      "$ref": "#/$defs/CopyPurpose",
+      "description": "Abstract copy goal, never copied source text."
+    },
+    "layout": {
+      "description": "Controlled high-level section layout.",
+      "enum": [
+        "single-column",
+        "two-column",
+        "three-column",
+        "multi-column",
+        "grid",
+        "split",
+        "overlay",
+        "unknown"
+      ],
+      "title": "Layout",
+      "type": "string"
+    },
+    "order": {
+      "description": "Zero-based page section order.",
+      "maximum": 255,
+      "minimum": 0,
+      "title": "Order",
+      "type": "integer"
+    },
+    "responsive_behaviors": {
+      "default": [],
+      "description": "Ordered non-overlapping responsive behaviors.",
+      "items": {
+        "$ref": "#/$defs/ResponsiveBehavior"
+      },
+      "maxItems": 16,
+      "title": "Responsive Behaviors",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "description": "Normalized analysis schema version.",
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "section_type": {
+      "$ref": "#/$defs/SectionType",
+      "description": "Controlled section registry type."
+    }
+  },
+  "required": [
+    "section_type",
+    "order",
+    "copy_purpose",
+    "layout"
+  ],
+  "title": "SectionPattern",
+  "type": "object"
+}

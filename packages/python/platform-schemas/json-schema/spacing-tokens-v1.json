@@ -1,0 +1,37 @@
+{
+  "$id": "https://schemas.ai-website-generator.local/analysis/v1/spacing-tokens.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Positive spacing and shape dimensions normalized to CSS pixels.",
+  "properties": {
+    "radius_px": {
+      "default": [],
+      "description": "Unique ascending border radii in CSS pixels.",
+      "items": {
+        "type": "number"
+      },
+      "maxItems": 16,
+      "title": "Radius Px",
+      "type": "array"
+    },
+    "scale_px": {
+      "default": [],
+      "description": "Unique ascending spacing values in CSS pixels.",
+      "items": {
+        "type": "number"
+      },
+      "maxItems": 24,
+      "title": "Scale Px",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "description": "Normalized analysis schema version.",
+      "title": "Schema Version",
+      "type": "integer"
+    }
+  },
+  "title": "SpacingTokens",
+  "type": "object"
+}

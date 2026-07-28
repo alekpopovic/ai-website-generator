@@ -7,6 +7,7 @@ dist/
 generated/
 packages/web/api-client/openapi.json
 packages/web/api-client/src/generated/
+packages/python/platform-schemas/json-schema/
 htmlcov/
 minio-data/
 ollama-data/

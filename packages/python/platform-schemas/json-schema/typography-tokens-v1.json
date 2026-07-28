@@ -1,0 +1,73 @@
+{
+  "$defs": {
+    "FontCategory": {
+      "description": "Abstract font classification that cannot carry a source-specific family name.",
+      "enum": [
+        "system-sans",
+        "sans-serif",
+        "serif",
+        "monospace",
+        "cursive",
+        "display",
+        "unknown"
+      ],
+      "title": "FontCategory",
+      "type": "string"
+    }
+  },
+  "$id": "https://schemas.ai-website-generator.local/analysis/v1/typography-tokens.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Abstract typography scale without copied text or brand identity.",
+  "properties": {
+    "font_families": {
+      "default": [],
+      "description": "Ordered generic font categories inferred from computed styles.",
+      "items": {
+        "$ref": "#/$defs/FontCategory"
+      },
+      "maxItems": 8,
+      "title": "Font Families",
+      "type": "array"
+    },
+    "font_sizes_px": {
+      "default": [],
+      "description": "Unique positive font sizes in ascending CSS-pixel order.",
+      "items": {
+        "type": "number"
+      },
+      "maxItems": 20,
+      "title": "Font Sizes Px",
+      "type": "array"
+    },
+    "font_weights": {
+      "default": [],
+      "description": "Unique numeric font weights in ascending order.",
+      "items": {
+        "type": "integer"
+      },
+      "maxItems": 12,
+      "title": "Font Weights",
+      "type": "array"
+    },
+    "line_heights_px": {
+      "default": [],
+      "description": "Unique positive line heights in ascending CSS-pixel order.",
+      "items": {
+        "type": "number"
+      },
+      "maxItems": 20,
+      "title": "Line Heights Px",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "description": "Normalized analysis schema version.",
+      "title": "Schema Version",
+      "type": "integer"
+    }
+  },
+  "title": "TypographyTokens",
+  "type": "object"
+}
