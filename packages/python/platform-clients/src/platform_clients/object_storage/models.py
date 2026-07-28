@@ -30,6 +30,8 @@ class Bucket(StrEnum):
 ALL_BUCKETS = tuple(Bucket)
 _SHA256 = re.compile(r"^[a-f0-9]{64}$")
 _TAG_NAME = re.compile(r"^[A-Za-z0-9+\-=._:/@ ]{1,128}$")
+_METADATA_NAME = re.compile(r"^[a-z0-9][a-z0-9-]{0,62}$")
+_RESERVED_METADATA = frozenset({"sha256", "retention-policy", "retain-until"})
 
 
 def validate_object_key(value: str) -> str:
@@ -88,6 +90,7 @@ class UploadRequest:
     content_type: str
     content_encoding: str | None = None
     tags: Mapping[str, str] = field(default_factory=dict)
+    metadata: Mapping[str, str] = field(default_factory=dict)
     retention: RetentionMetadata | None = None
     test_artifact: bool = False
 
@@ -109,6 +112,20 @@ class UploadRequest:
                 raise ValueError("object tag key is invalid or reserved")
             if len(value) > 256 or any(ord(character) < 32 for character in value):
                 raise ValueError("object tag value is invalid")
+        metadata_bytes = 0
+        for key, value in self.metadata.items():
+            if not _METADATA_NAME.fullmatch(key) or key in _RESERVED_METADATA:
+                raise ValueError("object metadata key is invalid or reserved")
+            if (
+                not value
+                or len(value.encode("utf-8")) > 2_048
+                or not value.isascii()
+                or any(ord(character) < 32 or ord(character) == 127 for character in value)
+            ):
+                raise ValueError("object metadata value must be bounded printable ASCII")
+            metadata_bytes += len(key) + len(value)
+        if metadata_bytes > 7_000:
+            raise ValueError("object metadata exceeds its bounded header budget")
 
 
 @dataclass(frozen=True, slots=True)
@@ -122,6 +139,7 @@ class StoredObject:
     content_encoding: str | None
     tags: Mapping[str, str]
     retention: RetentionMetadata | None
+    metadata: Mapping[str, str] = field(default_factory=dict)
     etag: str | None = None
     created: bool = True
 

@@ -156,6 +156,11 @@ class S3ObjectStorage:
                 policy=policy,
                 retain_until=datetime.fromisoformat(retain_until) if retain_until else None,
             )
+        custom_metadata = {
+            key: value
+            for key, value in metadata.items()
+            if key not in {"sha256", "retention-policy", "retain-until"}
+        }
         return StoredObject(
             location=location,
             sha256=digest,
@@ -164,12 +169,13 @@ class S3ObjectStorage:
             content_encoding=response.get("ContentEncoding"),
             tags=await self._tags(location),
             retention=retention,
+            metadata=custom_metadata,
             etag=response.get("ETag", "").strip('"') or None,
         )
 
     @staticmethod
     def _metadata(request: UploadRequest) -> dict[str, str]:
-        metadata = {"sha256": request.expected_sha256}
+        metadata = {"sha256": request.expected_sha256, **request.metadata}
         if request.retention is not None:
             metadata.update(request.retention.metadata())
         return metadata
@@ -189,6 +195,7 @@ class S3ObjectStorage:
             and stored.content_type == request.content_type
             and stored.content_encoding == request.content_encoding
             and dict(stored.tags) == tags
+            and dict(stored.metadata) == dict(request.metadata)
             and stored.retention == request.retention
         )
 
@@ -258,6 +265,7 @@ class S3ObjectStorage:
                 content_encoding=request.content_encoding,
                 tags=tags,
                 retention=request.retention,
+                metadata=dict(request.metadata),
                 etag=response.get("ETag", "").strip('"') or None,
             )
         except BaseException:
@@ -348,6 +356,7 @@ class S3ObjectStorage:
             content_encoding=request.content_encoding,
             tags=tags,
             retention=request.retention,
+            metadata=dict(request.metadata),
             etag=response.get("ETag", "").strip('"') or None,
         )
 

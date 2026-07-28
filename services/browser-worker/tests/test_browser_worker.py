@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from collections.abc import Awaitable, Callable
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import pytest
@@ -23,12 +25,19 @@ from platform_browser_worker.models import (
     ViewportName,
 )
 from platform_browser_worker.renderer import PlaywrightBrowserRenderer
+from platform_browser_worker.repository import _manifest_bytes
 from platform_browser_worker.runner import BrowserScanRunner, FakeBrowserRenderer
 from platform_clients.network_safety import (
     NetworkSafetySubsystem,
     PlaywrightRequestSafety,
 )
 from platform_clients.network_safety.resolver import SequenceDnsResolver
+from platform_clients.object_storage.models import Bucket, ObjectLocation, StoredObject
+from platform_clients.object_storage.scan_artifacts import (
+    ArtifactAccessPolicy,
+    ArtifactRetentionStatus,
+    ScanArtifactKind,
+)
 from platform_workflows.commands import RenderPageInput
 from temporalio.testing import ActivityEnvironment
 
@@ -43,7 +52,9 @@ def configuration() -> BrowserScanConfiguration:
         crawl_page_id=uuid4(),
         url="https://fixture.example/",
         source_content_sha256="a" * 64,
+        raw_response_artifact_key="scans/source/raw-response.html.gz",
         retention_days=30,
+        legal_hold=False,
         viewports=(
             BrowserViewport(ViewportName.DESKTOP, 1440, 1000, False),
             BrowserViewport(ViewportName.MOBILE, 390, 844, True),
@@ -190,10 +201,18 @@ class FakeRepository:
         existing = self.prepared.get(viewport.name.value)
         if existing is not None and viewport.name.value in self.completed:
             return PreparedPageScan(
-                existing.id, viewport, existing.configuration_hash, already_succeeded=True
+                existing.id,
+                viewport,
+                existing.configuration_hash,
+                already_succeeded=True,
+                scan_timestamp=existing.scan_timestamp,
             )
         prepared = existing or PreparedPageScan(
-            uuid4(), viewport, config.configuration_hash(viewport), already_succeeded=False
+            uuid4(),
+            viewport,
+            config.configuration_hash(viewport),
+            already_succeeded=False,
+            scan_timestamp=datetime.now(UTC),
         )
         self.prepared[viewport.name.value] = prepared
         return prepared
@@ -287,6 +306,45 @@ def test_semantic_snapshot_rejects_over_limit_browser_payload_with_typed_failure
         )
 
     assert caught.value.code is BrowserFailureCode.EXTRACTION_TOO_LARGE
+
+
+def test_scan_metadata_manifest_references_typed_preceding_artifacts() -> None:
+    config = configuration()
+    prepared = PreparedPageScan(
+        uuid4(),
+        config.viewports[0],
+        config.configuration_hash(config.viewports[0]),
+        False,
+        datetime(2026, 7, 28, 12, 0, tzinfo=UTC),
+    )
+    stored = StoredObject(
+        location=ObjectLocation(
+            Bucket.SCAN_ARTIFACTS, f"scans/{config.target_id}/{prepared.id}/semantic.json.gz"
+        ),
+        sha256="b" * 64,
+        size=123,
+        content_type="application/json",
+        content_encoding="gzip",
+        tags={},
+        retention=None,
+    )
+
+    value = json.loads(
+        _manifest_bytes(
+            capture("desktop"),
+            prepared,
+            {ScanArtifactKind.SEMANTIC_SNAPSHOT: (stored, ArtifactAccessPolicy.PROJECT_MEMBER)},
+            configuration=config,
+            scanner_version="playwright/fixture",
+            retention_status=ArtifactRetentionStatus.ACTIVE,
+        )
+    )
+
+    assert value["campaign_id"] == str(config.campaign_id)
+    assert value["source_url"] == config.url
+    assert value["raw_response_artifact_key"] == config.raw_response_artifact_key
+    assert value["artifacts"][0]["artifact_type"] == "semantic_snapshot"
+    assert value["artifacts"][0]["sha256"] == "b" * 64
 
 
 async def test_typed_renderer_failure_is_persisted() -> None:

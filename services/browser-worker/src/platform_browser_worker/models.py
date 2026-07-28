@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import asdict, dataclass
+from datetime import datetime
 from enum import StrEnum
 from typing import Self
 from uuid import UUID
@@ -102,7 +103,9 @@ class BrowserScanConfiguration:
     crawl_page_id: UUID
     url: str
     source_content_sha256: str | None
+    raw_response_artifact_key: str | None
     retention_days: int
+    legal_hold: bool
     viewports: tuple[BrowserViewport, ...]
     limits: BrowserCaptureLimits
 
@@ -114,6 +117,8 @@ class BrowserScanConfiguration:
             "crawl_page_id": str(self.crawl_page_id),
             "url": self.url,
             "source_content_sha256": self.source_content_sha256,
+            "raw_response_artifact_key": self.raw_response_artifact_key,
+            "legal_hold": self.legal_hold,
             "viewport": asdict(viewport),
             "limits": asdict(self.limits),
         }
@@ -305,3 +310,4 @@ class PreparedPageScan:
     viewport: BrowserViewport
     configuration_hash: str
     already_succeeded: bool
+    scan_timestamp: datetime

@@ -21,3 +21,4 @@ ADRs record durable choices and their consequences. Accepted decisions are chang
 | [0015](0015-deterministic-page-deduplication.md)     | Deterministic page fingerprinting and deduplication   | Accepted |
 | [0016](0016-deterministic-page-classification.md)    | Deterministic classification and page selection       | Accepted |
 | [0017](0017-isolated-playwright-browser-captures.md) | Isolated, bounded Playwright browser captures         | Accepted |
+| [0018](0018-typed-immutable-scan-artifacts.md)       | Typed immutable scan artifacts                        | Accepted |

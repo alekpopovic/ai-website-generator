@@ -67,3 +67,13 @@ def test_openapi_exposes_streaming_scan_target_import_contract() -> None:
     assert schema["paths"][f"{base}/{{import_id}}/errors.csv"]["get"]["operationId"] == (
         "exportScanTargetImportErrors"
     )
+
+
+def test_openapi_exposes_owned_scan_artifact_reads_and_removal_requests() -> None:
+    paths = create_test_app().openapi()["paths"]
+    prefix = "/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}"
+
+    assert "get" in paths[f"{prefix}/pages/{{page_id}}/artifacts"]
+    assert "get" in paths[f"{prefix}/artifacts/{{artifact_id}}/read-url"]
+    assert "get" in paths[f"{prefix}/artifacts/{{artifact_id}}/screenshot"]
+    assert "post" in paths[f"{prefix}/artifacts/{{artifact_id}}/removal-request"]

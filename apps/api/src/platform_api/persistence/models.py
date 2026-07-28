@@ -6,6 +6,7 @@ from datetime import datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     CheckConstraint,
     DateTime,
@@ -670,6 +671,83 @@ class PageScan(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base
     campaign: Mapped[ScanCampaign] = relationship(back_populates="page_scans")
     crawl_page: Mapped[CrawlPage] = relationship(back_populates="page_scans")
     failures: Mapped[list[ScanFailure]] = relationship(back_populates="page_scan")
+
+
+class ScanArtifact(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base):
+    """Typed immutable scan object with ownership, provenance, and retention state."""
+
+    __tablename__ = "scan_artifacts"
+    __table_args__ = (
+        CheckConstraint("bucket = 'scan-artifacts'", name="bucket_allowed"),
+        CheckConstraint(
+            "artifact_type IN ('raw_response_html', 'rendered_html', "
+            "'desktop_screenshot', 'mobile_screenshot', 'viewport_screenshot', "
+            "'semantic_snapshot', 'extracted_nodes', 'style_summary', "
+            "'network_manifest', 'console_diagnostics', 'scan_metadata_manifest')",
+            name="artifact_type_allowed",
+        ),
+        CheckConstraint(
+            "access_policy IN ('restricted_raw', 'project_member', 'safe_screenshot')",
+            name="access_policy_allowed",
+        ),
+        CheckConstraint(
+            "retention_status IN ('active', 'pending_deletion', 'legal_hold', 'expired', "
+            "'deleted')",
+            name="retention_status_allowed",
+        ),
+        CheckConstraint(
+            "provenance_status IN ('authorized', 'restricted', 'removal_pending', 'removed')",
+            name="provenance_status_allowed",
+        ),
+        CheckConstraint("size_bytes >= 0", name="size_bytes_nonnegative"),
+        CheckConstraint(
+            "viewport IS NULL OR viewport IN ('desktop', 'mobile')", name="viewport_allowed"
+        ),
+        Index("ix_scan_artifacts_campaign_type", "campaign_id", "artifact_type"),
+        Index("ix_scan_artifacts_crawl_page_id", "crawl_page_id"),
+        Index("ix_scan_artifacts_page_scan_id", "page_scan_id"),
+        UniqueConstraint("bucket", "object_key"),
+    )
+
+    project_id: Mapped[UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
+    )
+    campaign_id: Mapped[UUID] = mapped_column(
+        ForeignKey("scan_campaigns.id", ondelete="CASCADE"), nullable=False
+    )
+    source_website_id: Mapped[UUID] = mapped_column(
+        ForeignKey("scan_targets.id", ondelete="CASCADE"), nullable=False
+    )
+    crawl_page_id: Mapped[UUID] = mapped_column(
+        ForeignKey("crawl_pages.id", ondelete="CASCADE"), nullable=False
+    )
+    page_scan_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("page_scans.id", ondelete="CASCADE")
+    )
+    artifact_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    bucket: Mapped[str] = mapped_column(String(64), nullable=False, default="scan-artifacts")
+    object_key: Mapped[str] = mapped_column(String(1_024), nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    content_type: Mapped[str] = mapped_column(String(255), nullable=False)
+    content_encoding: Mapped[str | None] = mapped_column(String(32))
+    source_url: Mapped[str] = mapped_column(String(2_048), nullable=False)
+    final_url: Mapped[str] = mapped_column(String(2_048), nullable=False)
+    scan_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    scanner_version: Mapped[str] = mapped_column(String(200), nullable=False)
+    viewport: Mapped[str | None] = mapped_column(String(16))
+    provenance_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    access_policy: Mapped[str] = mapped_column(String(32), nullable=False)
+    retention_policy: Mapped[str] = mapped_column(String(64), nullable=False)
+    retention_status: Mapped[str] = mapped_column(String(32), nullable=False, default="active")
+    retain_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deletion_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deletion_requested_by_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    deletion_reason: Mapped[str | None] = mapped_column(String(500))
+    deletion_workflow_id: Mapped[str | None] = mapped_column(String(255))
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class ScanFailure(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base):

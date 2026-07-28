@@ -10,6 +10,7 @@ import pytest
 from platform_clients.object_storage.keys import scan_key, user_asset_key
 from platform_clients.object_storage.models import (
     ApprovedUserAssetUpload,
+    ObjectConflictError,
     ObjectLocation,
     RetentionMetadata,
     StorageConfig,
@@ -17,6 +18,10 @@ from platform_clients.object_storage.models import (
     UploadRequest,
 )
 from platform_clients.object_storage.s3 import S3ObjectStorage
+from platform_clients.object_storage.scan_artifacts import (
+    ArtifactProvenanceStatus,
+    ScanObjectMetadata,
+)
 
 pytestmark = pytest.mark.integration
 
@@ -51,6 +56,7 @@ async def download(storage: S3ObjectStorage, location: ObjectLocation) -> bytes:
 async def test_minio_readiness_streams_multipart_metadata_and_presigning() -> None:
     storage = await S3ObjectStorage.create(minio_config())
     website_id, scan_id = uuid4(), uuid4()
+    campaign_id = uuid4()
     small_location = scan_key(website_id, scan_id, "integration-small.json")
     multipart_location = scan_key(website_id, scan_id, "integration-multipart.bin")
     created_locations = [small_location, multipart_location]
@@ -62,6 +68,17 @@ async def test_minio_readiness_streams_multipart_metadata_and_presigning() -> No
             expected_sha256=small_digest,
             content_type="application/json",
             tags={"suite": "minio"},
+            metadata=ScanObjectMetadata(
+                source_url="https://fixture.example/source",
+                final_url="https://fixture.example/final",
+                scan_timestamp=datetime(2026, 7, 28, 12, 0, tzinfo=UTC),
+                scanner_version="integration-scanner/1",
+                viewport="desktop",
+                content_type="application/json",
+                source_website_id=website_id,
+                campaign_id=campaign_id,
+                provenance_status=ArtifactProvenanceStatus.AUTHORIZED,
+            ).as_object_metadata(),
             retention=RetentionMetadata(
                 policy="integration-test", retain_until=datetime.now(UTC) + timedelta(days=1)
             ),
@@ -77,7 +94,22 @@ async def test_minio_readiness_streams_multipart_metadata_and_presigning() -> No
         stored = await storage.stat(small_location)
         assert stored is not None
         assert stored.tags["suite"] == "minio"
+        assert stored.metadata["source-url"] == "https://fixture.example/source"
+        assert stored.metadata["scanner-version"] == "integration-scanner/1"
         assert "X-Amz-" in await storage.presign_read(small_location)
+        with pytest.raises(ObjectConflictError):
+            await storage.upload(
+                small_location,
+                body_stream(small),
+                UploadRequest(
+                    expected_sha256=small_digest,
+                    content_type="application/json",
+                    tags={"suite": "minio"},
+                    metadata={**request.metadata, "scanner-version": "integration-scanner/2"},
+                    retention=request.retention,
+                    test_artifact=True,
+                ),
+            )
 
         multipart = b"m" * (5 * 1_024 * 1_024 + 257)
         multipart_digest = hashlib.sha256(multipart).hexdigest()

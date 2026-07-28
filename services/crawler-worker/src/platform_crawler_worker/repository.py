@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import cast
 from uuid import UUID
 
+from platform_api.artifacts.persistence import ScanArtifactRecordInput, record_scan_artifact
 from platform_api.database import DatabaseManager
 from platform_api.persistence.json import JsonValue
 from platform_api.persistence.models import (
@@ -23,9 +24,14 @@ from platform_api.persistence.models import (
 )
 from platform_clients.crawl_policy import CrawlPolicyConfig, RobotsPolicy
 from platform_clients.object_storage import (
+    ArtifactAccessPolicy,
+    ArtifactProvenanceStatus,
+    ArtifactRetentionStatus,
     Bucket,
     ObjectLocation,
     ObjectStorage,
+    ScanArtifactKind,
+    ScanObjectMetadata,
     UploadRequest,
     scan_key,
 )
@@ -120,6 +126,7 @@ class CrawlRepository:
                 campaign_timeout_seconds=int(_number(timeout.get("campaign_seconds"), 7_200)),
                 store_raw_html=campaign.store_raw_html,
                 retention_days=int(_number(retention.get("retention_days"), 30)),
+                legal_hold=retention.get("legal_hold") is True,
                 max_visual_pages_per_domain=campaign.max_visual_pages_per_domain,
                 include_restricted_representatives=campaign.include_restricted_representatives,
             )
@@ -256,7 +263,14 @@ class CrawlRepository:
             await session.flush()
             page_id = page.id
         if configuration.store_raw_html and discovery.raw_html is not None:
-            await self._store_html(configuration, page_id, discovery.raw_html)
+            await self._store_html(
+                configuration,
+                page_id,
+                discovery.raw_html,
+                source_url=discovery.requested_url,
+                final_url=discovery.final_url,
+                scan_timestamp=page.created_at,
+            )
         return page_id
 
     async def recalculate_deduplication(self, campaign_id: UUID) -> int:
@@ -480,7 +494,14 @@ class CrawlRepository:
         page.fingerprinted_at = fingerprinted_at
 
     async def _store_html(
-        self, configuration: TargetCrawlConfiguration, page_id: UUID, body: bytes
+        self,
+        configuration: TargetCrawlConfiguration,
+        page_id: UUID,
+        body: bytes,
+        *,
+        source_url: str,
+        final_url: str,
+        scan_timestamp: datetime,
     ) -> None:
         if self._storage is None:
             raise RuntimeError("raw HTML storage is configured but object storage is unavailable")
@@ -496,26 +517,73 @@ class CrawlRepository:
             output.write(final)
             digest.update(final)
             output.flush()
-            location = scan_key(configuration.target_id, page_id, "raw.html.gz")
-            await self._storage.upload(
+            location = scan_key(
+                configuration.target_id,
+                page_id,
+                f"raw-response-{digest.hexdigest()[:16]}.html.gz",
+            )
+            retention = RetentionMetadata(
+                policy="legal-hold" if configuration.legal_hold else "scan-campaign",
+                retain_until=None
+                if configuration.legal_hold
+                else scan_timestamp + timedelta(days=configuration.retention_days),
+            )
+            stored = await self._storage.upload(
                 location,
                 _file_chunks(Path(output.name)),
                 UploadRequest(
                     expected_sha256=digest.hexdigest(),
                     content_type="text/html",
                     content_encoding="gzip",
-                    tags={"artifact": "raw-html", "target-id": str(configuration.target_id)},
-                    retention=RetentionMetadata(
-                        policy="scan-campaign",
-                        retain_until=datetime.now(UTC)
-                        + timedelta(days=configuration.retention_days),
-                    ),
+                    tags={
+                        "artifact": ScanArtifactKind.RAW_RESPONSE_HTML.value,
+                        "source-website": str(configuration.target_id),
+                        "campaign": str(configuration.campaign_id),
+                        "provenance": ArtifactProvenanceStatus.AUTHORIZED.value,
+                        "viewport": "none",
+                    },
+                    metadata=ScanObjectMetadata(
+                        source_url=source_url,
+                        final_url=final_url,
+                        scan_timestamp=scan_timestamp,
+                        scanner_version="scrapy/crawler-v1",
+                        viewport="none",
+                        content_type="text/html",
+                        source_website_id=configuration.target_id,
+                        campaign_id=configuration.campaign_id,
+                        provenance_status=ArtifactProvenanceStatus.AUTHORIZED,
+                    ).as_object_metadata(),
+                    retention=retention,
                 ),
             )
         async with self._database.transaction() as session:
             page = await session.get(CrawlPage, page_id)
             if page is not None:
                 page.response_artifact_key = location.key
+                await record_scan_artifact(
+                    session,
+                    ScanArtifactRecordInput(
+                        project_id=configuration.project_id,
+                        campaign_id=configuration.campaign_id,
+                        source_website_id=configuration.target_id,
+                        crawl_page_id=page_id,
+                        page_scan_id=None,
+                        artifact_type=ScanArtifactKind.RAW_RESPONSE_HTML,
+                        stored=stored,
+                        source_url=source_url,
+                        final_url=final_url,
+                        scan_timestamp=scan_timestamp,
+                        scanner_version="scrapy/crawler-v1",
+                        viewport=None,
+                        provenance_status=ArtifactProvenanceStatus.AUTHORIZED,
+                        access_policy=ArtifactAccessPolicy.RESTRICTED_RAW,
+                        retention_status=(
+                            ArtifactRetentionStatus.LEGAL_HOLD
+                            if configuration.legal_hold
+                            else ArtifactRetentionStatus.ACTIVE
+                        ),
+                    ),
+                )
 
     async def record_failure(
         self, configuration: TargetCrawlConfiguration, failure: CrawlFailure

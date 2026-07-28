@@ -57,12 +57,14 @@ _WORKFLOW_NAMES = {
     WorkflowKind.DATASET_BUILD: "DatasetBuildWorkflow",
     WorkflowKind.SITE_GENERATION: "SiteGenerationWorkflow",
     WorkflowKind.TRAINING_RUN: "TrainingRunWorkflow",
+    WorkflowKind.ARTIFACT_DELETION: "ArtifactDeletionWorkflow",
 }
 _EXECUTION_TIMEOUTS = {
     WorkflowKind.SCAN_CAMPAIGN: timedelta(hours=4),
     WorkflowKind.DATASET_BUILD: timedelta(hours=4),
     WorkflowKind.SITE_GENERATION: timedelta(hours=2),
     WorkflowKind.TRAINING_RUN: timedelta(days=2),
+    WorkflowKind.ARTIFACT_DELETION: timedelta(minutes=10),
 }
 
 
@@ -76,7 +78,11 @@ class TemporalWorkflowDispatcher:
         if kind is WorkflowKind.MODEL_WARMUP:
             raise ValueError("model warm-up requires dispatch_model_warmup")
         client = await self._clients.get()
-        resource_id = command.job_id if kind is WorkflowKind.SCAN_CAMPAIGN else command.project_id
+        resource_id = (
+            command.job_id
+            if kind in {WorkflowKind.SCAN_CAMPAIGN, WorkflowKind.ARTIFACT_DELETION}
+            else command.project_id
+        )
         dispatch_id = workflow_id(kind, resource_id, command.idempotency_key)
         handle = await client.start_workflow(
             _WORKFLOW_NAMES[kind],
@@ -132,7 +138,11 @@ class FakeWorkflowDispatcher:
     async def dispatch(self, kind: WorkflowKind, command: CompactWorkflowInput) -> WorkflowDispatch:
         if kind is WorkflowKind.MODEL_WARMUP:
             raise ValueError("model warm-up requires dispatch_model_warmup")
-        resource_id = command.job_id if kind is WorkflowKind.SCAN_CAMPAIGN else command.project_id
+        resource_id = (
+            command.job_id
+            if kind in {WorkflowKind.SCAN_CAMPAIGN, WorkflowKind.ARTIFACT_DELETION}
+            else command.project_id
+        )
         dispatch_id = workflow_id(kind, resource_id, command.idempotency_key)
         if dispatch_id in self._workflow_ids:
             raise DuplicateWorkflowDispatchError(dispatch_id)

@@ -16,6 +16,7 @@ from platform_workflows.dispatcher import (
 from platform_workflows.identifiers import ModelRole, WorkflowKind, workflow_id
 from platform_workflows.queues import TaskQueue
 from platform_workflows.workflows import (
+    ArtifactDeletionWorkflow,
     DatasetBuildWorkflow,
     ModelWarmupWorkflow,
     ScanCampaignWorkflow,
@@ -24,6 +25,7 @@ from platform_workflows.workflows import (
 )
 
 __all__ = [
+    "ArtifactDeletionWorkflow",
     "CompactWorkflowInput",
     "CrawlTargetInput",
     "DatasetBuildWorkflow",

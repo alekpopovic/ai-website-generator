@@ -11,8 +11,14 @@ from uuid import UUID
 from fastapi import APIRouter, Query, Request, Response, status
 from fastapi.responses import StreamingResponse
 
+from platform_api.artifacts.dependencies import ScanArtifactServiceDependency
+from platform_api.artifacts.schemas import (
+    ArtifactRemovalRequest,
+    PresignedArtifactReadResponse,
+    ScanArtifactResponse,
+)
 from platform_api.auth.dependencies import CurrentUserDependency
-from platform_api.dependencies import SettingsDependency
+from platform_api.dependencies import ObjectStorageDependency, SettingsDependency
 from platform_api.errors import ApiError, problem_responses, request_id_from
 from platform_api.models.common import PageResponse, PaginationMeta, PaginationParams, ResponseMeta
 from platform_api.scans.dependencies import (
@@ -504,6 +510,106 @@ async def list_scan_campaign_pages(
 ) -> PageResponse[CrawlPageWithScansResponse]:
     page = await service.list_pages(project_id, campaign_id, owner_id=user.id, params=params)
     return _page_response(request, page.items, page.total, params)
+
+
+@router.get(
+    "/{campaign_id}/pages/{page_id}/artifacts",
+    response_model=list[ScanArtifactResponse],
+    operation_id="listScanPageArtifacts",
+    responses=problem_responses(401, 404, 503),
+)
+async def list_scan_page_artifacts(
+    project_id: UUID,
+    campaign_id: UUID,
+    page_id: UUID,
+    user: CurrentUserDependency,
+    service: ScanArtifactServiceDependency,
+) -> tuple[ScanArtifactResponse, ...]:
+    return await service.list_for_page(project_id, campaign_id, page_id, owner_id=user.id)
+
+
+@router.get(
+    "/{campaign_id}/artifacts/{artifact_id}/read-url",
+    response_model=PresignedArtifactReadResponse,
+    operation_id="createScanArtifactReadUrl",
+    responses=problem_responses(401, 403, 404, 410, 422, 503),
+)
+async def create_scan_artifact_read_url(
+    project_id: UUID,
+    campaign_id: UUID,
+    artifact_id: UUID,
+    user: CurrentUserDependency,
+    settings: SettingsDependency,
+    service: ScanArtifactServiceDependency,
+    expires_seconds: Annotated[int, Query(ge=60, le=900)] = 300,
+) -> PresignedArtifactReadResponse:
+    administrators = {str(email).casefold() for email in settings.security.administrator_emails}
+    return await service.presign_read(
+        project_id,
+        campaign_id,
+        artifact_id,
+        owner_id=user.id,
+        administrator=user.email.casefold() in administrators,
+        expires_seconds=expires_seconds,
+    )
+
+
+@router.get(
+    "/{campaign_id}/artifacts/{artifact_id}/screenshot",
+    operation_id="viewScanArtifactScreenshot",
+    responses=problem_responses(401, 404, 410, 503),
+)
+async def view_scan_artifact_screenshot(
+    project_id: UUID,
+    campaign_id: UUID,
+    artifact_id: UUID,
+    user: CurrentUserDependency,
+    service: ScanArtifactServiceDependency,
+    storage: ObjectStorageDependency,
+) -> StreamingResponse:
+    screenshot = await service.authorize_screenshot(
+        project_id, campaign_id, artifact_id, owner_id=user.id
+    )
+    return StreamingResponse(
+        storage.stream_download(
+            screenshot.location,
+            expected_sha256=screenshot.artifact.sha256,
+        ),
+        media_type="image/png",
+        headers={
+            "Cache-Control": "private, no-store",
+            "Content-Disposition": f'inline; filename="scan-{artifact_id}.png"',
+            "Content-Security-Policy": "default-src 'none'; sandbox",
+            "Cross-Origin-Resource-Policy": "same-origin",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+@router.post(
+    "/{campaign_id}/artifacts/{artifact_id}/removal-request",
+    response_model=ScanArtifactResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    operation_id="requestScanArtifactRemoval",
+    responses=problem_responses(401, 404, 409, 422, 503),
+)
+async def request_scan_artifact_removal(
+    project_id: UUID,
+    campaign_id: UUID,
+    artifact_id: UUID,
+    payload: ArtifactRemovalRequest,
+    request: Request,
+    user: CurrentUserDependency,
+    service: ScanArtifactServiceDependency,
+) -> ScanArtifactResponse:
+    return await service.request_removal(
+        project_id,
+        campaign_id,
+        artifact_id,
+        payload,
+        owner_id=user.id,
+        request_id=request_id_from(request),
+    )
 
 
 @router.put(

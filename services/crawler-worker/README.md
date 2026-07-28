@@ -29,7 +29,10 @@ declarations pass normal admission before scheduling, while hreflang declaration
 Original, normalized, final, and declared-canonical URLs, sitemap `lastmod`, response metadata,
 discovery lineage, and typed failures are persisted idempotently. Raw HTML is disabled by default; when
 enabled it is gzip-compressed through a temporary spool and streamed to the private `scan-artifacts`
-bucket with checksum and retention metadata.
+bucket under a content-addressed immutable key. Each retained response gets a restricted typed
+artifact record and mirrors its checksum, source/final URL, scan timestamp, scanner version, source
+website, campaign, provenance, content type, and retention metadata into object storage. Raw HTML is
+never exposed through ordinary frontend access.
 
 ## Page fingerprinting
 

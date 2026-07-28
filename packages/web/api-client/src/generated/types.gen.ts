@@ -59,6 +59,20 @@ export type ApiResponseVersionInfo = {
 };
 
 /**
+ * ArtifactRemovalRequest
+ */
+export type ArtifactRemovalRequest = {
+    /**
+     * Idempotency Key
+     */
+    idempotency_key: string;
+    /**
+     * Reason
+     */
+    reason: string;
+};
+
+/**
  * ArtifactRetentionPolicy
  */
 export type ArtifactRetentionPolicy = {
@@ -1103,6 +1117,24 @@ export type PasswordResetRequest = {
 };
 
 /**
+ * PresignedArtifactReadResponse
+ */
+export type PresignedArtifactReadResponse = {
+    /**
+     * Artifact Id
+     */
+    artifact_id: string;
+    /**
+     * Expires Seconds
+     */
+    expires_seconds: number;
+    /**
+     * Url
+     */
+    url: string;
+};
+
+/**
  * ProblemDetail
  *
  * Problem Details response compatible with RFC 7807 and RFC 9457 clients.
@@ -1354,6 +1386,76 @@ export type ResponseMeta = {
      * Request Id
      */
     request_id?: string | null;
+};
+
+/**
+ * ScanArtifactResponse
+ */
+export type ScanArtifactResponse = {
+    /**
+     * Artifact Type
+     */
+    artifact_type: 'raw_response_html' | 'rendered_html' | 'desktop_screenshot' | 'mobile_screenshot' | 'viewport_screenshot' | 'semantic_snapshot' | 'extracted_nodes' | 'style_summary' | 'network_manifest' | 'console_diagnostics' | 'scan_metadata_manifest';
+    /**
+     * Campaign Id
+     */
+    campaign_id: string;
+    /**
+     * Content Encoding
+     */
+    content_encoding: string | null;
+    /**
+     * Content Type
+     */
+    content_type: string;
+    /**
+     * Crawl Page Id
+     */
+    crawl_page_id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Page Scan Id
+     */
+    page_scan_id: string | null;
+    /**
+     * Provenance Status
+     */
+    provenance_status: 'authorized' | 'restricted' | 'removal_pending' | 'removed';
+    /**
+     * Retain Until
+     */
+    retain_until: string | null;
+    /**
+     * Retention Status
+     */
+    retention_status: 'active' | 'pending_deletion' | 'legal_hold' | 'expired' | 'deleted';
+    /**
+     * Scan Timestamp
+     */
+    scan_timestamp: string;
+    /**
+     * Scanner Version
+     */
+    scanner_version: string;
+    /**
+     * Sha256
+     */
+    sha256: string;
+    /**
+     * Size Bytes
+     */
+    size_bytes: number;
+    /**
+     * Viewport
+     */
+    viewport: 'desktop' | 'mobile' | null;
 };
 
 /**
@@ -2999,6 +3101,175 @@ export type UpdateScanCampaignResponses = {
 
 export type UpdateScanCampaignResponse = UpdateScanCampaignResponses[keyof UpdateScanCampaignResponses];
 
+export type CreateScanArtifactReadUrlData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+        /**
+         * Artifact Id
+         */
+        artifact_id: string;
+    };
+    query?: {
+        /**
+         * Expires Seconds
+         */
+        expires_seconds?: number;
+    };
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/artifacts/{artifact_id}/read-url';
+};
+
+export type CreateScanArtifactReadUrlErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Gone
+     */
+    410: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type CreateScanArtifactReadUrlError = CreateScanArtifactReadUrlErrors[keyof CreateScanArtifactReadUrlErrors];
+
+export type CreateScanArtifactReadUrlResponses = {
+    /**
+     * Successful Response
+     */
+    200: PresignedArtifactReadResponse;
+};
+
+export type CreateScanArtifactReadUrlResponse = CreateScanArtifactReadUrlResponses[keyof CreateScanArtifactReadUrlResponses];
+
+export type RequestScanArtifactRemovalData = {
+    body: ArtifactRemovalRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+        /**
+         * Artifact Id
+         */
+        artifact_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/artifacts/{artifact_id}/removal-request';
+};
+
+export type RequestScanArtifactRemovalErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type RequestScanArtifactRemovalError = RequestScanArtifactRemovalErrors[keyof RequestScanArtifactRemovalErrors];
+
+export type RequestScanArtifactRemovalResponses = {
+    /**
+     * Successful Response
+     */
+    202: ScanArtifactResponse;
+};
+
+export type RequestScanArtifactRemovalResponse = RequestScanArtifactRemovalResponses[keyof RequestScanArtifactRemovalResponses];
+
+export type ViewScanArtifactScreenshotData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+        /**
+         * Artifact Id
+         */
+        artifact_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/artifacts/{artifact_id}/screenshot';
+};
+
+export type ViewScanArtifactScreenshotErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Gone
+     */
+    410: ProblemDetail;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type ViewScanArtifactScreenshotError = ViewScanArtifactScreenshotErrors[keyof ViewScanArtifactScreenshotErrors];
+
+export type ViewScanArtifactScreenshotResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
 export type CancelScanCampaignData = {
     body: CampaignVersionRequest;
     path: {
@@ -3174,6 +3445,58 @@ export type ListScanCampaignPagesResponses = {
 };
 
 export type ListScanCampaignPagesResponse = ListScanCampaignPagesResponses[keyof ListScanCampaignPagesResponses];
+
+export type ListScanPageArtifactsData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+        /**
+         * Page Id
+         */
+        page_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/pages/{page_id}/artifacts';
+};
+
+export type ListScanPageArtifactsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type ListScanPageArtifactsError = ListScanPageArtifactsErrors[keyof ListScanPageArtifactsErrors];
+
+export type ListScanPageArtifactsResponses = {
+    /**
+     * Response Listscanpageartifacts
+     *
+     * Successful Response
+     */
+    200: Array<ScanArtifactResponse>;
+};
+
+export type ListScanPageArtifactsResponse = ListScanPageArtifactsResponses[keyof ListScanPageArtifactsResponses];
 
 export type OverrideScanCampaignPageRepresentativeData = {
     body: RepresentativeOverrideRequest;

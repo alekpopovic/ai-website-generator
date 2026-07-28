@@ -50,6 +50,9 @@ def test_workflow_id_is_duplicate_safe_and_validated() -> None:
     assert workflow_id(WorkflowKind.SCAN_CAMPAIGN, resource_id, "request-001") == (
         f"aiwg:scan-campaign:{resource_id}:request-001"
     )
+    assert workflow_id(WorkflowKind.ARTIFACT_DELETION, resource_id, "removal-001") == (
+        f"aiwg:artifact-deletion:{resource_id}:removal-001"
+    )
     with pytest.raises(ValueError, match="idempotency_key"):
         workflow_id(WorkflowKind.SCAN_CAMPAIGN, resource_id, "unsafe key")
 

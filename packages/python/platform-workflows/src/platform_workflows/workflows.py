@@ -211,10 +211,24 @@ class ModelWarmupWorkflow:
         return WorkflowResult(job_id=command.job_id, status="completed")
 
 
+@workflow.defn(name="ArtifactDeletionWorkflow")
+class ArtifactDeletionWorkflow:
+    """Acknowledge removal intent until policy-aware deletion activities are implemented."""
+
+    @workflow.run
+    async def run(self, command: CompactWorkflowInput) -> WorkflowResult:
+        return WorkflowResult(
+            job_id=command.job_id,
+            status="completed",
+            output_object_key=command.input_object_key,
+        )
+
+
 WORKFLOW_TYPES = (
     ScanCampaignWorkflow,
     DatasetBuildWorkflow,
     SiteGenerationWorkflow,
     TrainingRunWorkflow,
     ModelWarmupWorkflow,
+    ArtifactDeletionWorkflow,
 )

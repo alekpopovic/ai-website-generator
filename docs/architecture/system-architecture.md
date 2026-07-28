@@ -124,6 +124,12 @@ checksums, and retention intent is mirrored as metadata while PostgreSQL remains
 Presigned writes are restricted to control-plane-approved user assets; there is no general browser
 object-storage client.
 
+Every crawler or browser object additionally has a typed `scan_artifacts` record with project,
+campaign, source website, page, viewport, scanner, provenance, access, and retention lineage. Raw and
+rendered HTML are restricted; screenshots for Angular are integrity-checked and proxied through the
+control plane. See [Scan artifact API](../api/scan-artifacts.md) and
+[ADR 0018](../adr/0018-typed-immutable-scan-artifacts.md).
+
 ## 9. Trust boundaries
 
 The primary boundaries are: public browser to Angular; Angular to authenticated FastAPI; FastAPI to internal infrastructure; workers to untrusted external websites; workers to private inference; and generated artifacts to preview or publication environments. Authentication does not replace tenant authorization. IDs, workflow signals, object keys, model output, scraped content, uploaded files, webhook bodies, and external URLs are untrusted until validated for their specific boundary.

@@ -54,6 +54,7 @@ class InMemoryObjectStorage:
                 and existing[1].content_type == request.content_type
                 and existing[1].content_encoding == request.content_encoding
                 and dict(existing[1].tags) == expected_tags
+                and dict(existing[1].metadata) == dict(request.metadata)
                 and existing[1].retention == request.retention
             ):
                 return replace(existing[1], created=False)
@@ -69,6 +70,7 @@ class InMemoryObjectStorage:
             content_encoding=request.content_encoding,
             tags=tags,
             retention=request.retention,
+            metadata=dict(request.metadata),
             etag=digest,
         )
         self._objects[location] = (body, stored)

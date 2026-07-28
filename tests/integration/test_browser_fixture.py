@@ -83,7 +83,9 @@ async def test_real_browser_captures_desktop_and_mobile_fixture() -> None:
         crawl_page_id=uuid4(),
         url=base_url.rstrip("/") + "/extraction/",
         source_content_sha256=None,
+        raw_response_artifact_key=None,
         retention_days=1,
+        legal_hold=False,
         viewports=(
             BrowserViewport(ViewportName.DESKTOP, 1440, 1000, False),
             BrowserViewport(ViewportName.MOBILE, 390, 844, True),

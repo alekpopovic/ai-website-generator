@@ -6,16 +6,25 @@ import hashlib
 import json
 import zlib
 from collections.abc import AsyncIterator
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import cast
 from uuid import UUID, uuid4
 
+from platform_api.artifacts.persistence import ScanArtifactRecordInput, record_scan_artifact
 from platform_api.database import DatabaseManager
 from platform_api.persistence.json import JsonValue
 from platform_api.persistence.models import CrawlPage, PageScan, ScanCampaign, ScanFailure
-from platform_clients.object_storage import ObjectStorage
+from platform_clients.object_storage import (
+    ArtifactAccessPolicy,
+    ArtifactProvenanceStatus,
+    ArtifactRetentionStatus,
+    ObjectStorage,
+    ScanArtifactKind,
+    ScanObjectMetadata,
+)
 from platform_clients.object_storage.keys import scan_key
-from platform_clients.object_storage.models import RetentionMetadata, UploadRequest
+from platform_clients.object_storage.models import RetentionMetadata, StoredObject, UploadRequest
 from sqlalchemy import func, select
 
 from platform_browser_worker.models import (
@@ -29,6 +38,17 @@ from platform_browser_worker.models import (
     PreparedPageScan,
     ViewportName,
 )
+
+
+@dataclass(frozen=True, slots=True)
+class _ArtifactSpec:
+    kind: ScanArtifactKind
+    body: bytes
+    content_type: str
+    content_encoding: str | None
+    label: str
+    suffix: str
+    access_policy: ArtifactAccessPolicy
 
 
 class BrowserScanRepository:
@@ -69,7 +89,11 @@ class BrowserScanRepository:
             crawl_page_id=page.id,
             url=page.normalized_url,
             source_content_sha256=page.content_sha256,
-            retention_days=_bounded_int(retention.get("days"), 30, minimum=1, maximum=3650),
+            raw_response_artifact_key=page.response_artifact_key,
+            retention_days=_bounded_int(
+                retention.get("retention_days"), 30, minimum=1, maximum=3650
+            ),
+            legal_hold=retention.get("legal_hold") is True,
             viewports=(desktop, mobile),
             limits=BrowserCaptureLimits(
                 navigation_timeout_seconds=_bounded_float(
@@ -113,7 +137,9 @@ class BrowserScanRepository:
                 .with_for_update()
             )
             if scan is not None and scan.status == "succeeded":
-                return PreparedPageScan(scan.id, viewport, configuration_hash, True)
+                return PreparedPageScan(
+                    scan.id, viewport, configuration_hash, True, scan.created_at
+                )
             if scan is None:
                 next_attempt = (
                     await session.scalar(
@@ -149,7 +175,7 @@ class BrowserScanRepository:
                 scan.started_at = datetime.now(UTC)
                 scan.completed_at = None
             await session.flush()
-            return PreparedPageScan(scan.id, viewport, configuration_hash, False)
+            return PreparedPageScan(scan.id, viewport, configuration_hash, False, scan.created_at)
 
     async def complete(
         self,
@@ -157,69 +183,224 @@ class BrowserScanRepository:
         prepared: PreparedPageScan,
         capture: BrowserCapture,
     ) -> None:
+        scan_timestamp = prepared.scan_timestamp
         retention = RetentionMetadata(
-            policy="scan-campaign",
-            retain_until=datetime.now(UTC) + timedelta(days=configuration.retention_days),
+            policy="legal-hold" if configuration.legal_hold else "scan-campaign",
+            retain_until=None
+            if configuration.legal_hold
+            else scan_timestamp + timedelta(days=configuration.retention_days),
         )
-        artifact_tags = {
-            "artifact": "browser-capture",
-            "viewport": prepared.viewport.name.value,
-            "target-id": str(configuration.target_id),
-        }
-        html = _gzip(capture.rendered_html.encode("utf-8"))
-        manifest = _gzip(_manifest_bytes(capture, prepared))
+        retention_status = (
+            ArtifactRetentionStatus.LEGAL_HOLD
+            if configuration.legal_hold
+            else ArtifactRetentionStatus.ACTIVE
+        )
+        scanner_version = (
+            f"playwright/{capture.browser_version};capture/{CAPTURE_SCHEMA_VERSION};"
+            f"extractor/{capture.semantic_snapshot.extractor_version}"
+        )[:200]
         semantic_snapshot = capture.semantic_snapshot.canonical_bytes()
-        compressed_semantic_snapshot = _gzip(semantic_snapshot)
-        artifacts = {
-            "full_page_screenshot": (
+        full_screenshot_kind = (
+            ScanArtifactKind.DESKTOP_SCREENSHOT
+            if prepared.viewport.name is ViewportName.DESKTOP
+            else ScanArtifactKind.MOBILE_SCREENSHOT
+        )
+        artifacts = (
+            _ArtifactSpec(
+                full_screenshot_kind,
                 capture.full_page_screenshot,
                 "image/png",
                 None,
-                "full-page",
+                f"{prepared.viewport.name.value}-full-page",
+                "png",
+                ArtifactAccessPolicy.SAFE_SCREENSHOT,
             ),
-            "viewport_screenshot": (
+            _ArtifactSpec(
+                ScanArtifactKind.VIEWPORT_SCREENSHOT,
                 capture.viewport_screenshot,
                 "image/png",
                 None,
-                "viewport",
+                f"{prepared.viewport.name.value}-viewport",
+                "png",
+                ArtifactAccessPolicy.SAFE_SCREENSHOT,
             ),
-            "rendered_html": (html, "text/html", "gzip", "rendered-html"),
-            "capture_manifest": (manifest, "application/json", "gzip", "capture-manifest"),
-            "semantic_snapshot": (
-                compressed_semantic_snapshot,
+            _ArtifactSpec(
+                ScanArtifactKind.RENDERED_HTML,
+                _gzip(capture.rendered_html.encode("utf-8")),
+                "text/html",
+                "gzip",
+                "rendered-html",
+                "html.gz",
+                ArtifactAccessPolicy.RESTRICTED_RAW,
+            ),
+            _ArtifactSpec(
+                ScanArtifactKind.SEMANTIC_SNAPSHOT,
+                _gzip(semantic_snapshot),
                 "application/json",
                 "gzip",
                 "semantic-snapshot",
+                "json.gz",
+                ArtifactAccessPolicy.PROJECT_MEMBER,
             ),
-        }
-        stored: dict[str, tuple[str, str]] = {}
+            _ArtifactSpec(
+                ScanArtifactKind.EXTRACTED_NODES,
+                _gzip_json(
+                    {
+                        "extractor_version": capture.semantic_snapshot.extractor_version,
+                        "nodes": [
+                            node.model_dump(mode="json", exclude_none=True)
+                            for node in capture.semantic_snapshot.nodes
+                        ],
+                    }
+                ),
+                "application/json",
+                "gzip",
+                "extracted-nodes",
+                "json.gz",
+                ArtifactAccessPolicy.PROJECT_MEMBER,
+            ),
+            _ArtifactSpec(
+                ScanArtifactKind.STYLE_SUMMARY,
+                _gzip_json(
+                    {
+                        "extractor_version": capture.semantic_snapshot.extractor_version,
+                        "style_frequencies": capture.semantic_snapshot.style_frequencies.model_dump(
+                            mode="json"
+                        ),
+                        "design_tokens": [
+                            token.model_dump(mode="json")
+                            for token in capture.semantic_snapshot.design_tokens
+                        ],
+                        "summary": capture.semantic_snapshot.summary.model_dump(mode="json"),
+                    }
+                ),
+                "application/json",
+                "gzip",
+                "style-summary",
+                "json.gz",
+                ArtifactAccessPolicy.PROJECT_MEMBER,
+            ),
+            _ArtifactSpec(
+                ScanArtifactKind.NETWORK_MANIFEST,
+                _gzip_json(
+                    {
+                        "final_url": capture.final_url,
+                        "response_metadata": capture.response_metadata,
+                        "failed_requests": capture.failed_requests,
+                        "external_hosts": capture.external_hosts,
+                    }
+                ),
+                "application/json",
+                "gzip",
+                "network-manifest",
+                "json.gz",
+                ArtifactAccessPolicy.PROJECT_MEMBER,
+            ),
+            _ArtifactSpec(
+                ScanArtifactKind.CONSOLE_DIAGNOSTICS,
+                _gzip_json(
+                    {
+                        "console_errors": capture.console_errors,
+                        "page_errors": capture.page_errors,
+                    }
+                ),
+                "application/json",
+                "gzip",
+                "console-diagnostics",
+                "json.gz",
+                ArtifactAccessPolicy.PROJECT_MEMBER,
+            ),
+        )
+        stored: dict[ScanArtifactKind, tuple[StoredObject, ArtifactAccessPolicy]] = {}
         try:
-            for name, (body, content_type, content_encoding, label) in artifacts.items():
-                digest = hashlib.sha256(body).hexdigest()
-                suffix = {
-                    "full_page_screenshot": "png",
-                    "viewport_screenshot": "png",
-                    "rendered_html": "html.gz",
-                    "capture_manifest": "json.gz",
-                    "semantic_snapshot": "json.gz",
-                }[name]
+            for artifact in artifacts:
+                digest = hashlib.sha256(artifact.body).hexdigest()
                 location = scan_key(
                     configuration.target_id,
                     prepared.id,
-                    f"{label}-{digest[:16]}.{suffix}",
+                    f"{artifact.label}-{digest[:16]}.{artifact.suffix}",
                 )
                 result = await self._storage.upload(
                     location,
-                    _bytes(body),
+                    _bytes(artifact.body),
                     UploadRequest(
                         expected_sha256=digest,
-                        content_type=content_type,
-                        content_encoding=content_encoding,
-                        tags=artifact_tags,
+                        content_type=artifact.content_type,
+                        content_encoding=artifact.content_encoding,
+                        tags={
+                            "artifact": artifact.kind.value,
+                            "viewport": prepared.viewport.name.value,
+                            "source-website": str(configuration.target_id),
+                            "campaign": str(configuration.campaign_id),
+                            "provenance": ArtifactProvenanceStatus.AUTHORIZED.value,
+                        },
+                        metadata=ScanObjectMetadata(
+                            source_url=configuration.url,
+                            final_url=capture.final_url,
+                            scan_timestamp=scan_timestamp,
+                            scanner_version=scanner_version,
+                            viewport=prepared.viewport.name.value,
+                            content_type=artifact.content_type,
+                            source_website_id=configuration.target_id,
+                            campaign_id=configuration.campaign_id,
+                            provenance_status=ArtifactProvenanceStatus.AUTHORIZED,
+                        ).as_object_metadata(),
                         retention=retention,
                     ),
                 )
-                stored[name] = (result.location.key, result.sha256)
+                stored[artifact.kind] = (result, artifact.access_policy)
+            manifest_spec = _ArtifactSpec(
+                ScanArtifactKind.SCAN_METADATA_MANIFEST,
+                _gzip(
+                    _manifest_bytes(
+                        capture,
+                        prepared,
+                        stored,
+                        configuration=configuration,
+                        scanner_version=scanner_version,
+                        retention_status=retention_status,
+                    )
+                ),
+                "application/json",
+                "gzip",
+                "scan-metadata-manifest",
+                "json.gz",
+                ArtifactAccessPolicy.PROJECT_MEMBER,
+            )
+            manifest_digest = hashlib.sha256(manifest_spec.body).hexdigest()
+            manifest_result = await self._storage.upload(
+                scan_key(
+                    configuration.target_id,
+                    prepared.id,
+                    f"{manifest_spec.label}-{manifest_digest[:16]}.{manifest_spec.suffix}",
+                ),
+                _bytes(manifest_spec.body),
+                UploadRequest(
+                    expected_sha256=manifest_digest,
+                    content_type=manifest_spec.content_type,
+                    content_encoding=manifest_spec.content_encoding,
+                    tags={
+                        "artifact": manifest_spec.kind.value,
+                        "viewport": prepared.viewport.name.value,
+                        "source-website": str(configuration.target_id),
+                        "campaign": str(configuration.campaign_id),
+                        "provenance": ArtifactProvenanceStatus.AUTHORIZED.value,
+                    },
+                    metadata=ScanObjectMetadata(
+                        source_url=configuration.url,
+                        final_url=capture.final_url,
+                        scan_timestamp=scan_timestamp,
+                        scanner_version=scanner_version,
+                        viewport=prepared.viewport.name.value,
+                        content_type=manifest_spec.content_type,
+                        source_website_id=configuration.target_id,
+                        campaign_id=configuration.campaign_id,
+                        provenance_status=ArtifactProvenanceStatus.AUTHORIZED,
+                    ).as_object_metadata(),
+                    retention=retention,
+                ),
+            )
+            stored[manifest_spec.kind] = (manifest_result, manifest_spec.access_policy)
         except Exception as error:
             raise BrowserScanError(
                 BrowserFailureCode.ARTIFACT_PERSISTENCE_FAILED,
@@ -235,13 +416,19 @@ class BrowserScanRepository:
                     retryable=True,
                 )
             scan.status = "succeeded"
-            scan.screenshot_artifact_key = stored["full_page_screenshot"][0]
-            scan.viewport_screenshot_artifact_key = stored["viewport_screenshot"][0]
-            scan.rendered_html_artifact_key = stored["rendered_html"][0]
-            scan.analysis_artifact_key = stored["capture_manifest"][0]
-            scan.semantic_snapshot_artifact_key = stored["semantic_snapshot"][0]
+            scan.screenshot_artifact_key = stored[full_screenshot_kind][0].location.key
+            scan.viewport_screenshot_artifact_key = stored[ScanArtifactKind.VIEWPORT_SCREENSHOT][
+                0
+            ].location.key
+            scan.rendered_html_artifact_key = stored[ScanArtifactKind.RENDERED_HTML][0].location.key
+            scan.analysis_artifact_key = stored[ScanArtifactKind.SCAN_METADATA_MANIFEST][
+                0
+            ].location.key
+            scan.semantic_snapshot_artifact_key = stored[ScanArtifactKind.SEMANTIC_SNAPSHOT][
+                0
+            ].location.key
             scan.artifact_checksums = cast(
-                JsonValue, {name: digest for name, (_, digest) in stored.items()}
+                JsonValue, {kind.value: item.sha256 for kind, (item, _) in stored.items()}
             )
             scan.response_metadata = cast(JsonValue, capture.response_metadata)
             scan.browser_version = capture.browser_version[:64]
@@ -268,6 +455,27 @@ class BrowserScanRepository:
             scan.screenshot_height = capture.dimensions.screenshot_height
             scan.full_page_truncated = capture.dimensions.full_page_truncated
             scan.completed_at = datetime.now(UTC)
+            for kind, (item, access_policy) in stored.items():
+                await record_scan_artifact(
+                    session,
+                    ScanArtifactRecordInput(
+                        project_id=configuration.project_id,
+                        campaign_id=configuration.campaign_id,
+                        source_website_id=configuration.target_id,
+                        crawl_page_id=configuration.crawl_page_id,
+                        page_scan_id=prepared.id,
+                        artifact_type=kind,
+                        stored=item,
+                        source_url=configuration.url,
+                        final_url=capture.final_url,
+                        scan_timestamp=scan_timestamp,
+                        scanner_version=scanner_version,
+                        viewport=prepared.viewport.name.value,
+                        provenance_status=ArtifactProvenanceStatus.AUTHORIZED,
+                        access_policy=access_policy,
+                        retention_status=retention_status,
+                    ),
+                )
 
     async def fail(
         self,
@@ -361,16 +569,34 @@ def _gzip(body: bytes) -> bytes:
     return compressor.compress(body) + compressor.flush()
 
 
-def _manifest_bytes(capture: BrowserCapture, prepared: PreparedPageScan) -> bytes:
+def _manifest_bytes(
+    capture: BrowserCapture,
+    prepared: PreparedPageScan,
+    stored: dict[ScanArtifactKind, tuple[StoredObject, ArtifactAccessPolicy]],
+    *,
+    configuration: BrowserScanConfiguration,
+    scanner_version: str,
+    retention_status: ArtifactRetentionStatus,
+) -> bytes:
     value = {
         "schema_version": CAPTURE_SCHEMA_VERSION,
         "configuration_hash": prepared.configuration_hash,
+        "project_id": str(configuration.project_id),
+        "campaign_id": str(configuration.campaign_id),
+        "source_website_id": str(configuration.target_id),
+        "crawl_page_id": str(configuration.crawl_page_id),
+        "page_scan_id": str(prepared.id),
+        "source_url": configuration.url,
         "viewport": {
             "name": prepared.viewport.name.value,
             "width": prepared.viewport.width,
             "height": prepared.viewport.height,
         },
         "final_url": capture.final_url,
+        "scan_timestamp": prepared.scan_timestamp.astimezone(UTC).isoformat(),
+        "scanner_version": scanner_version,
+        "provenance_status": ArtifactProvenanceStatus.AUTHORIZED.value,
+        "retention_status": retention_status.value,
         "response_metadata": capture.response_metadata,
         "title": capture.title,
         "meta_description": capture.meta_description,
@@ -396,8 +622,33 @@ def _manifest_bytes(capture: BrowserCapture, prepared: PreparedPageScan) -> byte
             "full_page_truncated": capture.dimensions.full_page_truncated,
         },
         "browser_version": capture.browser_version,
+        "raw_response_artifact_key": configuration.raw_response_artifact_key,
+        "artifacts": [
+            {
+                "artifact_type": kind.value,
+                "bucket": item.location.bucket.value,
+                "object_key": item.location.key,
+                "sha256": item.sha256,
+                "size_bytes": item.size,
+                "content_type": item.content_type,
+                "content_encoding": item.content_encoding,
+            }
+            for kind, (item, _) in sorted(stored.items(), key=lambda value: value[0].value)
+        ],
     }
     return json.dumps(value, ensure_ascii=False, allow_nan=False, sort_keys=True).encode("utf-8")
+
+
+def _gzip_json(value: object) -> bytes:
+    return _gzip(
+        json.dumps(
+            value,
+            ensure_ascii=False,
+            allow_nan=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    )
 
 
 async def _bytes(body: bytes) -> AsyncIterator[bytes]:

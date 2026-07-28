@@ -42,6 +42,7 @@ def test_metadata_contains_named_foundation_tables_and_constraints() -> None:
         "refresh_tokens",
         "users",
         "scan_campaigns",
+        "scan_artifacts",
         "scan_targets",
         "crawl_pages",
         "crawl_policy_records",

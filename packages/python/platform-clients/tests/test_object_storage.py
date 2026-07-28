@@ -122,6 +122,7 @@ async def test_fake_upload_is_verified_idempotent_and_immutable() -> None:
         expected_sha256=sha256(body),
         content_type="application/json",
         tags={"kind": "manifest"},
+        metadata={"scanner-version": "fixture/1", "campaign": str(uuid4())},
         retention=retention,
         test_artifact=True,
     )
@@ -133,6 +134,7 @@ async def test_fake_upload_is_verified_idempotent_and_immutable() -> None:
     assert not repeated.created
     assert created.tags["aiwg-test-artifact"] == "true"
     assert created.retention == retention
+    assert created.metadata["scanner-version"] == "fixture/1"
     assert await collect(storage.stream_download(location)) == body
     assert len(await storage.list_test_artifacts()) == 1
 
@@ -148,6 +150,19 @@ async def test_fake_upload_is_verified_idempotent_and_immutable() -> None:
             location,
             chunks(body),
             UploadRequest(expected_sha256=sha256(body), content_type="text/plain"),
+        )
+    with pytest.raises(ObjectConflictError):
+        await storage.upload(
+            location,
+            chunks(body),
+            UploadRequest(
+                expected_sha256=sha256(body),
+                content_type="application/json",
+                tags={"kind": "manifest"},
+                metadata={"scanner-version": "fixture/2"},
+                retention=retention,
+                test_artifact=True,
+            ),
         )
 
 

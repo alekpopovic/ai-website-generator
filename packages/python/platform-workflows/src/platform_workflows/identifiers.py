@@ -15,6 +15,7 @@ class WorkflowKind(StrEnum):
     SITE_GENERATION = "site-generation"
     TRAINING_RUN = "training-run"
     MODEL_WARMUP = "model-warmup"
+    ARTIFACT_DELETION = "artifact-deletion"
 
 
 class ModelRole(StrEnum):

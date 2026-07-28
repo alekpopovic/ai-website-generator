@@ -61,6 +61,8 @@ generated/
 !packages/web/api-client/src/generated/
 !packages/web/api-client/src/generated/**
 artifacts/
+!apps/api/src/platform_api/artifacts/
+!apps/api/src/platform_api/artifacts/**
 site-output/
 
 # Local infrastructure state

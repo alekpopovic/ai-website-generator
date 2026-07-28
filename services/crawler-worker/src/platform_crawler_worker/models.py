@@ -26,6 +26,7 @@ class TargetCrawlConfiguration:
     campaign_timeout_seconds: int
     store_raw_html: bool
     retention_days: int
+    legal_hold: bool
     max_visual_pages_per_domain: int
     include_restricted_representatives: bool
 

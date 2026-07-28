@@ -111,6 +111,7 @@ def main() -> None:
         campaign_timeout_seconds=30,
         store_raw_html=False,
         retention_days=1,
+        legal_hold=False,
         max_visual_pages_per_domain=10,
         include_restricted_representatives=False,
     )

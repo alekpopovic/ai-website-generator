@@ -32,6 +32,12 @@ frequencies and candidate design tokens. The detailed JSON snapshot is gzip-comp
 object storage; PostgreSQL stores only its artifact key, checksum, version, counts, truncation state,
 and compact summary. No snapshot is sent to Ollama by this worker.
 
+Each successful viewport now creates typed relational records for rendered HTML, the viewport-specific
+full screenshot, viewport screenshot, semantic snapshot, extracted nodes, style summary, network
+manifest, console diagnostics, and the final scan metadata manifest. All JSON/HTML bodies are gzip
+compressed, and every object carries immutable checksum, scanner, URL, campaign, source website,
+viewport, timestamp, provenance, and retention metadata.
+
 Default extraction limits are 500 nodes, 240 normalized text characters per node, and 1 MiB of
 validated JSON. Selection prioritizes visible semantics when the node limit is reached. Scripts,
 styles, templates, hidden or `aria-hidden` descendants, tracking markers, input values, and one-pixel

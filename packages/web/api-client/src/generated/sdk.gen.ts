@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddScanCampaignTargetData, AddScanCampaignTargetErrors, AddScanCampaignTargetResponses, ArchiveProjectData, ArchiveProjectErrors, ArchiveProjectResponses, CancelScanCampaignData, CancelScanCampaignErrors, CancelScanCampaignResponses, CommitScanTargetImportData, CommitScanTargetImportErrors, CommitScanTargetImportResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateScanCampaignData, CreateScanCampaignErrors, CreateScanCampaignResponses, DeleteDraftScanCampaignData, DeleteDraftScanCampaignErrors, DeleteDraftScanCampaignResponses, DeleteDraftScanCampaignTargetData, DeleteDraftScanCampaignTargetErrors, DeleteDraftScanCampaignTargetResponses, ExportScanTargetImportErrorsData, ExportScanTargetImportErrorsErrors, ExportScanTargetImportErrorsResponses, GetApiVersionData, GetApiVersionErrors, GetApiVersionResponses, GetConfiguredModelReadinessData, GetConfiguredModelReadinessErrors, GetConfiguredModelReadinessResponses, GetCurrentUserData, GetCurrentUserErrors, GetCurrentUserResponses, GetDependencyHealthData, GetDependencyHealthErrors, GetDependencyHealthResponses, GetLivenessData, GetLivenessErrors, GetLivenessResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetScanCampaignData, GetScanCampaignErrors, GetScanCampaignResponses, GetScanCampaignSummaryData, GetScanCampaignSummaryErrors, GetScanCampaignSummaryResponses, GetScanTargetImportData, GetScanTargetImportErrors, GetScanTargetImportResponses, GetVectorCollectionStatisticsData, GetVectorCollectionStatisticsErrors, GetVectorCollectionStatisticsResponses, ImportScanCampaignTargetsData, ImportScanCampaignTargetsErrors, ImportScanCampaignTargetsResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListScanCampaignFailuresData, ListScanCampaignFailuresErrors, ListScanCampaignFailuresResponses, ListScanCampaignPagesData, ListScanCampaignPagesErrors, ListScanCampaignPagesResponses, ListScanCampaignsData, ListScanCampaignsErrors, ListScanCampaignsResponses, ListScanCampaignTargetsData, ListScanCampaignTargetsErrors, ListScanCampaignTargetsResponses, LoginData, LoginErrors, LoginResponses, LogoutAllData, LogoutAllErrors, LogoutAllResponses, LogoutData, LogoutErrors, LogoutResponses, OverrideScanCampaignPageRepresentativeData, OverrideScanCampaignPageRepresentativeErrors, OverrideScanCampaignPageRepresentativeResponses, PauseScanCampaignData, PauseScanCampaignErrors, PauseScanCampaignResponses, RefreshAccessTokenData, RefreshAccessTokenErrors, RefreshAccessTokenResponses, RegisterData, RegisterErrors, RegisterResponses, RequestPasswordResetData, RequestPasswordResetErrors, RequestPasswordResetResponses, ResetPasswordData, ResetPasswordErrors, ResetPasswordResponses, RestoreProjectData, RestoreProjectErrors, RestoreProjectResponses, ResumeScanCampaignData, ResumeScanCampaignErrors, ResumeScanCampaignResponses, RetryScanCampaignFailuresData, RetryScanCampaignFailuresErrors, RetryScanCampaignFailuresResponses, StartScanCampaignData, StartScanCampaignErrors, StartScanCampaignResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateScanCampaignData, UpdateScanCampaignErrors, UpdateScanCampaignResponses, VerifyEmailData, VerifyEmailErrors, VerifyEmailResponses, WarmUpConfiguredModelData, WarmUpConfiguredModelErrors, WarmUpConfiguredModelResponses } from './types.gen';
+import type { AddScanCampaignTargetData, AddScanCampaignTargetErrors, AddScanCampaignTargetResponses, ArchiveProjectData, ArchiveProjectErrors, ArchiveProjectResponses, CancelScanCampaignData, CancelScanCampaignErrors, CancelScanCampaignResponses, CommitScanTargetImportData, CommitScanTargetImportErrors, CommitScanTargetImportResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateScanArtifactReadUrlData, CreateScanArtifactReadUrlErrors, CreateScanArtifactReadUrlResponses, CreateScanCampaignData, CreateScanCampaignErrors, CreateScanCampaignResponses, DeleteDraftScanCampaignData, DeleteDraftScanCampaignErrors, DeleteDraftScanCampaignResponses, DeleteDraftScanCampaignTargetData, DeleteDraftScanCampaignTargetErrors, DeleteDraftScanCampaignTargetResponses, ExportScanTargetImportErrorsData, ExportScanTargetImportErrorsErrors, ExportScanTargetImportErrorsResponses, GetApiVersionData, GetApiVersionErrors, GetApiVersionResponses, GetConfiguredModelReadinessData, GetConfiguredModelReadinessErrors, GetConfiguredModelReadinessResponses, GetCurrentUserData, GetCurrentUserErrors, GetCurrentUserResponses, GetDependencyHealthData, GetDependencyHealthErrors, GetDependencyHealthResponses, GetLivenessData, GetLivenessErrors, GetLivenessResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetScanCampaignData, GetScanCampaignErrors, GetScanCampaignResponses, GetScanCampaignSummaryData, GetScanCampaignSummaryErrors, GetScanCampaignSummaryResponses, GetScanTargetImportData, GetScanTargetImportErrors, GetScanTargetImportResponses, GetVectorCollectionStatisticsData, GetVectorCollectionStatisticsErrors, GetVectorCollectionStatisticsResponses, ImportScanCampaignTargetsData, ImportScanCampaignTargetsErrors, ImportScanCampaignTargetsResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListScanCampaignFailuresData, ListScanCampaignFailuresErrors, ListScanCampaignFailuresResponses, ListScanCampaignPagesData, ListScanCampaignPagesErrors, ListScanCampaignPagesResponses, ListScanCampaignsData, ListScanCampaignsErrors, ListScanCampaignsResponses, ListScanCampaignTargetsData, ListScanCampaignTargetsErrors, ListScanCampaignTargetsResponses, ListScanPageArtifactsData, ListScanPageArtifactsErrors, ListScanPageArtifactsResponses, LoginData, LoginErrors, LoginResponses, LogoutAllData, LogoutAllErrors, LogoutAllResponses, LogoutData, LogoutErrors, LogoutResponses, OverrideScanCampaignPageRepresentativeData, OverrideScanCampaignPageRepresentativeErrors, OverrideScanCampaignPageRepresentativeResponses, PauseScanCampaignData, PauseScanCampaignErrors, PauseScanCampaignResponses, RefreshAccessTokenData, RefreshAccessTokenErrors, RefreshAccessTokenResponses, RegisterData, RegisterErrors, RegisterResponses, RequestPasswordResetData, RequestPasswordResetErrors, RequestPasswordResetResponses, RequestScanArtifactRemovalData, RequestScanArtifactRemovalErrors, RequestScanArtifactRemovalResponses, ResetPasswordData, ResetPasswordErrors, ResetPasswordResponses, RestoreProjectData, RestoreProjectErrors, RestoreProjectResponses, ResumeScanCampaignData, ResumeScanCampaignErrors, ResumeScanCampaignResponses, RetryScanCampaignFailuresData, RetryScanCampaignFailuresErrors, RetryScanCampaignFailuresResponses, StartScanCampaignData, StartScanCampaignErrors, StartScanCampaignResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateScanCampaignData, UpdateScanCampaignErrors, UpdateScanCampaignResponses, VerifyEmailData, VerifyEmailErrors, VerifyEmailResponses, ViewScanArtifactScreenshotData, ViewScanArtifactScreenshotErrors, ViewScanArtifactScreenshotResponses, WarmUpConfiguredModelData, WarmUpConfiguredModelErrors, WarmUpConfiguredModelResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -334,6 +334,43 @@ export class ScanCampaigns {
     }
     
     /**
+     * Create Scan Artifact Read Url
+     */
+    public createScanArtifactReadUrl<ThrowOnError extends boolean = false>(options: Options<CreateScanArtifactReadUrlData, ThrowOnError>): RequestResult<CreateScanArtifactReadUrlResponses, CreateScanArtifactReadUrlErrors, ThrowOnError> {
+        return (options.client ?? client).get<CreateScanArtifactReadUrlResponses, CreateScanArtifactReadUrlErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/artifacts/{artifact_id}/read-url',
+            ...options
+        });
+    }
+    
+    /**
+     * Request Scan Artifact Removal
+     */
+    public requestScanArtifactRemoval<ThrowOnError extends boolean = false>(options: Options<RequestScanArtifactRemovalData, ThrowOnError>): RequestResult<RequestScanArtifactRemovalResponses, RequestScanArtifactRemovalErrors, ThrowOnError> {
+        return (options.client ?? client).post<RequestScanArtifactRemovalResponses, RequestScanArtifactRemovalErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/artifacts/{artifact_id}/removal-request',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * View Scan Artifact Screenshot
+     */
+    public viewScanArtifactScreenshot<ThrowOnError extends boolean = false>(options: Options<ViewScanArtifactScreenshotData, ThrowOnError>): RequestResult<ViewScanArtifactScreenshotResponses, ViewScanArtifactScreenshotErrors, ThrowOnError> {
+        return (options.client ?? client).get<ViewScanArtifactScreenshotResponses, ViewScanArtifactScreenshotErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/artifacts/{artifact_id}/screenshot',
+            ...options
+        });
+    }
+    
+    /**
      * Cancel Scan Campaign
      */
     public cancelScanCampaign<ThrowOnError extends boolean = false>(options: Options<CancelScanCampaignData, ThrowOnError>): RequestResult<CancelScanCampaignResponses, CancelScanCampaignErrors, ThrowOnError> {
@@ -366,6 +403,17 @@ export class ScanCampaigns {
         return (options.client ?? client).get<ListScanCampaignPagesResponses, ListScanCampaignPagesErrors, ThrowOnError>({
             security: [{ scheme: 'bearer', type: 'http' }],
             url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/pages',
+            ...options
+        });
+    }
+    
+    /**
+     * List Scan Page Artifacts
+     */
+    public listScanPageArtifacts<ThrowOnError extends boolean = false>(options: Options<ListScanPageArtifactsData, ThrowOnError>): RequestResult<ListScanPageArtifactsResponses, ListScanPageArtifactsErrors, ThrowOnError> {
+        return (options.client ?? client).get<ListScanPageArtifactsResponses, ListScanPageArtifactsErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/pages/{page_id}/artifacts',
             ...options
         });
     }

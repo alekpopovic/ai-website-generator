@@ -16,13 +16,25 @@ from platform_clients.object_storage.models import (
     UploadRequest,
 )
 from platform_clients.object_storage.s3 import S3ObjectStorage
+from platform_clients.object_storage.scan_artifacts import (
+    ArtifactAccessPolicy,
+    ArtifactProvenanceStatus,
+    ArtifactRetentionStatus,
+    ScanArtifactKind,
+    ScanObjectMetadata,
+)
 
 __all__ = [
+    "ArtifactAccessPolicy",
+    "ArtifactProvenanceStatus",
+    "ArtifactRetentionStatus",
     "Bucket",
     "InMemoryObjectStorage",
     "ObjectLocation",
     "ObjectStorage",
     "S3ObjectStorage",
+    "ScanArtifactKind",
+    "ScanObjectMetadata",
     "StorageConfig",
     "UploadRequest",
     "dataset_key",
