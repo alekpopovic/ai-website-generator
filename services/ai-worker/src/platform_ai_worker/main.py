@@ -6,6 +6,7 @@ import os
 import signal
 
 from platform_clients.llm.ollama import OllamaConfig, OllamaGateway
+from platform_clients.llm.protocols import LLMGateway
 from platform_workflows.client import TemporalClientConfig, create_temporal_client
 from platform_workflows.queues import TaskQueue
 from platform_workflows.worker import (
@@ -16,6 +17,8 @@ from platform_workflows.worker import (
 )
 
 from platform_ai_worker.activities import ModelActivities
+from platform_ai_worker.dspy_program import DspyOllamaVisionProgram
+from platform_ai_worker.page_analyzer import DspyPageAnalyzer
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +52,20 @@ def ollama_config_from_environment() -> OllamaConfig:
         max_total_image_bytes=_int("OLLAMA_MAX_TOTAL_IMAGE_BYTES", 20_971_520),
         max_response_bytes=_int("OLLAMA_MAX_RESPONSE_BYTES", 4_194_304),
         keep_alive=os.environ.get("OLLAMA_KEEP_ALIVE", "5m"),
+    )
+
+
+def create_page_analyzer(gateway: LLMGateway, config: OllamaConfig) -> DspyPageAnalyzer:
+    """Build the worker-only analyzer against the configured private vision model."""
+    return DspyPageAnalyzer(
+        gateway,
+        DspyOllamaVisionProgram(
+            config=config,
+            max_attempts=_int("DSPY_PAGE_ANALYSIS_MAX_ATTEMPTS", 2),
+            max_output_tokens=_int("DSPY_PAGE_ANALYSIS_MAX_OUTPUT_TOKENS", 12_000),
+        ),
+        verify_dspy_transport=True,
+        max_output_tokens=_int("DSPY_PAGE_ANALYSIS_MAX_OUTPUT_TOKENS", 12_000),
     )
 
 

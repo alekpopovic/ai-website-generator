@@ -78,6 +78,14 @@ PostgreSQL stores only compact section/style/token summaries, counts, versions, 
 This extraction performs no inference and sends no content to Ollama. Downstream analysis must consume
 the compact, provenance-linked representation and may not reuse captured copy or media.
 
+Page analysis is implemented behind a worker-only `PageAnalyzer` interface. A versioned DSPy module
+combines copy-free semantic geometry, deterministic generic tokens, section candidates, and bounded
+desktop/mobile screenshot evidence into a strict `PageAnalysisPayload`. The installed model and the
+DSPy/LiteLLM image transport are capability-tested before use; an explicitly recorded direct Ollama
+structured-output path handles incompatible local vision transports. Both paths use the configured
+private vision model and revalidate the same Pydantic contract. See
+[DSPy page analysis](../development/page-analysis.md).
+
 ## 4. Dataset workflow
 
 Dataset creation selects eligible abstract scan records by ID and evaluates authorization, provenance, licensing, removal state, schema version, and quality policy. Workers normalize and deduplicate records, create immutable versioned manifests, and split data deterministically. Dataset bodies live in object storage; PostgreSQL holds lifecycle state, ownership, policy, lineage, checksums, and object keys. Optional embeddings live in Qdrant with the same dataset and provenance identifiers.
