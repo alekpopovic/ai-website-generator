@@ -31,6 +31,15 @@ typed capture manifest are checksum-verified private objects. Page height, width
 screenshot bytes, navigation time, total time, context concurrency, container memory, and PIDs are
 bounded.
 
+Rendered pages are also converted by a deterministic, versioned browser-side extractor. It prefers
+visible semantic landmarks and controls, detects repeated card structures, assigns identifiers derived
+from local DOM paths, records bounded geometry and computed-style fields, infers section boundaries,
+aggregates style frequencies, and proposes candidate design tokens without model inference. Node count,
+per-node text, and serialized payload size are hard limited. Scripts, non-visible content, tracking
+markers, input values, and executable behavior are excluded. The detailed snapshot is a private
+checksum-verified object; PostgreSQL retains only its key, checksum, extractor version, bounded counts,
+and compact abstract summary.
+
 PostgreSQL owns viewport scan state and sanitized metadata. A versioned configuration hash uniquely
 identifies `(page, viewport, configuration)`. Content-addressed artifact filenames make retries safe
 when dynamic pages render differently. Typed browser failures are persisted without raw exceptions or
@@ -45,3 +54,5 @@ URLs, and cancellation marks an in-progress scan cancelled.
 - Browser routing reduces exposure but is not a network sandbox; hardened containers, restricted
   credentials, and firewall or egress-proxy enforcement remain mandatory.
 - Captured source HTML and text remain private scan artifacts and cannot be reused as generated copy.
+- Extractor and capture schema versions participate in the configuration hash, so algorithm or limit
+  changes produce a new idempotent capture instead of silently changing an existing artifact.

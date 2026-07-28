@@ -35,7 +35,9 @@ from playwright.async_api import (
     TimeoutError as PlaywrightTimeoutError,
 )
 
+from platform_browser_worker.extractor import EXTRACTION_SCRIPT, validate_semantic_snapshot
 from platform_browser_worker.models import (
+    EXTRACTOR_VERSION,
     BrowserCapture,
     BrowserFailureCode,
     BrowserScanConfiguration,
@@ -257,6 +259,24 @@ class PlaywrightBrowserRenderer:
         if progress is not None:
             await progress(f"stabilize-{viewport.name.value}")
         await self._stabilize(page, configuration.limits.stabilization_seconds)
+        if progress is not None:
+            await progress(f"extract-{viewport.name.value}")
+        try:
+            semantic_value = await page.evaluate(
+                EXTRACTION_SCRIPT,
+                {
+                    "extractorVersion": EXTRACTOR_VERSION,
+                    "maximumNodes": configuration.limits.maximum_extracted_nodes,
+                    "maximumPayloadBytes": configuration.limits.maximum_extraction_bytes,
+                    "maximumTextCharacters": configuration.limits.maximum_node_text_characters,
+                },
+            )
+        except PlaywrightError as error:
+            raise BrowserScanError(
+                BrowserFailureCode.EXTRACTION_FAILED,
+                "Browser semantic extraction could not be completed.",
+            ) from error
+        semantic_snapshot = validate_semantic_snapshot(semantic_value, configuration.limits)
         observations = await page.evaluate(_OBSERVATION_SCRIPT)
         if not isinstance(observations, dict):
             raise BrowserScanError(
@@ -343,6 +363,7 @@ class PlaywrightBrowserRenderer:
                 full_page_truncated=truncated,
             ),
             browser_version=(await self._browser_process()).version,
+            semantic_snapshot=semantic_snapshot,
         )
 
     async def _route(

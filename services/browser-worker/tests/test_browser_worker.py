@@ -8,7 +8,9 @@ from uuid import UUID, uuid4
 
 import pytest
 from platform_browser_worker.activities import BrowserActivities
+from platform_browser_worker.extractor import validate_semantic_snapshot
 from platform_browser_worker.models import (
+    EXTRACTOR_VERSION,
     BrowserCapture,
     BrowserCaptureLimits,
     BrowserFailureCode,
@@ -17,6 +19,7 @@ from platform_browser_worker.models import (
     BrowserViewport,
     DocumentDimensions,
     PreparedPageScan,
+    SemanticSnapshot,
     ViewportName,
 )
 from platform_browser_worker.renderer import PlaywrightBrowserRenderer
@@ -67,6 +70,102 @@ def capture(viewport: str) -> BrowserCapture:
         external_hosts=(),
         dimensions=DocumentDimensions(1440, 1200, 1440, 1200, False),
         browser_version="fixture-browser/1",
+        semantic_snapshot=semantic_snapshot(),
+    )
+
+
+def semantic_snapshot(*, tag_counts: dict[str, int] | None = None) -> SemanticSnapshot:
+    return SemanticSnapshot.model_validate(
+        {
+            "extractor_version": EXTRACTOR_VERSION,
+            "nodes": [
+                {
+                    "id": "n-1234abcd",
+                    "tag": "main",
+                    "role": "main",
+                    "aria_label": None,
+                    "text": "Synthetic fixture content.",
+                    "bounds": {"x": 0, "y": 72, "width": 1440, "height": 900},
+                    "visible": True,
+                    "z_index": "auto",
+                    "display": "block",
+                    "position": "static",
+                    "layout": {
+                        "flex_direction": "row",
+                        "flex_wrap": "nowrap",
+                        "justify_content": "normal",
+                        "align_items": "normal",
+                        "gap": "normal",
+                        "grid_template_columns": "none",
+                        "grid_template_rows": "none",
+                    },
+                    "color": "rgb(24, 33, 47)",
+                    "background_color": "rgba(0, 0, 0, 0)",
+                    "font_family": "Inter, sans-serif",
+                    "font_size": "16px",
+                    "font_weight": "400",
+                    "line_height": "24.8px",
+                    "spacing": {
+                        "margin_top": "0px",
+                        "margin_right": "0px",
+                        "margin_bottom": "0px",
+                        "margin_left": "0px",
+                        "padding_top": "0px",
+                        "padding_right": "0px",
+                        "padding_bottom": "0px",
+                        "padding_left": "0px",
+                    },
+                    "border": "0px none rgb(24, 33, 47)",
+                    "radius": "0px",
+                    "shadow": "none",
+                    "text_align": "start",
+                    "image": None,
+                    "parent_section_id": "n-1234abcd",
+                }
+            ],
+            "sections": [
+                {
+                    "id": "n-1234abcd",
+                    "tag": "main",
+                    "kind": "semantic-main",
+                    "bounds": {"x": 0, "y": 72, "width": 1440, "height": 900},
+                    "parent_section_id": None,
+                    "node_count": 1,
+                }
+            ],
+            "style_frequencies": {
+                "colors": [{"value": "rgb(24, 33, 47)", "count": 1}],
+                "font_families": [],
+                "font_sizes": [],
+                "font_weights": [],
+                "line_heights": [],
+                "spacing": [],
+                "radii": [],
+                "shadows": [],
+                "borders": [],
+            },
+            "design_tokens": [
+                {
+                    "category": "colors",
+                    "name": "color-1",
+                    "value": "rgb(24, 33, 47)",
+                    "count": 1,
+                }
+            ],
+            "summary": {
+                "node_count": 1,
+                "section_count": 1,
+                "card_count": 0,
+                "tag_counts": tag_counts or {"main": 1},
+                "role_counts": {"main": 1},
+                "layout_counts": {"block": 1},
+                "heading_outline": [],
+                "palette": ["rgb(24, 33, 47)"],
+                "font_families": ["Inter, sans-serif"],
+                "spacing_scale": [],
+            },
+            "truncated": False,
+        }
     )
 
 
@@ -159,6 +258,35 @@ async def test_configuration_hash_and_successful_retries_are_deterministic() -> 
     await runner.scan(command)
     assert len(renderer.calls) == 2
     assert repository.completed == ["desktop", "mobile"]
+
+
+def test_semantic_snapshot_validation_and_serialization_are_deterministic() -> None:
+    first = semantic_snapshot(tag_counts={"main": 1, "body": 1})
+    second = semantic_snapshot(tag_counts={"body": 1, "main": 1})
+    validated = validate_semantic_snapshot(first.model_dump(mode="json"), BrowserCaptureLimits())
+
+    assert validated.canonical_bytes() == second.canonical_bytes()
+    assert len(validated.nodes) == 1
+    assert validated.extractor_version == EXTRACTOR_VERSION
+
+
+def test_semantic_snapshot_rejects_over_limit_browser_payload_with_typed_failure() -> None:
+    snapshot = semantic_snapshot()
+    node = snapshot.nodes[0]
+    oversized = snapshot.model_copy(
+        update={
+            "nodes": tuple(node.model_copy(update={"id": f"n-{index:08x}"}) for index in range(51)),
+            "summary": snapshot.summary.model_copy(update={"node_count": 51}),
+        }
+    )
+
+    with pytest.raises(BrowserScanError) as caught:
+        validate_semantic_snapshot(
+            oversized.model_dump(mode="json"),
+            BrowserCaptureLimits(maximum_extracted_nodes=50),
+        )
+
+    assert caught.value.code is BrowserFailureCode.EXTRACTION_TOO_LARGE
 
 
 async def test_typed_renderer_failure_is_persisted() -> None:

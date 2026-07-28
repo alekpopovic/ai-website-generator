@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Semantic Extraction Fixture</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="shell">
+        <a class="brand" href="/">Fixture</a>
+        <nav aria-label="Extraction navigation"><a href="#content">Content</a></nav>
+      </div>
+    </header>
+    <main id="content">
+      <section class="section" aria-label="Test components">
+        <div class="shell">
+          <h1>Semantic component inventory</h1>
+          <p>Visible deterministic text.</p>
+          <ul>
+            <li>First item</li>
+            <li>Second item</li>
+          </ul>
+          <ol>
+            <li>First ordered item</li>
+            <li>Second ordered item</li>
+          </ol>
+          <div class="grid">
+            <article class="card">
+              <h2>Alpha</h2>
+              <p>Repeated card pattern.</p>
+            </article>
+            <article class="card">
+              <h2>Beta</h2>
+              <p>Repeated card pattern.</p>
+            </article>
+            <article class="card">
+              <h2>Gamma</h2>
+              <p>Repeated card pattern.</p>
+            </article>
+          </div>
+          <aside>
+            <h3>Related context</h3>
+            <h4>Supporting detail</h4>
+            <h5>Minor detail</h5>
+            <h6>Smallest detail</h6>
+            <p>Related visible context.</p>
+          </aside>
+          <figure>
+            <img src="/extraction/fixture.svg" width="160" height="90" alt="Abstract fixture" />
+            <figcaption>Fixture image caption.</figcaption>
+          </figure>
+          <form aria-label="Fixture form">
+            <label>Name <input name="name" autocomplete="off" /></label>
+            <button type="button">Continue</button>
+          </form>
+          <div hidden>Hidden text must not be extracted.</div>
+          <div class="analytics-pixel">Tracking noise must not be extracted.</div>
+        </div>
+      </section>
+    </main>
+    <footer class="site-footer"><p>Deterministic footer.</p></footer>
+    <script>
+      window.fixtureMarker = 'script text must not be extracted';
+    </script>
+  </body>
+</html>

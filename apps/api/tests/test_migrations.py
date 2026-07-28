@@ -54,6 +54,8 @@ def test_initial_migration_renders_postgresql_upgrade_sql(
     assert "ck_crawl_pages_manual_selection_allowed" in upgrade_sql
     assert "ALTER TABLE page_scans ADD COLUMN configuration_hash" in upgrade_sql
     assert "uq_page_scans_crawl_page_id_viewport_configuration_hash" in upgrade_sql
+    assert "ALTER TABLE page_scans ADD COLUMN semantic_snapshot_artifact_key" in upgrade_sql
+    assert "ck_page_scans_extraction_payload_bytes_nonnegative" in upgrade_sql
     assert "ck_users_status_allowed" in upgrade_sql
     assert "ck_users_ck_" not in upgrade_sql
     assert "CREATE TYPE" not in upgrade_sql

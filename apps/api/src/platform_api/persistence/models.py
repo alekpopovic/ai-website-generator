@@ -595,6 +595,14 @@ class PageScan(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base
         CheckConstraint(
             "document_height IS NULL OR document_height >= 1", name="document_height_positive"
         ),
+        CheckConstraint(
+            "extracted_node_count IS NULL OR extracted_node_count >= 0",
+            name="extracted_node_count_nonnegative",
+        ),
+        CheckConstraint(
+            "extraction_payload_bytes IS NULL OR extraction_payload_bytes >= 0",
+            name="extraction_payload_bytes_nonnegative",
+        ),
         Index("ix_page_scans_campaign_id_status", "campaign_id", "status"),
         Index("ix_page_scans_configuration_hash", "configuration_hash"),
         UniqueConstraint("crawl_page_id", "viewport", "attempt"),
@@ -616,6 +624,7 @@ class PageScan(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base
     rendered_html_artifact_key: Mapped[str | None] = mapped_column(String(1_024))
     analysis_artifact_key: Mapped[str | None] = mapped_column(String(1_024))
     viewport_screenshot_artifact_key: Mapped[str | None] = mapped_column(String(1_024))
+    semantic_snapshot_artifact_key: Mapped[str | None] = mapped_column(String(1_024))
     configuration_hash: Mapped[str | None] = mapped_column(String(64))
     capture_schema_version: Mapped[int | None] = mapped_column(Integer)
     browser_version: Mapped[str | None] = mapped_column(String(64))
@@ -631,6 +640,13 @@ class PageScan(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base
     canonical_url: Mapped[str | None] = mapped_column(String(2_048))
     language: Mapped[str | None] = mapped_column(String(35))
     visible_text_summary: Mapped[str | None] = mapped_column(String(4_000))
+    extractor_version: Mapped[str | None] = mapped_column(String(64))
+    extracted_node_count: Mapped[int | None] = mapped_column(Integer)
+    extraction_payload_bytes: Mapped[int | None] = mapped_column(Integer)
+    extraction_truncated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    semantic_snapshot_summary: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")
+    )
     console_errors: Mapped[JsonValue] = mapped_column(
         SafeJSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
     )

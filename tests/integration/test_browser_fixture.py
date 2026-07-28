@@ -81,7 +81,7 @@ async def test_real_browser_captures_desktop_and_mobile_fixture() -> None:
         project_id=uuid4(),
         target_id=uuid4(),
         crawl_page_id=uuid4(),
-        url=base_url.rstrip("/") + "/",
+        url=base_url.rstrip("/") + "/extraction/",
         source_content_sha256=None,
         retention_days=1,
         viewports=(
@@ -103,11 +103,52 @@ async def test_real_browser_captures_desktop_and_mobile_fixture() -> None:
             await renderer.capture(configuration, viewport, request_id=str(uuid4()))
             for viewport in configuration.viewports
         ]
+        repeated_desktop = await renderer.capture(
+            configuration, configuration.viewports[0], request_id=str(uuid4())
+        )
     finally:
         await renderer.close()
-    assert all(capture.title == "Northstar Studio Fixture" for capture in captures)
+    assert all(capture.title == "Semantic Extraction Fixture" for capture in captures)
     assert all(capture.full_page_screenshot.startswith(b"\x89PNG") for capture in captures)
     assert all(capture.viewport_screenshot.startswith(b"\x89PNG") for capture in captures)
-    assert all("Northstar" in capture.visible_text_summary for capture in captures)
+    assert all(
+        "Semantic component inventory" in capture.visible_text_summary for capture in captures
+    )
     assert captures[0].dimensions.screenshot_width >= captures[1].dimensions.screenshot_width
     assert all("<html" in capture.rendered_html.casefold() for capture in captures)
+    desktop_snapshot = captures[0].semantic_snapshot
+    assert (
+        desktop_snapshot.canonical_bytes() == repeated_desktop.semantic_snapshot.canonical_bytes()
+    )
+    assert {
+        "body",
+        "header",
+        "nav",
+        "main",
+        "section",
+        "article",
+        "aside",
+        "footer",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "p",
+        "ul",
+        "ol",
+        "li",
+        "a",
+        "button",
+        "form",
+        "input",
+        "img",
+        "figure",
+    } <= {node.tag for node in desktop_snapshot.nodes}
+    assert desktop_snapshot.summary.card_count == 3
+    assert desktop_snapshot.design_tokens
+    extracted_text = " ".join(node.text for node in desktop_snapshot.nodes)
+    assert "Hidden text" not in extracted_text
+    assert "Tracking noise" not in extracted_text
+    assert "script text" not in extracted_text

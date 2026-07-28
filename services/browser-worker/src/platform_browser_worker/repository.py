@@ -168,6 +168,8 @@ class BrowserScanRepository:
         }
         html = _gzip(capture.rendered_html.encode("utf-8"))
         manifest = _gzip(_manifest_bytes(capture, prepared))
+        semantic_snapshot = capture.semantic_snapshot.canonical_bytes()
+        compressed_semantic_snapshot = _gzip(semantic_snapshot)
         artifacts = {
             "full_page_screenshot": (
                 capture.full_page_screenshot,
@@ -183,6 +185,12 @@ class BrowserScanRepository:
             ),
             "rendered_html": (html, "text/html", "gzip", "rendered-html"),
             "capture_manifest": (manifest, "application/json", "gzip", "capture-manifest"),
+            "semantic_snapshot": (
+                compressed_semantic_snapshot,
+                "application/json",
+                "gzip",
+                "semantic-snapshot",
+            ),
         }
         stored: dict[str, tuple[str, str]] = {}
         try:
@@ -193,6 +201,7 @@ class BrowserScanRepository:
                     "viewport_screenshot": "png",
                     "rendered_html": "html.gz",
                     "capture_manifest": "json.gz",
+                    "semantic_snapshot": "json.gz",
                 }[name]
                 location = scan_key(
                     configuration.target_id,
@@ -230,6 +239,7 @@ class BrowserScanRepository:
             scan.viewport_screenshot_artifact_key = stored["viewport_screenshot"][0]
             scan.rendered_html_artifact_key = stored["rendered_html"][0]
             scan.analysis_artifact_key = stored["capture_manifest"][0]
+            scan.semantic_snapshot_artifact_key = stored["semantic_snapshot"][0]
             scan.artifact_checksums = cast(
                 JsonValue, {name: digest for name, (_, digest) in stored.items()}
             )
@@ -241,6 +251,13 @@ class BrowserScanRepository:
             scan.canonical_url = capture.canonical_url
             scan.language = capture.language
             scan.visible_text_summary = capture.visible_text_summary
+            scan.extractor_version = capture.semantic_snapshot.extractor_version[:64]
+            scan.extracted_node_count = len(capture.semantic_snapshot.nodes)
+            scan.extraction_payload_bytes = len(semantic_snapshot)
+            scan.extraction_truncated = capture.semantic_snapshot.truncated
+            scan.semantic_snapshot_summary = cast(
+                JsonValue, capture.semantic_snapshot.summary.model_dump(mode="json")
+            )
             scan.console_errors = list(capture.console_errors)
             scan.page_errors = list(capture.page_errors)
             scan.failed_requests = cast(JsonValue, list(capture.failed_requests))
@@ -360,6 +377,13 @@ def _manifest_bytes(capture: BrowserCapture, prepared: PreparedPageScan) -> byte
         "canonical_url": capture.canonical_url,
         "language": capture.language,
         "visible_text_summary": capture.visible_text_summary,
+        "semantic_extraction": {
+            "extractor_version": capture.semantic_snapshot.extractor_version,
+            "node_count": len(capture.semantic_snapshot.nodes),
+            "payload_bytes": len(capture.semantic_snapshot.canonical_bytes()),
+            "truncated": capture.semantic_snapshot.truncated,
+            "summary": capture.semantic_snapshot.summary.model_dump(mode="json"),
+        },
         "console_errors": capture.console_errors,
         "page_errors": capture.page_errors,
         "failed_requests": capture.failed_requests,

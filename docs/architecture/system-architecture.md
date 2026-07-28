@@ -72,6 +72,12 @@ captures by checksum. See
 [Scan campaign API](../api/scan-campaigns.md), [Crawl policy](../security/crawl-policy.md), and
 [ADR 0013](../adr/0013-crawl-policy-and-provenance.md).
 
+Browser captures now include a deterministic versioned semantic snapshot. Detailed bounded node,
+geometry, relationship, and computed-style observations remain private object-storage artifacts;
+PostgreSQL stores only compact section/style/token summaries, counts, versions, checksums, and keys.
+This extraction performs no inference and sends no content to Ollama. Downstream analysis must consume
+the compact, provenance-linked representation and may not reuse captured copy or media.
+
 ## 4. Dataset workflow
 
 Dataset creation selects eligible abstract scan records by ID and evaluates authorization, provenance, licensing, removal state, schema version, and quality policy. Workers normalize and deduplicate records, create immutable versioned manifests, and split data deterministically. Dataset bodies live in object storage; PostgreSQL holds lifecycle state, ownership, policy, lineage, checksums, and object keys. Optional embeddings live in Qdrant with the same dataset and provenance identifiers.
