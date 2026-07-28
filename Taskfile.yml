@@ -85,6 +85,11 @@ tasks:
     cmds:
       - uv run platform-crawler-worker
 
+  crawler-fingerprint-backfill:
+    desc: Recalculate deterministic duplicate groups from persisted page fingerprints
+    cmds:
+      - uv run platform-crawler-fingerprint-backfill
+
   storage-test-artifacts:
     desc: Inspect development objects explicitly tagged as test artifacts
     cmds:

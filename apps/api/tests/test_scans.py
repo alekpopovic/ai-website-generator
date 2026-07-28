@@ -225,7 +225,7 @@ class FakeScanRepository:
 
     async def summary_counts(
         self, campaign_id: UUID
-    ) -> tuple[dict[str, int], dict[str, int], dict[str, int], int, int, int]:
+    ) -> tuple[dict[str, int], dict[str, int], dict[str, int], int, int, int, dict[str, int]]:
         targets = [target for target in self.targets.values() if target.campaign_id == campaign_id]
         failures = [
             failure for failure in self.failures.values() if failure.campaign_id == campaign_id
@@ -237,6 +237,17 @@ class FakeScanRepository:
             len(failures),
             sum(failure.retryable for failure in failures),
             sum(failure.resolved_at is None for failure in failures),
+            {
+                "fingerprinted_pages": 0,
+                "unique_representatives": 0,
+                "exact_duplicate_pages": 0,
+                "exact_duplicate_groups": 0,
+                "near_duplicate_pages": 0,
+                "near_duplicate_groups": 0,
+                "shared_template_pages": 0,
+                "shared_template_groups": 0,
+                "repeated_collection_groups": 0,
+            },
         )
 
     async def has_retryable_failures(self, campaign_id: UUID) -> bool:
@@ -550,6 +561,7 @@ async def test_scan_campaign_api_exposes_crud_targets_summary_and_control(app: F
     assert target.status_code == 201
     assert listed.json()["pagination"]["total"] == 1
     assert summary.json()["target_counts"] == {"pending": 1}
+    assert summary.json()["deduplication"]["fingerprinted_pages"] == 0
     assert started.status_code == 202
     assert started.json()["status"] == "queued"
     assert len(dispatcher.dispatched) == 1

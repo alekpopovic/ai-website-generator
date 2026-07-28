@@ -253,6 +253,51 @@
             "title": "Discovery Source",
             "type": "string"
           },
+          "dom_structure_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dom Structure Sha256"
+          },
+          "dom_template_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dom Template Sha256"
+          },
+          "exact_duplicate_of_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exact Duplicate Of Id"
+          },
+          "exact_group_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exact Group Key"
+          },
           "fetched_at": {
             "anyOf": [
               {
@@ -275,6 +320,51 @@
               }
             ],
             "title": "Final Url"
+          },
+          "fingerprint_algorithm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fingerprint Algorithm"
+          },
+          "fingerprint_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fingerprint Version"
+          },
+          "fingerprinted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fingerprinted At"
+          },
+          "heading_sequence_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heading Sequence Sha256"
           },
           "hreflang_links": {
             "items": {
@@ -322,6 +412,17 @@
             ],
             "title": "Last Modified At"
           },
+          "link_structure_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Structure Sha256"
+          },
           "meta_description": {
             "anyOf": [
               {
@@ -333,9 +434,65 @@
             ],
             "title": "Meta Description"
           },
+          "near_duplicate_of_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Near Duplicate Of Id"
+          },
+          "near_group_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Near Group Key"
+          },
+          "normalized_content_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Normalized Content Sha256"
+          },
+          "normalized_text_length": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Normalized Text Length"
+          },
           "normalized_url": {
             "title": "Normalized Url",
             "type": "string"
+          },
+          "normalized_url_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Normalized Url Sha256"
           },
           "page_scans": {
             "default": [],
@@ -379,6 +536,17 @@
             ],
             "title": "Robots Allowed"
           },
+          "semantic_simhash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Semantic Simhash"
+          },
           "source_domain": {
             "title": "Source Domain",
             "type": "string"
@@ -398,6 +566,29 @@
             "format": "uuid",
             "title": "Target Id",
             "type": "string"
+          },
+          "template_group_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Group Key"
+          },
+          "template_representative_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Representative Id"
           },
           "title": {
             "anyOf": [
@@ -422,6 +613,17 @@
           "version": {
             "title": "Version",
             "type": "integer"
+          },
+          "visible_text_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visible Text Sha256"
           }
         },
         "required": [
@@ -451,6 +653,24 @@
           "content_length",
           "discovery_source",
           "parent_url",
+          "fingerprint_algorithm",
+          "fingerprint_version",
+          "normalized_url_sha256",
+          "visible_text_sha256",
+          "dom_structure_sha256",
+          "heading_sequence_sha256",
+          "link_structure_sha256",
+          "semantic_simhash",
+          "dom_template_sha256",
+          "normalized_content_sha256",
+          "normalized_text_length",
+          "exact_duplicate_of_id",
+          "near_duplicate_of_id",
+          "template_representative_id",
+          "exact_group_key",
+          "near_group_key",
+          "template_group_key",
+          "fingerprinted_at",
           "discovered_at",
           "fetched_at",
           "created_at",
@@ -458,6 +678,60 @@
           "version"
         ],
         "title": "CrawlPageWithScansResponse",
+        "type": "object"
+      },
+      "DeduplicationStatistics": {
+        "additionalProperties": false,
+        "properties": {
+          "exact_duplicate_groups": {
+            "title": "Exact Duplicate Groups",
+            "type": "integer"
+          },
+          "exact_duplicate_pages": {
+            "title": "Exact Duplicate Pages",
+            "type": "integer"
+          },
+          "fingerprinted_pages": {
+            "title": "Fingerprinted Pages",
+            "type": "integer"
+          },
+          "near_duplicate_groups": {
+            "title": "Near Duplicate Groups",
+            "type": "integer"
+          },
+          "near_duplicate_pages": {
+            "title": "Near Duplicate Pages",
+            "type": "integer"
+          },
+          "repeated_collection_groups": {
+            "title": "Repeated Collection Groups",
+            "type": "integer"
+          },
+          "shared_template_groups": {
+            "title": "Shared Template Groups",
+            "type": "integer"
+          },
+          "shared_template_pages": {
+            "title": "Shared Template Pages",
+            "type": "integer"
+          },
+          "unique_representatives": {
+            "title": "Unique Representatives",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "fingerprinted_pages",
+          "unique_representatives",
+          "exact_duplicate_pages",
+          "exact_duplicate_groups",
+          "near_duplicate_pages",
+          "near_duplicate_groups",
+          "shared_template_pages",
+          "shared_template_groups",
+          "repeated_collection_groups"
+        ],
+        "title": "DeduplicationStatistics",
         "type": "object"
       },
       "DependencyCheck": {
@@ -2060,6 +2334,9 @@
           "campaign": {
             "$ref": "#/components/schemas/ScanCampaignResponse"
           },
+          "deduplication": {
+            "$ref": "#/components/schemas/DeduplicationStatistics"
+          },
           "failure_count": {
             "title": "Failure Count",
             "type": "integer"
@@ -2101,7 +2378,8 @@
           "page_scan_counts",
           "failure_count",
           "retryable_failure_count",
-          "unresolved_failure_count"
+          "unresolved_failure_count",
+          "deduplication"
         ],
         "title": "ScanCampaignSummaryResponse",
         "type": "object"

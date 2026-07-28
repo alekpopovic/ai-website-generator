@@ -24,6 +24,7 @@ from scrapy import Request, Spider
 from scrapy.http import Response
 from twisted.python.failure import Failure
 
+from platform_crawler_worker.fingerprinting import compute_page_fingerprints
 from platform_crawler_worker.models import (
     CrawlFailure,
     HreflangLink,
@@ -214,6 +215,9 @@ class WebsiteSpider(Spider):
             declared_canonical_url=declared_canonical,
             hreflang_links=tuple(hreflangs),
             last_modified_at=last_modified,
+            fingerprints=compute_page_fingerprints(
+                response.body, normalized_url=canonical, response_url=response.url
+            ),
             status_code=response.status,
             content_type=content_type.partition(";")[0].casefold(),
             title=metadata.title,

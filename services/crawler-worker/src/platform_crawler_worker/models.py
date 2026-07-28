@@ -35,6 +35,7 @@ class PageDiscovery:
     declared_canonical_url: str | None
     hreflang_links: tuple[HreflangLink, ...]
     last_modified_at: datetime | None
+    fingerprints: PageFingerprints
     status_code: int
     content_type: str
     title: str | None
@@ -78,6 +79,22 @@ class HtmlMetadata:
     links: tuple[str, ...]
     canonical_link: str | None
     hreflang_links: tuple[tuple[str, str], ...]
+
+
+@dataclass(frozen=True, slots=True)
+class PageFingerprints:
+    algorithm: str
+    version: int
+    normalized_url_sha256: str
+    visible_text_sha256: str
+    dom_structure_sha256: str
+    heading_sequence_sha256: str
+    link_structure_sha256: str
+    response_body_sha256: str
+    semantic_simhash: str
+    dom_template_sha256: str
+    normalized_content_sha256: str
+    normalized_text_length: int
 
 
 @dataclass(frozen=True, slots=True)

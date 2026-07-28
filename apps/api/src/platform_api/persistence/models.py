@@ -419,12 +419,34 @@ class CrawlPage(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Bas
             "content_length IS NULL OR content_length >= 0", name="content_length_non_negative"
         ),
         CheckConstraint(
+            "fingerprint_version IS NULL OR fingerprint_version >= 1",
+            name="fingerprint_version_positive",
+        ),
+        CheckConstraint(
+            "normalized_text_length IS NULL OR normalized_text_length >= 0",
+            name="normalized_text_length_non_negative",
+        ),
+        CheckConstraint(
             "discovery_source IN ("
             "'submitted_root', 'robots_sitemap', 'sitemap', 'html_link', 'canonical')",
             name="discovery_source_allowed",
         ),
         Index("ix_crawl_pages_campaign_id_status", "campaign_id", "status"),
         Index("ix_crawl_pages_target_id_depth", "target_id", "depth"),
+        Index(
+            "ix_crawl_pages_campaign_content_fingerprint",
+            "campaign_id",
+            "normalized_content_sha256",
+        ),
+        Index("ix_crawl_pages_campaign_semantic_simhash", "campaign_id", "semantic_simhash"),
+        Index(
+            "ix_crawl_pages_campaign_template_fingerprint",
+            "campaign_id",
+            "dom_template_sha256",
+        ),
+        Index("ix_crawl_pages_exact_duplicate_of_id", "exact_duplicate_of_id"),
+        Index("ix_crawl_pages_near_duplicate_of_id", "near_duplicate_of_id"),
+        Index("ix_crawl_pages_template_representative_id", "template_representative_id"),
         UniqueConstraint("campaign_id", "normalized_url"),
     )
 
@@ -466,6 +488,30 @@ class CrawlPage(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Bas
     discovery_source: Mapped[str] = mapped_column(String(32), nullable=False, default="html_link")
     parent_url: Mapped[str | None] = mapped_column(String(2_048))
     response_artifact_key: Mapped[str | None] = mapped_column(String(1_024))
+    fingerprint_algorithm: Mapped[str | None] = mapped_column(String(64))
+    fingerprint_version: Mapped[int | None] = mapped_column(Integer)
+    normalized_url_sha256: Mapped[str | None] = mapped_column(String(64))
+    visible_text_sha256: Mapped[str | None] = mapped_column(String(64))
+    dom_structure_sha256: Mapped[str | None] = mapped_column(String(64))
+    heading_sequence_sha256: Mapped[str | None] = mapped_column(String(64))
+    link_structure_sha256: Mapped[str | None] = mapped_column(String(64))
+    semantic_simhash: Mapped[str | None] = mapped_column(String(16))
+    dom_template_sha256: Mapped[str | None] = mapped_column(String(64))
+    normalized_content_sha256: Mapped[str | None] = mapped_column(String(64))
+    normalized_text_length: Mapped[int | None] = mapped_column(Integer)
+    exact_duplicate_of_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("crawl_pages.id", ondelete="SET NULL")
+    )
+    near_duplicate_of_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("crawl_pages.id", ondelete="SET NULL")
+    )
+    template_representative_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("crawl_pages.id", ondelete="SET NULL")
+    )
+    exact_group_key: Mapped[str | None] = mapped_column(String(64))
+    near_group_key: Mapped[str | None] = mapped_column(String(64))
+    template_group_key: Mapped[str | None] = mapped_column(String(64))
+    fingerprinted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     discovered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     fetched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 

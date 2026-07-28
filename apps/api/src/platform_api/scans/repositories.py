@@ -272,7 +272,7 @@ class ScanCampaignRepository:
 
     async def summary_counts(
         self, campaign_id: UUID
-    ) -> tuple[dict[str, int], dict[str, int], dict[str, int], int, int, int]:
+    ) -> tuple[dict[str, int], dict[str, int], dict[str, int], int, int, int, dict[str, int]]:
         targets = await self._status_counts(ScanTarget, campaign_id)
         pages = await self._status_counts(CrawlPage, campaign_id)
         page_scans = await self._status_counts(PageScan, campaign_id)
@@ -291,6 +291,75 @@ class ScanCampaignRepository:
             .select_from(ScanFailure)
             .where(ScanFailure.campaign_id == campaign_id, ScanFailure.resolved_at.is_(None))
         )
+        fingerprinted = await self._session.scalar(
+            select(func.count())
+            .select_from(CrawlPage)
+            .where(
+                CrawlPage.campaign_id == campaign_id,
+                CrawlPage.exact_group_key.is_not(None),
+            )
+        )
+        exact_pages = await self._session.scalar(
+            select(func.count())
+            .select_from(CrawlPage)
+            .where(
+                CrawlPage.campaign_id == campaign_id,
+                CrawlPage.exact_duplicate_of_id.is_not(None),
+            )
+        )
+        near_pages = await self._session.scalar(
+            select(func.count())
+            .select_from(CrawlPage)
+            .where(
+                CrawlPage.campaign_id == campaign_id,
+                CrawlPage.near_duplicate_of_id.is_not(None),
+            )
+        )
+        exact_groups = await self._session.scalar(
+            select(func.count(func.distinct(CrawlPage.exact_group_key))).where(
+                CrawlPage.campaign_id == campaign_id,
+                CrawlPage.exact_duplicate_of_id.is_not(None),
+            )
+        )
+        near_groups = await self._session.scalar(
+            select(func.count(func.distinct(CrawlPage.near_group_key))).where(
+                CrawlPage.campaign_id == campaign_id,
+                CrawlPage.near_duplicate_of_id.is_not(None),
+            )
+        )
+        template_counts = (
+            select(CrawlPage.template_group_key, func.count().label("member_count"))
+            .where(
+                CrawlPage.campaign_id == campaign_id,
+                CrawlPage.template_group_key.is_not(None),
+            )
+            .group_by(CrawlPage.template_group_key)
+            .having(func.count() > 1)
+            .subquery()
+        )
+        template_stats = (
+            await self._session.execute(
+                select(
+                    func.coalesce(func.sum(template_counts.c.member_count), 0),
+                    func.count(),
+                    func.count().filter(template_counts.c.member_count >= 3),
+                )
+            )
+        ).one()
+        fingerprinted_count = int(fingerprinted or 0)
+        exact_count = int(exact_pages or 0)
+        near_count = int(near_pages or 0)
+        deduplication = {
+            "fingerprinted_pages": fingerprinted_count,
+            "unique_representatives": max(0, fingerprinted_count - exact_count - near_count),
+            "exact_duplicate_pages": exact_count,
+            "exact_duplicate_groups": int(exact_groups or 0),
+            "near_duplicate_pages": near_count,
+            "near_duplicate_groups": int(near_groups or 0),
+            "shared_template_pages": int(template_stats[0]),
+            "shared_template_groups": int(template_stats[1]),
+            "repeated_collection_groups": int(template_stats[2]),
+        }
         return (
             targets,
             pages,
@@ -298,6 +367,7 @@ class ScanCampaignRepository:
             failure_count or 0,
             retryable or 0,
             unresolved or 0,
+            deduplication,
         )
 
     async def _status_counts(

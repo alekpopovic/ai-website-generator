@@ -4,14 +4,28 @@ from __future__ import annotations
 
 import asyncio
 import gzip
+import hashlib
+from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
-from uuid import uuid4
+from typing import Any, cast
+from uuid import UUID, uuid4
 
 import pytest
+from platform_clients.object_storage import (
+    Bucket,
+    InMemoryObjectStorage,
+    ObjectLocation,
+    UploadRequest,
+)
 from platform_crawler_worker.activities import CrawlActivities
+from platform_crawler_worker.fingerprinting import (
+    FingerprintRecord,
+    compute_page_fingerprints,
+    group_fingerprints,
+)
 from platform_crawler_worker.parsing import extract_html_metadata, parse_sitemap
+from platform_crawler_worker.repository import CrawlRepository
 from platform_crawler_worker.runner import FakeCrawlerRunner, SubprocessCrawlerRunner
 from platform_workflows.commands import CrawlTargetInput
 from temporalio.testing import ActivityEnvironment
@@ -137,3 +151,90 @@ async def test_canonical_and_hreflang_metadata_is_bounded_and_resolved() -> None
     )
     assert metadata.canonical_link == "https://example.com/Preferred"
     assert metadata.hreflang_links == (("fr", "https://example.com/fr/page"),)
+
+
+async def test_dynamic_noise_is_removed_without_erasing_semantic_structure() -> None:
+    first = f"""<html><head><script>analytics('one')</script></head><body>
+        <main id="render-123456"><h1>Release notes</h1>
+        <p>Updated 2026-07-27T22:15:00Z</p>
+        <input name="csrf" value="{"0" * 32}" /></main></body></html>""".encode()
+    second = f"""<html><head><script>analytics('two')</script></head><body>
+        <main id="render-987654"><h1>Release notes</h1>
+        <p>Updated 2026-07-28T09:30:00Z</p>
+        <input name="csrf" value="{"a" * 32}" /></main></body></html>""".encode()
+    left = compute_page_fingerprints(
+        first, normalized_url="https://example.test/a", response_url="https://example.test/a"
+    )
+    right = compute_page_fingerprints(
+        second, normalized_url="https://example.test/b", response_url="https://example.test/b"
+    )
+    assert left.response_body_sha256 != right.response_body_sha256
+    assert left.normalized_content_sha256 == right.normalized_content_sha256
+    assert left.heading_sequence_sha256 == right.heading_sequence_sha256
+
+
+async def test_repeated_fixture_articles_share_a_template() -> None:
+    paths = sorted(path for path in (FIXTURE_SITE / "blog").glob("*/index.html"))
+    fingerprints = [
+        compute_page_fingerprints(
+            path.read_bytes(),
+            normalized_url=f"https://fixture.example/blog/{path.parent.name}/",
+            response_url=f"https://fixture.example/blog/{path.parent.name}/",
+        )
+        for path in paths
+    ]
+    assert len(fingerprints) == 3
+    assert len({item.dom_template_sha256 for item in fingerprints}) == 1
+    assert len({item.visible_text_sha256 for item in fingerprints}) == 3
+
+
+async def test_grouping_selects_stable_exact_near_and_template_representatives() -> None:
+    base = "A bounded deterministic fingerprint should ignore runtime noise and preserve meaning. "
+    pages = (
+        ("https://example.test/z", f"<main><h1>Guide</h1><p>{base * 8}</p></main>"),
+        ("https://example.test/a", f"<main><h1>Guide</h1><p>{base * 8}</p></main>"),
+        (
+            "https://example.test/m",
+            f"<main><h1>Guide</h1><p>{base * 7}One sentence changed.</p></main>",
+        ),
+    )
+    records = []
+    for index, (url, body) in enumerate(pages, start=1):
+        fingerprint = compute_page_fingerprints(body.encode(), normalized_url=url, response_url=url)
+        records.append(
+            FingerprintRecord(
+                id=UUID(int=index),
+                normalized_url=url,
+                normalized_content_sha256=fingerprint.normalized_content_sha256,
+                semantic_simhash=fingerprint.semantic_simhash,
+                dom_template_sha256=fingerprint.dom_template_sha256,
+                normalized_text_length=fingerprint.normalized_text_length,
+            )
+        )
+    assignments = {item.page_id: item for item in group_fingerprints(tuple(records))}
+    assert assignments[UUID(int=1)].exact_duplicate_of_id == UUID(int=2)
+    assert assignments[UUID(int=3)].near_duplicate_of_id == UUID(int=2)
+    assert all(item.template_representative_id == UUID(int=2) for item in assignments.values())
+    assert group_fingerprints(tuple(reversed(records))) == tuple(assignments.values())
+
+
+async def test_backfill_download_verifies_and_bounds_gzip_artifact() -> None:
+    storage = InMemoryObjectStorage()
+    location = ObjectLocation(Bucket.SCAN_ARTIFACTS, "scans/test/page/raw.html.gz")
+    body = b"<html><body><main><h1>Retained source</h1></main></body></html>"
+    compressed = gzip.compress(body)
+
+    async def chunks() -> AsyncIterator[bytes]:
+        yield compressed
+
+    await storage.upload(
+        location,
+        chunks(),
+        UploadRequest(
+            expected_sha256=hashlib.sha256(compressed).hexdigest(),
+            content_type="text/html",
+            content_encoding="gzip",
+        ),
+    )
+    repository = CrawlRepository(cast(Any, object()), storage)
+    assert await repository._download_gzip_html(location.key) == body

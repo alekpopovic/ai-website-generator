@@ -32,6 +32,7 @@ from platform_api.scans.schemas import (
     CampaignListParams,
     CrawlPageResponse,
     CrawlPageWithScansResponse,
+    DeduplicationStatistics,
     FailureListParams,
     PageScanResponse,
     ScanCampaignCreateRequest,
@@ -156,7 +157,15 @@ class ScanCampaignRepositoryContract(Protocol):
 
     async def summary_counts(
         self, campaign_id: UUID
-    ) -> tuple[dict[str, int], dict[str, int], dict[str, int], int, int, int]: ...
+    ) -> tuple[
+        dict[str, int],
+        dict[str, int],
+        dict[str, int],
+        int,
+        int,
+        int,
+        dict[str, int],
+    ]: ...
 
     async def has_retryable_failures(self, campaign_id: UUID) -> bool: ...
 
@@ -450,6 +459,7 @@ class ScanCampaignService:
             failures,
             retryable,
             unresolved,
+            deduplication,
         ) = await self._repository.summary_counts(campaign.id)
         return ScanCampaignSummaryResponse(
             campaign=ScanCampaignResponse.model_validate(campaign),
@@ -459,6 +469,7 @@ class ScanCampaignService:
             failure_count=failures,
             retryable_failure_count=retryable,
             unresolved_failure_count=unresolved,
+            deduplication=DeduplicationStatistics.model_validate(deduplication),
         )
 
     async def start(

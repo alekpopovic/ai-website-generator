@@ -30,3 +30,23 @@ Original, normalized, final, and declared-canonical URLs, sitemap `lastmod`, res
 discovery lineage, and typed failures are persisted idempotently. Raw HTML is disabled by default; when
 enabled it is gzip-compressed through a temporary spool and streamed to the private `scan-artifacts`
 bucket with checksum and retention metadata.
+
+## Page fingerprinting
+
+The crawler computes versioned fingerprints from each bounded HTML response without executing page
+content or invoking an LLM. Normalization removes executable/style nodes, analytics noise, volatile
+timestamps, random IDs, CSRF values, and obvious dynamic tokens while retaining semantic elements,
+stable attributes, headings, and link topology. Response bytes retain a separate SHA-256 fingerprint.
+
+After a target crawl, an advisory-lock-protected campaign pass assigns deterministic exact-content,
+near-content, and shared-template representatives. Every source row remains intact. Large repeated
+article collections are visible as template groups of at least three pages. To repair group assignments
+or upgrade stored fingerprints explicitly, run:
+
+```shell
+uv run platform-crawler-fingerprint-backfill --campaign-id <campaign-uuid>
+```
+
+Missing fingerprints can be reconstructed only when the page has a retained raw-HTML artifact. The
+command verifies object checksums, bounds gzip decompression, updates rows transactionally, and then
+recalculates campaign groups idempotently.

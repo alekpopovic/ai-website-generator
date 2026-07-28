@@ -20,11 +20,29 @@ from platform_api.persistence.models import (
     ScanTarget,
 )
 from platform_clients.crawl_policy import CrawlPolicyConfig, RobotsPolicy
-from platform_clients.object_storage import ObjectStorage, UploadRequest, scan_key
+from platform_clients.object_storage import (
+    Bucket,
+    ObjectLocation,
+    ObjectStorage,
+    UploadRequest,
+    scan_key,
+)
 from platform_clients.object_storage.models import RetentionMetadata
-from sqlalchemy import select
+from sqlalchemy import func, select, update
 
-from platform_crawler_worker.models import CrawlFailure, PageDiscovery, TargetCrawlConfiguration
+from platform_crawler_worker.fingerprinting import (
+    FINGERPRINT_ALGORITHM,
+    FINGERPRINT_VERSION,
+    FingerprintRecord,
+    compute_page_fingerprints,
+    group_fingerprints,
+)
+from platform_crawler_worker.models import (
+    CrawlFailure,
+    PageDiscovery,
+    PageFingerprints,
+    TargetCrawlConfiguration,
+)
 
 
 class CrawlConfigurationError(RuntimeError):
@@ -192,6 +210,18 @@ class CrawlRepository:
                 "content_length": discovery.content_length,
                 "discovery_source": discovery.discovery_source,
                 "parent_url": discovery.parent_url,
+                "fingerprint_algorithm": discovery.fingerprints.algorithm,
+                "fingerprint_version": discovery.fingerprints.version,
+                "normalized_url_sha256": discovery.fingerprints.normalized_url_sha256,
+                "visible_text_sha256": discovery.fingerprints.visible_text_sha256,
+                "dom_structure_sha256": discovery.fingerprints.dom_structure_sha256,
+                "heading_sequence_sha256": discovery.fingerprints.heading_sequence_sha256,
+                "link_structure_sha256": discovery.fingerprints.link_structure_sha256,
+                "semantic_simhash": discovery.fingerprints.semantic_simhash,
+                "dom_template_sha256": discovery.fingerprints.dom_template_sha256,
+                "normalized_content_sha256": discovery.fingerprints.normalized_content_sha256,
+                "normalized_text_length": discovery.fingerprints.normalized_text_length,
+                "fingerprinted_at": discovery.fetched_at,
                 "discovered_at": discovery.fetched_at,
                 "fetched_at": discovery.fetched_at,
             }
@@ -210,6 +240,141 @@ class CrawlRepository:
         if configuration.store_raw_html and discovery.raw_html is not None:
             await self._store_html(configuration, page_id, discovery.raw_html)
         return page_id
+
+    async def recalculate_deduplication(self, campaign_id: UUID) -> int:
+        """Idempotently assign stable representatives for all fingerprinted campaign pages."""
+        async with self._database.transaction() as session:
+            await session.execute(
+                select(func.pg_advisory_xact_lock(func.hashtext(str(campaign_id))))
+            )
+            await session.execute(
+                update(CrawlPage)
+                .where(CrawlPage.campaign_id == campaign_id)
+                .values(
+                    exact_duplicate_of_id=None,
+                    near_duplicate_of_id=None,
+                    template_representative_id=None,
+                    exact_group_key=None,
+                    near_group_key=None,
+                    template_group_key=None,
+                )
+            )
+            pages = tuple(
+                (
+                    await session.scalars(
+                        select(CrawlPage)
+                        .where(
+                            CrawlPage.campaign_id == campaign_id,
+                            CrawlPage.fingerprint_algorithm == FINGERPRINT_ALGORITHM,
+                            CrawlPage.fingerprint_version == FINGERPRINT_VERSION,
+                            CrawlPage.normalized_content_sha256.is_not(None),
+                            CrawlPage.semantic_simhash.is_not(None),
+                            CrawlPage.dom_template_sha256.is_not(None),
+                            CrawlPage.normalized_text_length.is_not(None),
+                        )
+                        .order_by(CrawlPage.normalized_url.asc(), CrawlPage.id.asc())
+                        .with_for_update()
+                    )
+                ).all()
+            )
+            records = tuple(
+                FingerprintRecord(
+                    id=page.id,
+                    normalized_url=page.normalized_url,
+                    normalized_content_sha256=cast(str, page.normalized_content_sha256),
+                    semantic_simhash=cast(str, page.semantic_simhash),
+                    dom_template_sha256=cast(str, page.dom_template_sha256),
+                    normalized_text_length=cast(int, page.normalized_text_length),
+                )
+                for page in pages
+            )
+            by_id = {page.id: page for page in pages}
+            for assignment in group_fingerprints(records):
+                page = by_id[assignment.page_id]
+                page.exact_duplicate_of_id = assignment.exact_duplicate_of_id
+                page.near_duplicate_of_id = assignment.near_duplicate_of_id
+                page.template_representative_id = assignment.template_representative_id
+                page.exact_group_key = assignment.exact_group_key
+                page.near_group_key = assignment.near_group_key
+                page.template_group_key = assignment.template_group_key
+            return len(pages)
+
+    async def backfill_fingerprints(self, campaign_id: UUID) -> tuple[int, int]:
+        """Recompute absent/outdated fingerprints from retained raw HTML, then regroup."""
+        if self._storage is None:
+            raise RuntimeError("object storage is required for fingerprint backfill")
+        async with self._database.session() as session:
+            candidates = tuple(
+                (
+                    await session.execute(
+                        select(
+                            CrawlPage.id,
+                            CrawlPage.response_artifact_key,
+                            CrawlPage.normalized_url,
+                            CrawlPage.final_url,
+                        ).where(
+                            CrawlPage.campaign_id == campaign_id,
+                            CrawlPage.response_artifact_key.is_not(None),
+                            (CrawlPage.fingerprint_algorithm != FINGERPRINT_ALGORITHM)
+                            | CrawlPage.fingerprint_algorithm.is_(None)
+                            | (CrawlPage.fingerprint_version != FINGERPRINT_VERSION)
+                            | CrawlPage.fingerprint_version.is_(None),
+                        )
+                    )
+                ).all()
+            )
+        updated = 0
+        for page_id, artifact_key, normalized_url, final_url in candidates:
+            if not isinstance(artifact_key, str):
+                continue
+            body = await self._download_gzip_html(artifact_key)
+            fingerprints = compute_page_fingerprints(
+                body,
+                normalized_url=str(normalized_url),
+                response_url=str(final_url or normalized_url),
+            )
+            async with self._database.transaction() as session:
+                page = await session.get(CrawlPage, page_id, with_for_update=True)
+                if page is None or page.response_artifact_key != artifact_key:
+                    continue
+                self._assign_fingerprints(page, fingerprints, datetime.now(UTC))
+                updated += 1
+        grouped = await self.recalculate_deduplication(campaign_id)
+        return updated, grouped
+
+    async def _download_gzip_html(self, artifact_key: str) -> bytes:
+        if self._storage is None:
+            raise RuntimeError("object storage is required for fingerprint backfill")
+        decompressor = zlib.decompressobj(wbits=31)
+        output = bytearray()
+        async for chunk in self._storage.stream_download(
+            ObjectLocation(Bucket.SCAN_ARTIFACTS, artifact_key)
+        ):
+            output.extend(decompressor.decompress(chunk, 5 * 1_024 * 1_024 + 1 - len(output)))
+            if len(output) > 5 * 1_024 * 1_024 or decompressor.unconsumed_tail:
+                raise ValueError("raw HTML artifact exceeds fingerprint backfill limit")
+        output.extend(decompressor.flush(5 * 1_024 * 1_024 + 1 - len(output)))
+        if len(output) > 5 * 1_024 * 1_024 or not decompressor.eof or decompressor.unused_data:
+            raise ValueError("raw HTML artifact is invalid or oversized")
+        return bytes(output)
+
+    @staticmethod
+    def _assign_fingerprints(
+        page: CrawlPage, fingerprints: PageFingerprints, fingerprinted_at: datetime
+    ) -> None:
+        page.fingerprint_algorithm = fingerprints.algorithm
+        page.fingerprint_version = fingerprints.version
+        page.normalized_url_sha256 = fingerprints.normalized_url_sha256
+        page.visible_text_sha256 = fingerprints.visible_text_sha256
+        page.dom_structure_sha256 = fingerprints.dom_structure_sha256
+        page.heading_sequence_sha256 = fingerprints.heading_sequence_sha256
+        page.link_structure_sha256 = fingerprints.link_structure_sha256
+        page.semantic_simhash = fingerprints.semantic_simhash
+        page.dom_template_sha256 = fingerprints.dom_template_sha256
+        page.normalized_content_sha256 = fingerprints.normalized_content_sha256
+        page.normalized_text_length = fingerprints.normalized_text_length
+        page.content_sha256 = fingerprints.response_body_sha256
+        page.fingerprinted_at = fingerprinted_at
 
     async def _store_html(
         self, configuration: TargetCrawlConfiguration, page_id: UUID, body: bytes

@@ -155,6 +155,22 @@ export type CrawlPageWithScansResponse = {
      */
     discovery_source: string;
     /**
+     * Dom Structure Sha256
+     */
+    dom_structure_sha256: string | null;
+    /**
+     * Dom Template Sha256
+     */
+    dom_template_sha256: string | null;
+    /**
+     * Exact Duplicate Of Id
+     */
+    exact_duplicate_of_id: string | null;
+    /**
+     * Exact Group Key
+     */
+    exact_group_key: string | null;
+    /**
      * Fetched At
      */
     fetched_at: string | null;
@@ -162,6 +178,22 @@ export type CrawlPageWithScansResponse = {
      * Final Url
      */
     final_url: string | null;
+    /**
+     * Fingerprint Algorithm
+     */
+    fingerprint_algorithm: string | null;
+    /**
+     * Fingerprint Version
+     */
+    fingerprint_version: number | null;
+    /**
+     * Fingerprinted At
+     */
+    fingerprinted_at: string | null;
+    /**
+     * Heading Sequence Sha256
+     */
+    heading_sequence_sha256: string | null;
     /**
      * Hreflang Links
      */
@@ -183,13 +215,37 @@ export type CrawlPageWithScansResponse = {
      */
     last_modified_at: string | null;
     /**
+     * Link Structure Sha256
+     */
+    link_structure_sha256: string | null;
+    /**
      * Meta Description
      */
     meta_description: string | null;
     /**
+     * Near Duplicate Of Id
+     */
+    near_duplicate_of_id: string | null;
+    /**
+     * Near Group Key
+     */
+    near_group_key: string | null;
+    /**
+     * Normalized Content Sha256
+     */
+    normalized_content_sha256: string | null;
+    /**
+     * Normalized Text Length
+     */
+    normalized_text_length: number | null;
+    /**
      * Normalized Url
      */
     normalized_url: string;
+    /**
+     * Normalized Url Sha256
+     */
+    normalized_url_sha256: string | null;
     /**
      * Page Scans
      */
@@ -207,6 +263,10 @@ export type CrawlPageWithScansResponse = {
      */
     robots_allowed: boolean | null;
     /**
+     * Semantic Simhash
+     */
+    semantic_simhash: string | null;
+    /**
      * Source Domain
      */
     source_domain: string;
@@ -218,6 +278,14 @@ export type CrawlPageWithScansResponse = {
      * Target Id
      */
     target_id: string;
+    /**
+     * Template Group Key
+     */
+    template_group_key: string | null;
+    /**
+     * Template Representative Id
+     */
+    template_representative_id: string | null;
     /**
      * Title
      */
@@ -234,6 +302,52 @@ export type CrawlPageWithScansResponse = {
      * Version
      */
     version: number;
+    /**
+     * Visible Text Sha256
+     */
+    visible_text_sha256: string | null;
+};
+
+/**
+ * DeduplicationStatistics
+ */
+export type DeduplicationStatistics = {
+    /**
+     * Exact Duplicate Groups
+     */
+    exact_duplicate_groups: number;
+    /**
+     * Exact Duplicate Pages
+     */
+    exact_duplicate_pages: number;
+    /**
+     * Fingerprinted Pages
+     */
+    fingerprinted_pages: number;
+    /**
+     * Near Duplicate Groups
+     */
+    near_duplicate_groups: number;
+    /**
+     * Near Duplicate Pages
+     */
+    near_duplicate_pages: number;
+    /**
+     * Repeated Collection Groups
+     */
+    repeated_collection_groups: number;
+    /**
+     * Shared Template Groups
+     */
+    shared_template_groups: number;
+    /**
+     * Shared Template Pages
+     */
+    shared_template_pages: number;
+    /**
+     * Unique Representatives
+     */
+    unique_representatives: number;
 };
 
 /**
@@ -1077,6 +1191,7 @@ export type ScanCampaignResponse = {
  */
 export type ScanCampaignSummaryResponse = {
     campaign: ScanCampaignResponse;
+    deduplication: DeduplicationStatistics;
     /**
      * Failure Count
      */

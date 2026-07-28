@@ -372,6 +372,24 @@ class CrawlPageResponse(ScanModel):
     content_length: int | None
     discovery_source: str
     parent_url: str | None
+    fingerprint_algorithm: str | None
+    fingerprint_version: int | None
+    normalized_url_sha256: str | None
+    visible_text_sha256: str | None
+    dom_structure_sha256: str | None
+    heading_sequence_sha256: str | None
+    link_structure_sha256: str | None
+    semantic_simhash: str | None
+    dom_template_sha256: str | None
+    normalized_content_sha256: str | None
+    normalized_text_length: int | None
+    exact_duplicate_of_id: UUID | None
+    near_duplicate_of_id: UUID | None
+    template_representative_id: UUID | None
+    exact_group_key: str | None
+    near_group_key: str | None
+    template_group_key: str | None
+    fingerprinted_at: datetime | None
     discovered_at: datetime
     fetched_at: datetime | None
     created_at: datetime
@@ -416,6 +434,18 @@ class ScanFailureResponse(ScanModel):
     version: int
 
 
+class DeduplicationStatistics(ScanModel):
+    fingerprinted_pages: int
+    unique_representatives: int
+    exact_duplicate_pages: int
+    exact_duplicate_groups: int
+    near_duplicate_pages: int
+    near_duplicate_groups: int
+    shared_template_pages: int
+    shared_template_groups: int
+    repeated_collection_groups: int
+
+
 class ScanCampaignSummaryResponse(ScanModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -426,6 +456,7 @@ class ScanCampaignSummaryResponse(ScanModel):
     failure_count: int
     retryable_failure_count: int
     unresolved_failure_count: int
+    deduplication: DeduplicationStatistics
 
 
 class CampaignListParams(PaginationParams):

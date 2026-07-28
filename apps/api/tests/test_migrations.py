@@ -46,6 +46,9 @@ def test_initial_migration_renders_postgresql_upgrade_sql(
     assert "uq_scan_failures_campaign_id_failure_key" in upgrade_sql
     assert "ALTER TABLE scan_targets ADD COLUMN import_id" in upgrade_sql
     assert "uq_projects_owner_id_slug" in upgrade_sql
+    assert "ALTER TABLE crawl_pages ADD COLUMN fingerprint_algorithm" in upgrade_sql
+    assert "ix_crawl_pages_campaign_content_fingerprint" in upgrade_sql
+    assert "ix_crawl_pages_campaign_template_fingerprint" in upgrade_sql
     assert "ck_users_status_allowed" in upgrade_sql
     assert "ck_users_ck_" not in upgrade_sql
     assert "CREATE TYPE" not in upgrade_sql

@@ -28,7 +28,7 @@ from platform_api.persistence.models import (
 from platform_api.persistence.pagination import apply_pagination
 from platform_api.persistence.repositories import ProjectRepository, SqlAlchemyRepository
 from platform_api.scans.repositories import ScanCampaignRepository
-from sqlalchemy import DateTime, Enum, String, select
+from sqlalchemy import DateTime, Enum, String, Table, select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 
@@ -86,6 +86,18 @@ def test_statuses_are_strings_and_editable_records_are_versioned() -> None:
         ScanTargetImport,
     ):
         assert model.__mapper__.version_id_col is model.__table__.c.version
+
+
+def test_crawl_page_fingerprint_grouping_indexes_are_declared() -> None:
+    names = {index.name for index in cast(Table, CrawlPage.__table__).indexes}
+    assert {
+        "ix_crawl_pages_campaign_content_fingerprint",
+        "ix_crawl_pages_campaign_semantic_simhash",
+        "ix_crawl_pages_campaign_template_fingerprint",
+        "ix_crawl_pages_exact_duplicate_of_id",
+        "ix_crawl_pages_near_duplicate_of_id",
+        "ix_crawl_pages_template_representative_id",
+    } <= names
 
 
 def test_timestamp_columns_are_timezone_aware() -> None:
