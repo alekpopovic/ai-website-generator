@@ -25,3 +25,8 @@ The `network_safety` package provides the shared fail-closed URL, DNS, redirect,
 response-size, HTML content-type, timeout, and blocked-request audit policy used by Scrapy,
 Playwright, asset inspection, and publishing integrations. It includes an offline sequence resolver
 and recording auditor for deterministic security tests.
+
+The `page_classification` package defines the replaceable classifier protocol, versioned feature and
+result contracts, and the deterministic template-diverse representative selector shared by workers
+and the control-plane override path. Provider-specific HTML feature extraction remains in the crawler
+worker.

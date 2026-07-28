@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import tempfile
 import zlib
+from collections import Counter
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -12,6 +13,7 @@ from typing import cast
 from uuid import UUID
 
 from platform_api.database import DatabaseManager
+from platform_api.persistence.json import JsonValue
 from platform_api.persistence.models import (
     CrawlPage,
     CrawlPolicyRecord,
@@ -28,8 +30,15 @@ from platform_clients.object_storage import (
     scan_key,
 )
 from platform_clients.object_storage.models import RetentionMetadata
+from platform_clients.page_classification import (
+    ManualSelection,
+    PageClassificationFeatures,
+    RepresentativeCandidate,
+    select_representative_pages,
+)
 from sqlalchemy import func, select, update
 
+from platform_crawler_worker.classification import RuleBasedPageClassifier
 from platform_crawler_worker.fingerprinting import (
     FINGERPRINT_ALGORITHM,
     FINGERPRINT_VERSION,
@@ -111,6 +120,8 @@ class CrawlRepository:
                 campaign_timeout_seconds=int(_number(timeout.get("campaign_seconds"), 7_200)),
                 store_raw_html=campaign.store_raw_html,
                 retention_days=int(_number(retention.get("retention_days"), 30)),
+                max_visual_pages_per_domain=campaign.max_visual_pages_per_domain,
+                include_restricted_representatives=campaign.include_restricted_representatives,
             )
 
     async def persist_robots(
@@ -222,6 +233,13 @@ class CrawlRepository:
                 "normalized_content_sha256": discovery.fingerprints.normalized_content_sha256,
                 "normalized_text_length": discovery.fingerprints.normalized_text_length,
                 "fingerprinted_at": discovery.fetched_at,
+                "page_type": discovery.classification.page_type.value,
+                "page_type_score": discovery.classification.score,
+                "classification_features": discovery.classification_features.to_dict(),
+                "classification_explanation": list(discovery.classification.explanation),
+                "classifier": discovery.classification.classifier,
+                "classifier_version": discovery.classification.version,
+                "classified_at": discovery.fetched_at,
                 "discovered_at": discovery.fetched_at,
                 "fetched_at": discovery.fetched_at,
             }
@@ -340,7 +358,92 @@ class CrawlRepository:
                 self._assign_fingerprints(page, fingerprints, datetime.now(UTC))
                 updated += 1
         grouped = await self.recalculate_deduplication(campaign_id)
+        async with self._database.session() as session:
+            campaign = await session.get(ScanCampaign, campaign_id)
+        if campaign is not None:
+            await self.recalculate_classification_and_selection(
+                campaign_id,
+                maximum_pages=campaign.max_visual_pages_per_domain,
+                include_restricted=campaign.include_restricted_representatives,
+            )
         return updated, grouped
+
+    async def recalculate_classification_and_selection(
+        self,
+        campaign_id: UUID,
+        *,
+        maximum_pages: int,
+        include_restricted: bool,
+    ) -> int:
+        """Reclassify using template-group signals and persist explained selection decisions."""
+        classifier = RuleBasedPageClassifier()
+        async with self._database.transaction() as session:
+            await session.execute(
+                select(func.pg_advisory_xact_lock(func.hashtext(str(campaign_id))))
+            )
+            pages = tuple(
+                (
+                    await session.scalars(
+                        select(CrawlPage)
+                        .where(
+                            CrawlPage.campaign_id == campaign_id,
+                            CrawlPage.status == "fetched",
+                        )
+                        .order_by(CrawlPage.normalized_url.asc(), CrawlPage.id.asc())
+                        .with_for_update()
+                    )
+                ).all()
+            )
+            template_sizes = Counter(
+                page.template_group_key for page in pages if page.template_group_key is not None
+            )
+            candidates: list[RepresentativeCandidate] = []
+            now = datetime.now(UTC)
+            for page in pages:
+                raw_features = cast(dict[str, object], page.classification_features)
+                template_size = (
+                    template_sizes.get(page.template_group_key, 1)
+                    if page.template_group_key is not None
+                    else 1
+                )
+                features = PageClassificationFeatures.from_dict(
+                    raw_features
+                ).with_template_group_size(template_size)
+                classification = classifier.classify(features)
+                page.classification_features = cast(JsonValue, features.to_dict())
+                page.page_type = classification.page_type.value
+                page.page_type_score = classification.score
+                page.classification_explanation = list(classification.explanation)
+                page.classifier = classification.classifier
+                page.classifier_version = classification.version
+                page.classified_at = now
+                candidates.append(
+                    RepresentativeCandidate(
+                        page_id=page.id,
+                        normalized_url=page.normalized_url,
+                        page_type=classification.page_type,
+                        classification_score=classification.score,
+                        template_group_key=page.template_group_key,
+                        normalized_text_length=page.normalized_text_length or 0,
+                        exact_duplicate=page.exact_duplicate_of_id is not None,
+                        near_duplicate=page.near_duplicate_of_id is not None,
+                        manual_selection=ManualSelection(page.manual_selection),
+                    )
+                )
+            by_id = {page.id: page for page in pages}
+            for decision in select_representative_pages(
+                tuple(candidates),
+                maximum_pages=maximum_pages,
+                include_restricted=include_restricted,
+            ):
+                page = by_id[decision.page_id]
+                page.representative_selected = decision.selected
+                page.representative_rank = decision.rank
+                page.representative_score = decision.score
+                page.selection_explanation = list(decision.explanation)
+                page.selector = decision.selector
+                page.selector_version = decision.version
+            return len(pages)
 
     async def _download_gzip_html(self, artifact_key: str) -> bytes:
         if self._storage is None:

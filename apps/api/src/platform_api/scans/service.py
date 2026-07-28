@@ -3,10 +3,17 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
+from datetime import UTC, datetime
 from http import HTTPStatus
 from typing import Protocol
 from uuid import UUID
 
+from platform_clients.page_classification import (
+    ManualSelection,
+    PageType,
+    RepresentativeCandidate,
+    select_representative_pages,
+)
 from platform_workflows.commands import CompactWorkflowInput
 from platform_workflows.dispatcher import (
     DuplicateWorkflowDispatchError,
@@ -35,6 +42,7 @@ from platform_api.scans.schemas import (
     DeduplicationStatistics,
     FailureListParams,
     PageScanResponse,
+    RepresentativeOverrideRequest,
     ScanCampaignCreateRequest,
     ScanCampaignResponse,
     ScanCampaignSummaryResponse,
@@ -52,6 +60,7 @@ _CONFIGURATION_FIELDS = (
     "crawler_user_agent",
     "max_discovered_pages_per_domain",
     "max_visual_pages_per_domain",
+    "include_restricted_representatives",
     "maximum_crawl_depth",
     "per_domain_concurrency",
     "crawl_delay_seconds",
@@ -142,6 +151,18 @@ class ScanCampaignRepositoryContract(Protocol):
         status: str | None,
     ) -> Page[CrawlPage]: ...
 
+    async def crawl_page_owned(
+        self,
+        page_id: UUID,
+        campaign_id: UUID,
+        project_id: UUID,
+        owner_id: UUID,
+        *,
+        for_update: bool = False,
+    ) -> CrawlPage | None: ...
+
+    async def campaign_pages_for_selection(self, campaign_id: UUID) -> tuple[CrawlPage, ...]: ...
+
     async def failure_page(
         self,
         *,
@@ -164,6 +185,7 @@ class ScanCampaignRepositoryContract(Protocol):
         int,
         int,
         int,
+        dict[str, int],
         dict[str, int],
     ]: ...
 
@@ -422,6 +444,74 @@ class ScanCampaignService:
             )
         return Page(items=tuple(responses), total=page.total, limit=page.limit, offset=page.offset)
 
+    async def override_representative(
+        self,
+        project_id: UUID,
+        campaign_id: UUID,
+        page_id: UUID,
+        payload: RepresentativeOverrideRequest,
+        *,
+        owner_id: UUID,
+        request_id: str,
+    ) -> CrawlPageResponse:
+        campaign = await self._campaign(project_id, campaign_id, owner_id, for_update=True)
+        page = await self._repository.crawl_page_owned(
+            page_id,
+            campaign_id,
+            project_id,
+            owner_id,
+            for_update=True,
+        )
+        if page is None:
+            raise ApiError(
+                HTTPStatus.NOT_FOUND, "crawl_page_not_found", "Crawl page was not found."
+            )
+        if page.version != payload.version:
+            raise ApiError(
+                HTTPStatus.CONFLICT,
+                "crawl_page_version_conflict",
+                "The crawl page changed since it was loaded. Reload and try again.",
+            )
+        previous = page.manual_selection
+        page.manual_selection = payload.selection
+        page.manual_selection_reason = payload.reason
+        if payload.selection == ManualSelection.AUTOMATIC.value:
+            page.manual_selected_by_user_id = None
+            page.manual_selected_at = None
+        else:
+            page.manual_selected_by_user_id = owner_id
+            page.manual_selected_at = datetime.now(UTC)
+        pages = await self._repository.campaign_pages_for_selection(campaign_id)
+        decisions = select_representative_pages(
+            tuple(self._representative_candidate(item) for item in pages),
+            maximum_pages=campaign.max_visual_pages_per_domain,
+            include_restricted=campaign.include_restricted_representatives,
+        )
+        by_id = {item.id: item for item in pages}
+        for decision in decisions:
+            item = by_id[decision.page_id]
+            item.representative_selected = decision.selected
+            item.representative_rank = decision.rank
+            item.representative_score = decision.score
+            item.selection_explanation = list(decision.explanation)
+            item.selector = decision.selector
+            item.selector_version = decision.version
+        self._audit.record(
+            action="crawl_page.representative_override",
+            resource_type="crawl_page",
+            actor_user_id=owner_id,
+            resource_id=page.id,
+            request_id=request_id,
+            details={
+                "campaign_id": campaign.id,
+                "from": previous,
+                "to": payload.selection,
+                "reason": payload.reason,
+            },
+        )
+        await self._repository.flush()
+        return CrawlPageResponse.model_validate(page)
+
     async def list_failures(
         self,
         project_id: UUID,
@@ -448,6 +538,20 @@ class ScanCampaignService:
             offset=page.offset,
         )
 
+    @staticmethod
+    def _representative_candidate(page: CrawlPage) -> RepresentativeCandidate:
+        return RepresentativeCandidate(
+            page_id=page.id,
+            normalized_url=page.normalized_url,
+            page_type=PageType(page.page_type or PageType.UNKNOWN.value),
+            classification_score=page.page_type_score or 0,
+            template_group_key=page.template_group_key,
+            normalized_text_length=page.normalized_text_length or 0,
+            exact_duplicate=page.exact_duplicate_of_id is not None,
+            near_duplicate=page.near_duplicate_of_id is not None,
+            manual_selection=ManualSelection(page.manual_selection),
+        )
+
     async def summary(
         self, project_id: UUID, campaign_id: UUID, *, owner_id: UUID
     ) -> ScanCampaignSummaryResponse:
@@ -460,6 +564,7 @@ class ScanCampaignService:
             retryable,
             unresolved,
             deduplication,
+            page_type_counts,
         ) = await self._repository.summary_counts(campaign.id)
         return ScanCampaignSummaryResponse(
             campaign=ScanCampaignResponse.model_validate(campaign),
@@ -470,6 +575,7 @@ class ScanCampaignService:
             retryable_failure_count=retryable,
             unresolved_failure_count=unresolved,
             deduplication=DeduplicationStatistics.model_validate(deduplication),
+            page_type_counts=page_type_counts,
         )
 
     async def start(

@@ -80,7 +80,7 @@ class FakeScanRepository:
             self.targets.pop(entity.id, None)
 
     @staticmethod
-    def _snapshot(entity: ScanCampaign | ScanTarget) -> tuple[object, ...]:
+    def _snapshot(entity: ScanCampaign | ScanTarget | CrawlPage) -> tuple[object, ...]:
         ignored = {"created_at", "updated_at", "version"}
         return tuple(
             getattr(entity, column.name)
@@ -89,9 +89,10 @@ class FakeScanRepository:
         )
 
     async def flush(self) -> None:
-        entities: tuple[ScanCampaign | ScanTarget, ...] = (
+        entities: tuple[ScanCampaign | ScanTarget | CrawlPage, ...] = (
             *self.campaigns.values(),
             *self.targets.values(),
+            *self.pages.values(),
         )
         for entity in entities:
             snapshot = self._snapshot(entity)
@@ -211,6 +212,40 @@ class FakeScanRepository:
             offset=offset,
         )
 
+    async def crawl_page_owned(
+        self,
+        page_id: UUID,
+        campaign_id: UUID,
+        project_id: UUID,
+        owner_id: UUID,
+        *,
+        for_update: bool = False,
+    ) -> CrawlPage | None:
+        del for_update
+        page = self.pages.get(page_id)
+        campaign = self.campaigns.get(campaign_id)
+        if (
+            page is not None
+            and campaign is not None
+            and page.campaign_id == campaign_id
+            and campaign.project_id == project_id
+            and self.project.owner_id == owner_id
+        ):
+            return page
+        return None
+
+    async def campaign_pages_for_selection(self, campaign_id: UUID) -> tuple[CrawlPage, ...]:
+        return tuple(
+            sorted(
+                (
+                    page
+                    for page in self.pages.values()
+                    if page.campaign_id == campaign_id and page.status == "fetched"
+                ),
+                key=lambda page: (page.normalized_url, str(page.id)),
+            )
+        )
+
     async def failure_page(self, **kwargs: Any) -> Page[ScanFailure]:
         items = [
             item for item in self.failures.values() if item.campaign_id == kwargs["campaign_id"]
@@ -225,11 +260,24 @@ class FakeScanRepository:
 
     async def summary_counts(
         self, campaign_id: UUID
-    ) -> tuple[dict[str, int], dict[str, int], dict[str, int], int, int, int, dict[str, int]]:
+    ) -> tuple[
+        dict[str, int],
+        dict[str, int],
+        dict[str, int],
+        int,
+        int,
+        int,
+        dict[str, int],
+        dict[str, int],
+    ]:
         targets = [target for target in self.targets.values() if target.campaign_id == campaign_id]
         failures = [
             failure for failure in self.failures.values() if failure.campaign_id == campaign_id
         ]
+        page_type_counts: dict[str, int] = {}
+        for page in self.pages.values():
+            if page.campaign_id == campaign_id and page.page_type is not None:
+                page_type_counts[page.page_type] = page_type_counts.get(page.page_type, 0) + 1
         return (
             {"pending": len(targets)} if targets else {},
             {},
@@ -248,6 +296,7 @@ class FakeScanRepository:
                 "shared_template_groups": 0,
                 "repeated_collection_groups": 0,
             },
+            page_type_counts,
         )
 
     async def has_retryable_failures(self, campaign_id: UUID) -> bool:
@@ -293,6 +342,52 @@ def fixture() -> tuple[
 
 def campaign_payload(name: str = "Primary scan") -> ScanCampaignCreateRequest:
     return ScanCampaignCreateRequest(name=name, authorization_attested_at=NOW)
+
+
+def crawl_page(
+    campaign_id: UUID,
+    *,
+    number: int,
+    page_type: str,
+    template_group_key: str | None = None,
+) -> CrawlPage:
+    url = "https://example.com/" if page_type == "homepage" else f"https://example.com/{page_type}"
+    return CrawlPage(
+        id=UUID(int=number),
+        campaign_id=campaign_id,
+        target_id=uuid4(),
+        url=url,
+        normalized_url=url,
+        final_url=url,
+        source_domain="example.com",
+        depth=0,
+        status="fetched",
+        robots_allowed=True,
+        crawl_policy_provenance={},
+        http_status=200,
+        content_type="text/html",
+        title=page_type.title(),
+        hreflang_links=[],
+        content_length=1_000,
+        discovery_source="submitted_root",
+        normalized_text_length=1_000,
+        template_group_key=template_group_key,
+        page_type=page_type,
+        page_type_score=0.9,
+        classification_features={},
+        classification_explanation=[f"path:{page_type}"],
+        classifier="deterministic-page-classifier",
+        classifier_version=1,
+        classified_at=NOW,
+        representative_selected=False,
+        selection_explanation=[],
+        manual_selection="automatic",
+        discovered_at=NOW,
+        fetched_at=NOW,
+        created_at=NOW,
+        updated_at=NOW,
+        version=1,
+    )
 
 
 def test_normal_users_cannot_disable_robots_compliance() -> None:
@@ -568,3 +663,65 @@ async def test_scan_campaign_api_exposes_crud_targets_summary_and_control(app: F
     paths = app.openapi()["paths"]
     assert "/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/pages" in paths
     assert "/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/failures" in paths
+
+
+@pytest.mark.anyio
+async def test_representative_override_is_owned_versioned_and_reselects_campaign(
+    app: FastAPI,
+) -> None:
+    service, repository, audits, _, _, owner_id = fixture()
+    campaign = await service.create(
+        repository.project.id, campaign_payload(), owner_id=owner_id, request_id="create"
+    )
+    home = crawl_page(campaign.id, number=101, page_type="homepage")
+    legal = crawl_page(campaign.id, number=102, page_type="legal")
+    repository.pages = {home.id: home, legal.id: legal}
+    await repository.flush()
+    user = User(
+        id=owner_id,
+        email="owner@example.test",
+        display_name="Owner",
+        status="active",
+        created_at=NOW,
+        updated_at=NOW,
+        version=1,
+    )
+
+    async def override_user() -> User:
+        return user
+
+    async def override_service() -> ScanCampaignService:
+        return service
+
+    app.dependency_overrides[current_user_dependency] = override_user
+    app.dependency_overrides[scan_campaign_service_dependency] = override_service
+    path = (
+        f"/api/v1/projects/{repository.project.id}/scan-campaigns/{campaign.id}"
+        f"/pages/{legal.id}/representative"
+    )
+    async with (
+        app.router.lifespan_context(app),
+        httpx2.AsyncClient(
+            transport=httpx2.ASGITransport(app=app), base_url="http://testserver"
+        ) as client,
+    ):
+        response = await client.put(
+            path,
+            json={"version": legal.version, "selection": "include", "reason": "User review"},
+        )
+        summary = await client.get(
+            f"/api/v1/projects/{repository.project.id}/scan-campaigns/{campaign.id}/summary"
+        )
+        stale = await client.put(
+            path,
+            json={"version": 1, "selection": "exclude", "reason": "Stale edit"},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["manual_selection"] == "include"
+    assert response.json()["representative_selected"] is True
+    assert home.representative_selected is True
+    assert home.representative_rank == 1
+    assert summary.json()["page_type_counts"] == {"homepage": 1, "legal": 1}
+    assert stale.status_code == 409
+    assert audits.entries[-1].action == "crawl_page.representative_override"

@@ -50,3 +50,17 @@ uv run platform-crawler-fingerprint-backfill --campaign-id <campaign-uuid>
 Missing fingerprints can be reconstructed only when the page has a retained raw-HTML artifact. The
 command verifies object checksums, bounds gzip decompression, updates rows transactionally, and then
 recalculates campaign groups idempotently.
+
+## Page classification and visual representatives
+
+Each fetched page is classified without an LLM from bounded path, title, heading, navigation,
+schema.org, link-density, form, content-length, semantic-DOM, and repeated-template signals. The
+replaceable `PageClassifier` contract and persisted classifier version allow a later learned model
+without changing crawler or API boundaries.
+
+After duplicate grouping, a versioned deterministic selector chooses no more than
+`max_visual_pages_per_domain`. It prefers the homepage, important commercial and informational page
+types, and one content page while choosing at most one automatic representative from a template
+cluster. Legal and authentication pages remain excluded unless the campaign explicitly enables them
+or an owner manually includes one. Every page stores its selection score and reason, including
+rejections. This stage only records candidates; it does not invoke Playwright.

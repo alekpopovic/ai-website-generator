@@ -35,6 +35,23 @@ SortOrder = Literal["asc", "desc"]
 TargetImportSource = Literal["paste", "text", "csv"]
 TargetImportStatus = Literal["validating", "completed", "committed", "failed"]
 TargetImportOutcome = Literal["accepted", "duplicate", "invalid", "blocked", "already_present"]
+PageType = Literal[
+    "homepage",
+    "about",
+    "services",
+    "product",
+    "features",
+    "pricing",
+    "contact",
+    "documentation",
+    "blog-index",
+    "article",
+    "case-study",
+    "careers",
+    "legal",
+    "authentication",
+    "unknown",
+]
 
 
 class ScanModel(BaseModel):
@@ -67,6 +84,7 @@ class CampaignConfiguration(ScanModel):
     )
     max_discovered_pages_per_domain: int = Field(default=100, ge=1, le=10_000)
     max_visual_pages_per_domain: int = Field(default=20, ge=0, le=1_000)
+    include_restricted_representatives: bool = False
     maximum_crawl_depth: int = Field(default=5, ge=0, le=20)
     per_domain_concurrency: int = Field(default=2, ge=1, le=32)
     crawl_delay_seconds: float = Field(default=1.0, ge=0, le=60)
@@ -183,6 +201,7 @@ class ScanCampaignUpdateRequest(ScanModel):
     crawler_user_agent: str | None = Field(default=None, min_length=1, max_length=256)
     max_discovered_pages_per_domain: int | None = Field(default=None, ge=1, le=10_000)
     max_visual_pages_per_domain: int | None = Field(default=None, ge=0, le=1_000)
+    include_restricted_representatives: bool | None = None
     maximum_crawl_depth: int | None = Field(default=None, ge=0, le=20)
     per_domain_concurrency: int | None = Field(default=None, ge=1, le=32)
     crawl_delay_seconds: float | None = Field(default=None, ge=0, le=60)
@@ -390,6 +409,23 @@ class CrawlPageResponse(ScanModel):
     near_group_key: str | None
     template_group_key: str | None
     fingerprinted_at: datetime | None
+    page_type: PageType | None
+    page_type_score: float | None
+    classification_features: dict[str, object]
+    classification_explanation: tuple[str, ...]
+    classifier: str | None
+    classifier_version: int | None
+    classified_at: datetime | None
+    representative_selected: bool
+    representative_rank: int | None
+    representative_score: float | None
+    selection_explanation: tuple[str, ...]
+    selector: str | None
+    selector_version: int | None
+    manual_selection: Literal["automatic", "include", "exclude"]
+    manual_selection_reason: str | None
+    manual_selected_by_user_id: UUID | None
+    manual_selected_at: datetime | None
     discovered_at: datetime
     fetched_at: datetime | None
     created_at: datetime
@@ -446,6 +482,20 @@ class DeduplicationStatistics(ScanModel):
     repeated_collection_groups: int
 
 
+class RepresentativeOverrideRequest(ScanModel):
+    version: int = Field(ge=1)
+    selection: Literal["automatic", "include", "exclude"]
+    reason: str | None = Field(default=None, max_length=500)
+
+    @field_validator("reason")
+    @classmethod
+    def normalize_reason(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = " ".join(value.split())
+        return normalized or None
+
+
 class ScanCampaignSummaryResponse(ScanModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -457,6 +507,7 @@ class ScanCampaignSummaryResponse(ScanModel):
     retryable_failure_count: int
     unresolved_failure_count: int
     deduplication: DeduplicationStatistics
+    page_type_counts: dict[str, int]
 
 
 class CampaignListParams(PaginationParams):

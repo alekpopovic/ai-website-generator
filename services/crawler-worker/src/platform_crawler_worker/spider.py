@@ -24,6 +24,10 @@ from scrapy import Request, Spider
 from scrapy.http import Response
 from twisted.python.failure import Failure
 
+from platform_crawler_worker.classification import (
+    RuleBasedPageClassifier,
+    extract_classification_features,
+)
 from platform_crawler_worker.fingerprinting import compute_page_fingerprints
 from platform_crawler_worker.models import (
     CrawlFailure,
@@ -60,6 +64,7 @@ class WebsiteSpider(Spider):
         self.policy_record_id: UUID | None = None
         self.seen_sitemaps: set[str] = set()
         self.sitemap_url_count = 0
+        self.classifier = RuleBasedPageClassifier()
 
     async def start(self) -> Any:
         robots_url = urlunsplit((self.origin.scheme, self.origin.netloc, "/robots.txt", "", ""))
@@ -208,6 +213,9 @@ class WebsiteSpider(Spider):
         if not isinstance(last_modified, datetime):
             last_modified = self._http_last_modified(response)
         content_type = (response.headers.get("Content-Type") or b"").decode("latin-1")
+        classification_features = extract_classification_features(
+            response.body, normalized_url=canonical
+        )
         discovery = PageDiscovery(
             requested_url=str(response.meta["requested_url"]),
             final_url=response.url,
@@ -218,6 +226,8 @@ class WebsiteSpider(Spider):
             fingerprints=compute_page_fingerprints(
                 response.body, normalized_url=canonical, response_url=response.url
             ),
+            classification_features=classification_features,
+            classification=self.classifier.classify(classification_features),
             status_code=response.status,
             content_type=content_type.partition(";")[0].casefold(),
             title=metadata.title,

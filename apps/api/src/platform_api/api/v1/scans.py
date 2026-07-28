@@ -26,7 +26,9 @@ from platform_api.scans.dependencies import (
 from platform_api.scans.schemas import (
     CampaignActionRequest,
     CampaignVersionRequest,
+    CrawlPageResponse,
     CrawlPageWithScansResponse,
+    RepresentativeOverrideRequest,
     ScanCampaignCreateRequest,
     ScanCampaignResponse,
     ScanCampaignSummaryResponse,
@@ -502,6 +504,31 @@ async def list_scan_campaign_pages(
 ) -> PageResponse[CrawlPageWithScansResponse]:
     page = await service.list_pages(project_id, campaign_id, owner_id=user.id, params=params)
     return _page_response(request, page.items, page.total, params)
+
+
+@router.put(
+    "/{campaign_id}/pages/{page_id}/representative",
+    response_model=CrawlPageResponse,
+    operation_id="overrideScanCampaignPageRepresentative",
+    responses=problem_responses(401, 404, 409, 422, 503),
+)
+async def override_scan_campaign_page_representative(
+    project_id: UUID,
+    campaign_id: UUID,
+    page_id: UUID,
+    payload: RepresentativeOverrideRequest,
+    request: Request,
+    user: CurrentUserDependency,
+    service: ScanCampaignServiceDependency,
+) -> CrawlPageResponse:
+    return await service.override_representative(
+        project_id,
+        campaign_id,
+        page_id,
+        payload,
+        owner_id=user.id,
+        request_id=request_id_from(request),
+    )
 
 
 @router.get(

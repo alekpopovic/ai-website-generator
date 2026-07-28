@@ -190,6 +190,9 @@ class ScanCampaign(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, 
         Integer, nullable=False, default=100
     )
     max_visual_pages_per_domain: Mapped[int] = mapped_column(Integer, nullable=False, default=20)
+    include_restricted_representatives: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
     maximum_crawl_depth: Mapped[int] = mapped_column(Integer, nullable=False, default=5)
     per_domain_concurrency: Mapped[int] = mapped_column(Integer, nullable=False, default=2)
     crawl_delay_seconds: Mapped[float] = mapped_column(Float, nullable=False, default=1.0)
@@ -431,6 +434,21 @@ class CrawlPage(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Bas
             "'submitted_root', 'robots_sitemap', 'sitemap', 'html_link', 'canonical')",
             name="discovery_source_allowed",
         ),
+        CheckConstraint(
+            "page_type IS NULL OR page_type IN ("
+            "'homepage', 'about', 'services', 'product', 'features', 'pricing', 'contact', "
+            "'documentation', 'blog-index', 'article', 'case-study', 'careers', 'legal', "
+            "'authentication', 'unknown')",
+            name="page_type_allowed",
+        ),
+        CheckConstraint(
+            "manual_selection IN ('automatic', 'include', 'exclude')",
+            name="manual_selection_allowed",
+        ),
+        CheckConstraint(
+            "representative_rank IS NULL OR representative_rank >= 1",
+            name="representative_rank_positive",
+        ),
         Index("ix_crawl_pages_campaign_id_status", "campaign_id", "status"),
         Index("ix_crawl_pages_target_id_depth", "target_id", "depth"),
         Index(
@@ -447,6 +465,13 @@ class CrawlPage(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Bas
         Index("ix_crawl_pages_exact_duplicate_of_id", "exact_duplicate_of_id"),
         Index("ix_crawl_pages_near_duplicate_of_id", "near_duplicate_of_id"),
         Index("ix_crawl_pages_template_representative_id", "template_representative_id"),
+        Index("ix_crawl_pages_campaign_page_type", "campaign_id", "page_type"),
+        Index(
+            "ix_crawl_pages_campaign_representative",
+            "campaign_id",
+            "representative_selected",
+            "representative_rank",
+        ),
         UniqueConstraint("campaign_id", "normalized_url"),
     )
 
@@ -512,6 +537,31 @@ class CrawlPage(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Bas
     near_group_key: Mapped[str | None] = mapped_column(String(64))
     template_group_key: Mapped[str | None] = mapped_column(String(64))
     fingerprinted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    page_type: Mapped[str | None] = mapped_column(String(32))
+    page_type_score: Mapped[float | None] = mapped_column(Float)
+    classification_features: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")
+    )
+    classification_explanation: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+    )
+    classifier: Mapped[str | None] = mapped_column(String(64))
+    classifier_version: Mapped[int | None] = mapped_column(Integer)
+    classified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    representative_selected: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    representative_rank: Mapped[int | None] = mapped_column(Integer)
+    representative_score: Mapped[float | None] = mapped_column(Float)
+    selection_explanation: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+    )
+    selector: Mapped[str | None] = mapped_column(String(64))
+    selector_version: Mapped[int | None] = mapped_column(Integer)
+    manual_selection: Mapped[str] = mapped_column(String(16), nullable=False, default="automatic")
+    manual_selection_reason: Mapped[str | None] = mapped_column(String(500))
+    manual_selected_by_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    manual_selected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     discovered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     fetched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 

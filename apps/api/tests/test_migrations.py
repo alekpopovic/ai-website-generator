@@ -49,6 +49,9 @@ def test_initial_migration_renders_postgresql_upgrade_sql(
     assert "ALTER TABLE crawl_pages ADD COLUMN fingerprint_algorithm" in upgrade_sql
     assert "ix_crawl_pages_campaign_content_fingerprint" in upgrade_sql
     assert "ix_crawl_pages_campaign_template_fingerprint" in upgrade_sql
+    assert "ALTER TABLE crawl_pages ADD COLUMN page_type" in upgrade_sql
+    assert "ix_crawl_pages_campaign_page_type" in upgrade_sql
+    assert "ck_crawl_pages_manual_selection_allowed" in upgrade_sql
     assert "ck_users_status_allowed" in upgrade_sql
     assert "ck_users_ck_" not in upgrade_sql
     assert "CREATE TYPE" not in upgrade_sql

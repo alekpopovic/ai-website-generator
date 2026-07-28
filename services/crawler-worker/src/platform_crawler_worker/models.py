@@ -7,6 +7,7 @@ from datetime import datetime
 from uuid import UUID
 
 from platform_clients.crawl_policy import CrawlPolicyConfig
+from platform_clients.page_classification import PageClassification, PageClassificationFeatures
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,6 +26,8 @@ class TargetCrawlConfiguration:
     campaign_timeout_seconds: int
     store_raw_html: bool
     retention_days: int
+    max_visual_pages_per_domain: int
+    include_restricted_representatives: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,6 +39,8 @@ class PageDiscovery:
     hreflang_links: tuple[HreflangLink, ...]
     last_modified_at: datetime | None
     fingerprints: PageFingerprints
+    classification_features: PageClassificationFeatures
+    classification: PageClassification
     status_code: int
     content_type: str
     title: str | None

@@ -226,6 +226,42 @@ class ScanCampaignRepository:
         )
         return Page(items=items, total=total or 0, limit=limit, offset=offset)
 
+    async def crawl_page_owned(
+        self,
+        page_id: UUID,
+        campaign_id: UUID,
+        project_id: UUID,
+        owner_id: UUID,
+        *,
+        for_update: bool = False,
+    ) -> CrawlPage | None:
+        statement = (
+            select(CrawlPage)
+            .join(ScanCampaign, CrawlPage.campaign_id == ScanCampaign.id)
+            .join(Project, ScanCampaign.project_id == Project.id)
+            .where(
+                CrawlPage.id == page_id,
+                CrawlPage.campaign_id == campaign_id,
+                ScanCampaign.project_id == project_id,
+                Project.owner_id == owner_id,
+            )
+        )
+        if for_update:
+            statement = statement.with_for_update(of=CrawlPage)
+        return cast(CrawlPage | None, await self._session.scalar(statement))
+
+    async def campaign_pages_for_selection(self, campaign_id: UUID) -> tuple[CrawlPage, ...]:
+        return tuple(
+            (
+                await self._session.scalars(
+                    select(CrawlPage)
+                    .where(CrawlPage.campaign_id == campaign_id, CrawlPage.status == "fetched")
+                    .order_by(CrawlPage.normalized_url.asc(), CrawlPage.id.asc())
+                    .with_for_update()
+                )
+            ).all()
+        )
+
     async def failure_page(
         self,
         *,
@@ -272,7 +308,16 @@ class ScanCampaignRepository:
 
     async def summary_counts(
         self, campaign_id: UUID
-    ) -> tuple[dict[str, int], dict[str, int], dict[str, int], int, int, int, dict[str, int]]:
+    ) -> tuple[
+        dict[str, int],
+        dict[str, int],
+        dict[str, int],
+        int,
+        int,
+        int,
+        dict[str, int],
+        dict[str, int],
+    ]:
         targets = await self._status_counts(ScanTarget, campaign_id)
         pages = await self._status_counts(CrawlPage, campaign_id)
         page_scans = await self._status_counts(PageScan, campaign_id)
@@ -360,6 +405,12 @@ class ScanCampaignRepository:
             "shared_template_groups": int(template_stats[1]),
             "repeated_collection_groups": int(template_stats[2]),
         }
+        page_type_rows = await self._session.execute(
+            select(CrawlPage.page_type, func.count())
+            .where(CrawlPage.campaign_id == campaign_id, CrawlPage.page_type.is_not(None))
+            .group_by(CrawlPage.page_type)
+        )
+        page_type_counts = {str(page_type): int(count) for page_type, count in page_type_rows.all()}
         return (
             targets,
             pages,
@@ -368,6 +419,7 @@ class ScanCampaignRepository:
             retryable or 0,
             unresolved or 0,
             deduplication,
+            page_type_counts,
         )
 
     async def _status_counts(

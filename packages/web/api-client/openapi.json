@@ -155,13 +155,59 @@
         "title": "CampaignVersionRequest",
         "type": "object"
       },
-      "CrawlPageWithScansResponse": {
+      "CrawlPageResponse": {
         "additionalProperties": false,
         "properties": {
           "campaign_id": {
             "format": "uuid",
             "title": "Campaign Id",
             "type": "string"
+          },
+          "classification_explanation": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Classification Explanation",
+            "type": "array"
+          },
+          "classification_features": {
+            "additionalProperties": true,
+            "title": "Classification Features",
+            "type": "object"
+          },
+          "classified_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classified At"
+          },
+          "classifier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classifier"
+          },
+          "classifier_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classifier Version"
           },
           "content_length": {
             "anyOf": [
@@ -423,6 +469,50 @@
             ],
             "title": "Link Structure Sha256"
           },
+          "manual_selected_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manual Selected At"
+          },
+          "manual_selected_by_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manual Selected By User Id"
+          },
+          "manual_selection": {
+            "enum": [
+              "automatic",
+              "include",
+              "exclude"
+            ],
+            "title": "Manual Selection",
+            "type": "string"
+          },
+          "manual_selection_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manual Selection Reason"
+          },
           "meta_description": {
             "anyOf": [
               {
@@ -494,13 +584,44 @@
             ],
             "title": "Normalized Url Sha256"
           },
-          "page_scans": {
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/PageScanResponse"
-            },
-            "title": "Page Scans",
-            "type": "array"
+          "page_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "homepage",
+                  "about",
+                  "services",
+                  "product",
+                  "features",
+                  "pricing",
+                  "contact",
+                  "documentation",
+                  "blog-index",
+                  "article",
+                  "case-study",
+                  "careers",
+                  "legal",
+                  "authentication",
+                  "unknown"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Type"
+          },
+          "page_type_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Type Score"
           },
           "parent_page_id": {
             "anyOf": [
@@ -525,6 +646,32 @@
             ],
             "title": "Parent Url"
           },
+          "representative_rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Representative Rank"
+          },
+          "representative_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Representative Score"
+          },
+          "representative_selected": {
+            "title": "Representative Selected",
+            "type": "boolean"
+          },
           "robots_allowed": {
             "anyOf": [
               {
@@ -535,6 +682,35 @@
               }
             ],
             "title": "Robots Allowed"
+          },
+          "selection_explanation": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Selection Explanation",
+            "type": "array"
+          },
+          "selector": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selector"
+          },
+          "selector_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selector Version"
           },
           "semantic_simhash": {
             "anyOf": [
@@ -671,6 +847,749 @@
           "near_group_key",
           "template_group_key",
           "fingerprinted_at",
+          "page_type",
+          "page_type_score",
+          "classification_features",
+          "classification_explanation",
+          "classifier",
+          "classifier_version",
+          "classified_at",
+          "representative_selected",
+          "representative_rank",
+          "representative_score",
+          "selection_explanation",
+          "selector",
+          "selector_version",
+          "manual_selection",
+          "manual_selection_reason",
+          "manual_selected_by_user_id",
+          "manual_selected_at",
+          "discovered_at",
+          "fetched_at",
+          "created_at",
+          "updated_at",
+          "version"
+        ],
+        "title": "CrawlPageResponse",
+        "type": "object"
+      },
+      "CrawlPageWithScansResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "campaign_id": {
+            "format": "uuid",
+            "title": "Campaign Id",
+            "type": "string"
+          },
+          "classification_explanation": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Classification Explanation",
+            "type": "array"
+          },
+          "classification_features": {
+            "additionalProperties": true,
+            "title": "Classification Features",
+            "type": "object"
+          },
+          "classified_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classified At"
+          },
+          "classifier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classifier"
+          },
+          "classifier_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classifier Version"
+          },
+          "content_length": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Length"
+          },
+          "content_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Sha256"
+          },
+          "content_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Type"
+          },
+          "crawl_decision_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crawl Decision Code"
+          },
+          "crawl_policy_provenance": {
+            "additionalProperties": true,
+            "title": "Crawl Policy Provenance",
+            "type": "object"
+          },
+          "crawl_policy_record_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crawl Policy Record Id"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "declared_canonical_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Declared Canonical Url"
+          },
+          "depth": {
+            "title": "Depth",
+            "type": "integer"
+          },
+          "discovered_at": {
+            "format": "date-time",
+            "title": "Discovered At",
+            "type": "string"
+          },
+          "discovery_source": {
+            "title": "Discovery Source",
+            "type": "string"
+          },
+          "dom_structure_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dom Structure Sha256"
+          },
+          "dom_template_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dom Template Sha256"
+          },
+          "exact_duplicate_of_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exact Duplicate Of Id"
+          },
+          "exact_group_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exact Group Key"
+          },
+          "fetched_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fetched At"
+          },
+          "final_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Url"
+          },
+          "fingerprint_algorithm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fingerprint Algorithm"
+          },
+          "fingerprint_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fingerprint Version"
+          },
+          "fingerprinted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fingerprinted At"
+          },
+          "heading_sequence_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heading Sequence Sha256"
+          },
+          "hreflang_links": {
+            "items": {
+              "$ref": "#/components/schemas/HreflangLinkResponse"
+            },
+            "title": "Hreflang Links",
+            "type": "array"
+          },
+          "http_status": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Http Status"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "last_modified_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Modified At"
+          },
+          "link_structure_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Structure Sha256"
+          },
+          "manual_selected_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manual Selected At"
+          },
+          "manual_selected_by_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manual Selected By User Id"
+          },
+          "manual_selection": {
+            "enum": [
+              "automatic",
+              "include",
+              "exclude"
+            ],
+            "title": "Manual Selection",
+            "type": "string"
+          },
+          "manual_selection_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manual Selection Reason"
+          },
+          "meta_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta Description"
+          },
+          "near_duplicate_of_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Near Duplicate Of Id"
+          },
+          "near_group_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Near Group Key"
+          },
+          "normalized_content_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Normalized Content Sha256"
+          },
+          "normalized_text_length": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Normalized Text Length"
+          },
+          "normalized_url": {
+            "title": "Normalized Url",
+            "type": "string"
+          },
+          "normalized_url_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Normalized Url Sha256"
+          },
+          "page_scans": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/PageScanResponse"
+            },
+            "title": "Page Scans",
+            "type": "array"
+          },
+          "page_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "homepage",
+                  "about",
+                  "services",
+                  "product",
+                  "features",
+                  "pricing",
+                  "contact",
+                  "documentation",
+                  "blog-index",
+                  "article",
+                  "case-study",
+                  "careers",
+                  "legal",
+                  "authentication",
+                  "unknown"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Type"
+          },
+          "page_type_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Type Score"
+          },
+          "parent_page_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Page Id"
+          },
+          "parent_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Url"
+          },
+          "representative_rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Representative Rank"
+          },
+          "representative_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Representative Score"
+          },
+          "representative_selected": {
+            "title": "Representative Selected",
+            "type": "boolean"
+          },
+          "robots_allowed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Robots Allowed"
+          },
+          "selection_explanation": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Selection Explanation",
+            "type": "array"
+          },
+          "selector": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selector"
+          },
+          "selector_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selector Version"
+          },
+          "semantic_simhash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Semantic Simhash"
+          },
+          "source_domain": {
+            "title": "Source Domain",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "discovered",
+              "blocked",
+              "fetching",
+              "fetched",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "target_id": {
+            "format": "uuid",
+            "title": "Target Id",
+            "type": "string"
+          },
+          "template_group_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Group Key"
+          },
+          "template_representative_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Representative Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "visible_text_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visible Text Sha256"
+          }
+        },
+        "required": [
+          "id",
+          "campaign_id",
+          "target_id",
+          "parent_page_id",
+          "crawl_policy_record_id",
+          "url",
+          "normalized_url",
+          "final_url",
+          "declared_canonical_url",
+          "source_domain",
+          "depth",
+          "status",
+          "robots_allowed",
+          "crawl_decision_code",
+          "crawl_policy_provenance",
+          "http_status",
+          "content_type",
+          "content_sha256",
+          "title",
+          "meta_description",
+          "language",
+          "hreflang_links",
+          "last_modified_at",
+          "content_length",
+          "discovery_source",
+          "parent_url",
+          "fingerprint_algorithm",
+          "fingerprint_version",
+          "normalized_url_sha256",
+          "visible_text_sha256",
+          "dom_structure_sha256",
+          "heading_sequence_sha256",
+          "link_structure_sha256",
+          "semantic_simhash",
+          "dom_template_sha256",
+          "normalized_content_sha256",
+          "normalized_text_length",
+          "exact_duplicate_of_id",
+          "near_duplicate_of_id",
+          "template_representative_id",
+          "exact_group_key",
+          "near_group_key",
+          "template_group_key",
+          "fingerprinted_at",
+          "page_type",
+          "page_type_score",
+          "classification_features",
+          "classification_explanation",
+          "classifier",
+          "classifier_version",
+          "classified_at",
+          "representative_selected",
+          "representative_rank",
+          "representative_score",
+          "selection_explanation",
+          "selector",
+          "selector_version",
+          "manual_selection",
+          "manual_selection_reason",
+          "manual_selected_by_user_id",
+          "manual_selected_at",
           "discovered_at",
           "fetched_at",
           "created_at",
@@ -1852,6 +2771,43 @@
         "title": "RegisterRequest",
         "type": "object"
       },
+      "RepresentativeOverrideRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "selection": {
+            "enum": [
+              "automatic",
+              "include",
+              "exclude"
+            ],
+            "title": "Selection",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "selection"
+        ],
+        "title": "RepresentativeOverrideRequest",
+        "type": "object"
+      },
       "ResetPasswordRequest": {
         "additionalProperties": false,
         "description": "Single-use reset token and replacement password.",
@@ -1950,6 +2906,11 @@
             },
             "title": "Exclude Url Patterns",
             "type": "array"
+          },
+          "include_restricted_representatives": {
+            "default": false,
+            "title": "Include Restricted Representatives",
+            "type": "boolean"
           },
           "include_url_patterns": {
             "default": [],
@@ -2139,6 +3100,11 @@
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "include_restricted_representatives": {
+            "default": false,
+            "title": "Include Restricted Representatives",
+            "type": "boolean"
           },
           "include_url_patterns": {
             "default": [],
@@ -2355,6 +3321,13 @@
             "title": "Page Scan Counts",
             "type": "object"
           },
+          "page_type_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Page Type Counts",
+            "type": "object"
+          },
           "retryable_failure_count": {
             "title": "Retryable Failure Count",
             "type": "integer"
@@ -2379,7 +3352,8 @@
           "failure_count",
           "retryable_failure_count",
           "unresolved_failure_count",
-          "deduplication"
+          "deduplication",
+          "page_type_counts"
         ],
         "title": "ScanCampaignSummaryResponse",
         "type": "object"
@@ -2472,6 +3446,17 @@
               }
             ],
             "title": "Exclude Url Patterns"
+          },
+          "include_restricted_representatives": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Include Restricted Representatives"
           },
           "include_url_patterns": {
             "anyOf": [
@@ -5507,6 +6492,124 @@
           }
         ],
         "summary": "List Scan Campaign Pages",
+        "tags": [
+          "scan-campaigns"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/pages/{page_id}/representative": {
+      "put": {
+        "operationId": "overrideScanCampaignPageRepresentative",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "campaign_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Campaign Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "page_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Page Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RepresentativeOverrideRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrawlPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Override Scan Campaign Page Representative",
         "tags": [
           "scan-campaigns"
         ]

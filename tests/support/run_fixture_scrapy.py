@@ -111,6 +111,8 @@ def main() -> None:
         campaign_timeout_seconds=30,
         store_raw_html=False,
         retention_days=1,
+        max_visual_pages_per_domain=10,
+        include_restricted_representatives=False,
     )
     settings = _scrapy_settings(configuration)
     settings.set("LOG_ENABLED", False)

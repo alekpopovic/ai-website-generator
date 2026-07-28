@@ -101,13 +101,35 @@ export type CampaignVersionRequest = {
 };
 
 /**
- * CrawlPageWithScansResponse
+ * CrawlPageResponse
  */
-export type CrawlPageWithScansResponse = {
+export type CrawlPageResponse = {
     /**
      * Campaign Id
      */
     campaign_id: string;
+    /**
+     * Classification Explanation
+     */
+    classification_explanation: Array<string>;
+    /**
+     * Classification Features
+     */
+    classification_features: {
+        [key: string]: unknown;
+    };
+    /**
+     * Classified At
+     */
+    classified_at: string | null;
+    /**
+     * Classifier
+     */
+    classifier: string | null;
+    /**
+     * Classifier Version
+     */
+    classifier_version: number | null;
     /**
      * Content Length
      */
@@ -219,6 +241,296 @@ export type CrawlPageWithScansResponse = {
      */
     link_structure_sha256: string | null;
     /**
+     * Manual Selected At
+     */
+    manual_selected_at: string | null;
+    /**
+     * Manual Selected By User Id
+     */
+    manual_selected_by_user_id: string | null;
+    /**
+     * Manual Selection
+     */
+    manual_selection: 'automatic' | 'include' | 'exclude';
+    /**
+     * Manual Selection Reason
+     */
+    manual_selection_reason: string | null;
+    /**
+     * Meta Description
+     */
+    meta_description: string | null;
+    /**
+     * Near Duplicate Of Id
+     */
+    near_duplicate_of_id: string | null;
+    /**
+     * Near Group Key
+     */
+    near_group_key: string | null;
+    /**
+     * Normalized Content Sha256
+     */
+    normalized_content_sha256: string | null;
+    /**
+     * Normalized Text Length
+     */
+    normalized_text_length: number | null;
+    /**
+     * Normalized Url
+     */
+    normalized_url: string;
+    /**
+     * Normalized Url Sha256
+     */
+    normalized_url_sha256: string | null;
+    /**
+     * Page Type
+     */
+    page_type: 'homepage' | 'about' | 'services' | 'product' | 'features' | 'pricing' | 'contact' | 'documentation' | 'blog-index' | 'article' | 'case-study' | 'careers' | 'legal' | 'authentication' | 'unknown' | null;
+    /**
+     * Page Type Score
+     */
+    page_type_score: number | null;
+    /**
+     * Parent Page Id
+     */
+    parent_page_id: string | null;
+    /**
+     * Parent Url
+     */
+    parent_url: string | null;
+    /**
+     * Representative Rank
+     */
+    representative_rank: number | null;
+    /**
+     * Representative Score
+     */
+    representative_score: number | null;
+    /**
+     * Representative Selected
+     */
+    representative_selected: boolean;
+    /**
+     * Robots Allowed
+     */
+    robots_allowed: boolean | null;
+    /**
+     * Selection Explanation
+     */
+    selection_explanation: Array<string>;
+    /**
+     * Selector
+     */
+    selector: string | null;
+    /**
+     * Selector Version
+     */
+    selector_version: number | null;
+    /**
+     * Semantic Simhash
+     */
+    semantic_simhash: string | null;
+    /**
+     * Source Domain
+     */
+    source_domain: string;
+    /**
+     * Status
+     */
+    status: 'discovered' | 'blocked' | 'fetching' | 'fetched' | 'failed';
+    /**
+     * Target Id
+     */
+    target_id: string;
+    /**
+     * Template Group Key
+     */
+    template_group_key: string | null;
+    /**
+     * Template Representative Id
+     */
+    template_representative_id: string | null;
+    /**
+     * Title
+     */
+    title: string | null;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+    /**
+     * Url
+     */
+    url: string;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Visible Text Sha256
+     */
+    visible_text_sha256: string | null;
+};
+
+/**
+ * CrawlPageWithScansResponse
+ */
+export type CrawlPageWithScansResponse = {
+    /**
+     * Campaign Id
+     */
+    campaign_id: string;
+    /**
+     * Classification Explanation
+     */
+    classification_explanation: Array<string>;
+    /**
+     * Classification Features
+     */
+    classification_features: {
+        [key: string]: unknown;
+    };
+    /**
+     * Classified At
+     */
+    classified_at: string | null;
+    /**
+     * Classifier
+     */
+    classifier: string | null;
+    /**
+     * Classifier Version
+     */
+    classifier_version: number | null;
+    /**
+     * Content Length
+     */
+    content_length: number | null;
+    /**
+     * Content Sha256
+     */
+    content_sha256: string | null;
+    /**
+     * Content Type
+     */
+    content_type: string | null;
+    /**
+     * Crawl Decision Code
+     */
+    crawl_decision_code: string | null;
+    /**
+     * Crawl Policy Provenance
+     */
+    crawl_policy_provenance: {
+        [key: string]: unknown;
+    };
+    /**
+     * Crawl Policy Record Id
+     */
+    crawl_policy_record_id: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Declared Canonical Url
+     */
+    declared_canonical_url: string | null;
+    /**
+     * Depth
+     */
+    depth: number;
+    /**
+     * Discovered At
+     */
+    discovered_at: string;
+    /**
+     * Discovery Source
+     */
+    discovery_source: string;
+    /**
+     * Dom Structure Sha256
+     */
+    dom_structure_sha256: string | null;
+    /**
+     * Dom Template Sha256
+     */
+    dom_template_sha256: string | null;
+    /**
+     * Exact Duplicate Of Id
+     */
+    exact_duplicate_of_id: string | null;
+    /**
+     * Exact Group Key
+     */
+    exact_group_key: string | null;
+    /**
+     * Fetched At
+     */
+    fetched_at: string | null;
+    /**
+     * Final Url
+     */
+    final_url: string | null;
+    /**
+     * Fingerprint Algorithm
+     */
+    fingerprint_algorithm: string | null;
+    /**
+     * Fingerprint Version
+     */
+    fingerprint_version: number | null;
+    /**
+     * Fingerprinted At
+     */
+    fingerprinted_at: string | null;
+    /**
+     * Heading Sequence Sha256
+     */
+    heading_sequence_sha256: string | null;
+    /**
+     * Hreflang Links
+     */
+    hreflang_links: Array<HreflangLinkResponse>;
+    /**
+     * Http Status
+     */
+    http_status: number | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Language
+     */
+    language: string | null;
+    /**
+     * Last Modified At
+     */
+    last_modified_at: string | null;
+    /**
+     * Link Structure Sha256
+     */
+    link_structure_sha256: string | null;
+    /**
+     * Manual Selected At
+     */
+    manual_selected_at: string | null;
+    /**
+     * Manual Selected By User Id
+     */
+    manual_selected_by_user_id: string | null;
+    /**
+     * Manual Selection
+     */
+    manual_selection: 'automatic' | 'include' | 'exclude';
+    /**
+     * Manual Selection Reason
+     */
+    manual_selection_reason: string | null;
+    /**
      * Meta Description
      */
     meta_description: string | null;
@@ -251,6 +563,14 @@ export type CrawlPageWithScansResponse = {
      */
     page_scans?: Array<PageScanResponse>;
     /**
+     * Page Type
+     */
+    page_type: 'homepage' | 'about' | 'services' | 'product' | 'features' | 'pricing' | 'contact' | 'documentation' | 'blog-index' | 'article' | 'case-study' | 'careers' | 'legal' | 'authentication' | 'unknown' | null;
+    /**
+     * Page Type Score
+     */
+    page_type_score: number | null;
+    /**
      * Parent Page Id
      */
     parent_page_id: string | null;
@@ -259,9 +579,33 @@ export type CrawlPageWithScansResponse = {
      */
     parent_url: string | null;
     /**
+     * Representative Rank
+     */
+    representative_rank: number | null;
+    /**
+     * Representative Score
+     */
+    representative_score: number | null;
+    /**
+     * Representative Selected
+     */
+    representative_selected: boolean;
+    /**
      * Robots Allowed
      */
     robots_allowed: boolean | null;
+    /**
+     * Selection Explanation
+     */
+    selection_explanation: Array<string>;
+    /**
+     * Selector
+     */
+    selector: string | null;
+    /**
+     * Selector Version
+     */
+    selector_version: number | null;
     /**
      * Semantic Simhash
      */
@@ -967,6 +1311,24 @@ export type RegisterRequest = {
 };
 
 /**
+ * RepresentativeOverrideRequest
+ */
+export type RepresentativeOverrideRequest = {
+    /**
+     * Reason
+     */
+    reason?: string | null;
+    /**
+     * Selection
+     */
+    selection: 'automatic' | 'include' | 'exclude';
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * ResetPasswordRequest
  *
  * Single-use reset token and replacement password.
@@ -1020,6 +1382,10 @@ export type ScanCampaignCreateRequest = {
      * Exclude Url Patterns
      */
     exclude_url_patterns?: Array<string>;
+    /**
+     * Include Restricted Representatives
+     */
+    include_restricted_representatives?: boolean;
     /**
      * Include Url Patterns
      */
@@ -1106,6 +1472,10 @@ export type ScanCampaignResponse = {
      * Id
      */
     id: string;
+    /**
+     * Include Restricted Representatives
+     */
+    include_restricted_representatives?: boolean;
     /**
      * Include Url Patterns
      */
@@ -1209,6 +1579,12 @@ export type ScanCampaignSummaryResponse = {
         [key: string]: number;
     };
     /**
+     * Page Type Counts
+     */
+    page_type_counts: {
+        [key: string]: number;
+    };
+    /**
      * Retryable Failure Count
      */
     retryable_failure_count: number;
@@ -1250,6 +1626,10 @@ export type ScanCampaignUpdateRequest = {
      * Exclude Url Patterns
      */
     exclude_url_patterns?: Array<string> | null;
+    /**
+     * Include Restricted Representatives
+     */
+    include_restricted_representatives?: boolean | null;
     /**
      * Include Url Patterns
      */
@@ -2794,6 +3174,60 @@ export type ListScanCampaignPagesResponses = {
 };
 
 export type ListScanCampaignPagesResponse = ListScanCampaignPagesResponses[keyof ListScanCampaignPagesResponses];
+
+export type OverrideScanCampaignPageRepresentativeData = {
+    body: RepresentativeOverrideRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+        /**
+         * Page Id
+         */
+        page_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/pages/{page_id}/representative';
+};
+
+export type OverrideScanCampaignPageRepresentativeErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type OverrideScanCampaignPageRepresentativeError = OverrideScanCampaignPageRepresentativeErrors[keyof OverrideScanCampaignPageRepresentativeErrors];
+
+export type OverrideScanCampaignPageRepresentativeResponses = {
+    /**
+     * Successful Response
+     */
+    200: CrawlPageResponse;
+};
+
+export type OverrideScanCampaignPageRepresentativeResponse = OverrideScanCampaignPageRepresentativeResponses[keyof OverrideScanCampaignPageRepresentativeResponses];
 
 export type PauseScanCampaignData = {
     body: CampaignVersionRequest;

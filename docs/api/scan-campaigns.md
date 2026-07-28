@@ -14,6 +14,9 @@ draft and uses an optimistic `version`.
 `respect_robots_txt` is a literal `true` value and is also protected by a database constraint; normal
 API callers cannot create or update a bypass. The effective crawler user agent and configurable
 tracking-query removal list are captured with the campaign and copied into crawl-policy provenance.
+Legal and authentication pages are excluded from automatic visual-representative selection by
+default. `include_restricted_representatives` is an explicit campaign setting; it does not alter crawl
+admission or authorization policy.
 
 URL include/exclude patterns are bounded forward-slash globs, not executable regular expressions.
 Targets permit only credential-free HTTP(S), ports 80/443, and statically public destinations.
@@ -23,27 +26,35 @@ SSRF policy at every URL and redirect boundary.
 
 ## Routes
 
-| Method   | Path                                 | Purpose                                      |
-| -------- | ------------------------------------ | -------------------------------------------- |
-| `POST`   | `/`                                  | Create a draft campaign                      |
-| `GET`    | `/`                                  | List/search/filter owned campaigns           |
-| `GET`    | `/{campaign_id}`                     | Read campaign configuration and state        |
-| `PATCH`  | `/{campaign_id}`                     | Optimistically edit a draft                  |
-| `DELETE` | `/{campaign_id}`                     | Delete a draft only                          |
-| `POST`   | `/{campaign_id}/start`               | Queue and dispatch a control-only workflow   |
-| `POST`   | `/{campaign_id}/pause`               | Commit `pausing`, then signal Temporal       |
-| `POST`   | `/{campaign_id}/resume`              | Commit `running`, then signal Temporal       |
-| `POST`   | `/{campaign_id}/cancel`              | Commit `cancelling`, then signal Temporal    |
-| `POST`   | `/{campaign_id}/retry-failures`      | Queue a new idempotent workflow attempt      |
-| `GET`    | `/{campaign_id}/summary`             | Return bounded status and failure counts     |
-| `POST`   | `/{campaign_id}/targets`             | Add a validated draft target                 |
-| `GET`    | `/{campaign_id}/targets`             | List target projections                      |
-| `DELETE` | `/{campaign_id}/targets/{target_id}` | Delete an optimistically versioned draft URL |
-| `GET`    | `/{campaign_id}/pages`               | List page and viewport-scan projections      |
-| `GET`    | `/{campaign_id}/failures`            | Filter sanitized failure projections         |
+| Method   | Path                                            | Purpose                                                    |
+| -------- | ----------------------------------------------- | ---------------------------------------------------------- |
+| `POST`   | `/`                                             | Create a draft campaign                                    |
+| `GET`    | `/`                                             | List/search/filter owned campaigns                         |
+| `GET`    | `/{campaign_id}`                                | Read campaign configuration and state                      |
+| `PATCH`  | `/{campaign_id}`                                | Optimistically edit a draft                                |
+| `DELETE` | `/{campaign_id}`                                | Delete a draft only                                        |
+| `POST`   | `/{campaign_id}/start`                          | Queue and dispatch a control-only workflow                 |
+| `POST`   | `/{campaign_id}/pause`                          | Commit `pausing`, then signal Temporal                     |
+| `POST`   | `/{campaign_id}/resume`                         | Commit `running`, then signal Temporal                     |
+| `POST`   | `/{campaign_id}/cancel`                         | Commit `cancelling`, then signal Temporal                  |
+| `POST`   | `/{campaign_id}/retry-failures`                 | Queue a new idempotent workflow attempt                    |
+| `GET`    | `/{campaign_id}/summary`                        | Return bounded status and failure counts                   |
+| `POST`   | `/{campaign_id}/targets`                        | Add a validated draft target                               |
+| `GET`    | `/{campaign_id}/targets`                        | List target projections                                    |
+| `DELETE` | `/{campaign_id}/targets/{target_id}`            | Delete an optimistically versioned draft URL               |
+| `GET`    | `/{campaign_id}/pages`                          | List page and viewport-scan projections                    |
+| `PUT`    | `/{campaign_id}/pages/{page_id}/representative` | Optimistically include, exclude, or reset a representative |
+| `GET`    | `/{campaign_id}/failures`                       | Filter sanitized failure projections                       |
 
 The table paths are relative to the campaign prefix. Collection responses are bounded and paged.
 Private object-storage keys are not exposed by page responses.
+
+Page projections include their deterministic type, classifier score and reasons, representative rank,
+selector score and reasons, classifier/selector versions, and manual-override metadata. The override
+body contains the page `version`, `selection` (`automatic`, `include`, or `exclude`), and an optional
+reason. The operation is owner-scoped, audited, returns `409` for a stale version, and recalculates the
+campaign selection without starting any browser or workflow job. Campaign summaries include a
+`page_type_counts` distribution.
 
 Start and retry require an idempotency key. Temporal receives only UUIDs and compact control data.
 The workflow currently performs no crawling; it holds durable control state and accepts pause,
