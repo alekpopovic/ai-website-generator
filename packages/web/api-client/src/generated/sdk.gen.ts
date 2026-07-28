@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddScanCampaignTargetData, AddScanCampaignTargetErrors, AddScanCampaignTargetResponses, ArchiveProjectData, ArchiveProjectErrors, ArchiveProjectResponses, CancelScanCampaignData, CancelScanCampaignErrors, CancelScanCampaignResponses, CommitScanTargetImportData, CommitScanTargetImportErrors, CommitScanTargetImportResponses, CreateEmbeddingRunData, CreateEmbeddingRunErrors, CreateEmbeddingRunResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateScanArtifactReadUrlData, CreateScanArtifactReadUrlErrors, CreateScanArtifactReadUrlResponses, CreateScanCampaignData, CreateScanCampaignErrors, CreateScanCampaignResponses, CuratePageProfileData, CuratePageProfileErrors, CuratePageProfileResponses, CurateSectionPatternData, CurateSectionPatternErrors, CurateSectionPatternResponses, CurateWebsiteProfileData, CurateWebsiteProfileErrors, CurateWebsiteProfileResponses, DeleteDraftScanCampaignData, DeleteDraftScanCampaignErrors, DeleteDraftScanCampaignResponses, DeleteDraftScanCampaignTargetData, DeleteDraftScanCampaignTargetErrors, DeleteDraftScanCampaignTargetResponses, ExportScanTargetImportErrorsData, ExportScanTargetImportErrorsErrors, ExportScanTargetImportErrorsResponses, GetApiVersionData, GetApiVersionErrors, GetApiVersionResponses, GetConfiguredModelReadinessData, GetConfiguredModelReadinessErrors, GetConfiguredModelReadinessResponses, GetCurrentUserData, GetCurrentUserErrors, GetCurrentUserResponses, GetDependencyHealthData, GetDependencyHealthErrors, GetDependencyHealthResponses, GetEmbeddingRunData, GetEmbeddingRunErrors, GetEmbeddingRunResponses, GetLivenessData, GetLivenessErrors, GetLivenessResponses, GetPageProfileData, GetPageProfileErrors, GetPageProfileResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetScanCampaignData, GetScanCampaignErrors, GetScanCampaignPageData, GetScanCampaignPageErrors, GetScanCampaignPageResponses, GetScanCampaignResponses, GetScanCampaignSummaryData, GetScanCampaignSummaryErrors, GetScanCampaignSummaryResponses, GetScanCampaignTargetSummaryData, GetScanCampaignTargetSummaryErrors, GetScanCampaignTargetSummaryResponses, GetScanTargetImportData, GetScanTargetImportErrors, GetScanTargetImportResponses, GetSectionPatternData, GetSectionPatternErrors, GetSectionPatternResponses, GetVectorCollectionStatisticsData, GetVectorCollectionStatisticsErrors, GetVectorCollectionStatisticsResponses, GetWebsiteProfileData, GetWebsiteProfileErrors, GetWebsiteProfileResponses, ImportScanCampaignTargetsData, ImportScanCampaignTargetsErrors, ImportScanCampaignTargetsResponses, ListAnalysisRunsData, ListAnalysisRunsErrors, ListAnalysisRunsResponses, ListEmbeddingRunFailuresData, ListEmbeddingRunFailuresErrors, ListEmbeddingRunFailuresResponses, ListEmbeddingRunsData, ListEmbeddingRunsErrors, ListEmbeddingRunsResponses, ListPageProfilesData, ListPageProfilesErrors, ListPageProfilesResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListScanCampaignActivityData, ListScanCampaignActivityErrors, ListScanCampaignActivityResponses, ListScanCampaignDuplicateGroupsData, ListScanCampaignDuplicateGroupsErrors, ListScanCampaignDuplicateGroupsResponses, ListScanCampaignFailuresData, ListScanCampaignFailuresErrors, ListScanCampaignFailuresResponses, ListScanCampaignPagesData, ListScanCampaignPagesErrors, ListScanCampaignPagesResponses, ListScanCampaignRepresentativeDecisionsData, ListScanCampaignRepresentativeDecisionsErrors, ListScanCampaignRepresentativeDecisionsResponses, ListScanCampaignsData, ListScanCampaignsErrors, ListScanCampaignsResponses, ListScanCampaignTargetsData, ListScanCampaignTargetsErrors, ListScanCampaignTargetsResponses, ListScanPageArtifactsData, ListScanPageArtifactsErrors, ListScanPageArtifactsResponses, ListSectionPatternsData, ListSectionPatternsErrors, ListSectionPatternsResponses, ListWebsiteProfilesData, ListWebsiteProfilesErrors, ListWebsiteProfilesResponses, LoginData, LoginErrors, LoginResponses, LogoutAllData, LogoutAllErrors, LogoutAllResponses, LogoutData, LogoutErrors, LogoutResponses, OverrideScanCampaignPageRepresentativeData, OverrideScanCampaignPageRepresentativeErrors, OverrideScanCampaignPageRepresentativeResponses, PauseScanCampaignData, PauseScanCampaignErrors, PauseScanCampaignResponses, PollJobEventsData, PollJobEventsErrors, PollJobEventsResponses, RefreshAccessTokenData, RefreshAccessTokenErrors, RefreshAccessTokenResponses, RegisterData, RegisterErrors, RegisterResponses, RequestPasswordResetData, RequestPasswordResetErrors, RequestPasswordResetResponses, RequestScanArtifactRemovalData, RequestScanArtifactRemovalErrors, RequestScanArtifactRemovalResponses, ResetPasswordData, ResetPasswordErrors, ResetPasswordResponses, RestoreProjectData, RestoreProjectErrors, RestoreProjectResponses, ResumeScanCampaignData, ResumeScanCampaignErrors, ResumeScanCampaignResponses, RetryScanCampaignFailuresData, RetryScanCampaignFailuresErrors, RetryScanCampaignFailuresResponses, RetrySelectedScanCampaignFailuresData, RetrySelectedScanCampaignFailuresErrors, RetrySelectedScanCampaignFailuresResponses, StartScanCampaignData, StartScanCampaignErrors, StartScanCampaignResponses, StreamJobEventsData, StreamJobEventsErrors, StreamJobEventsResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateScanCampaignData, UpdateScanCampaignErrors, UpdateScanCampaignResponses, VerifyEmailData, VerifyEmailErrors, VerifyEmailResponses, ViewScanArtifactScreenshotData, ViewScanArtifactScreenshotErrors, ViewScanArtifactScreenshotResponses, WarmUpConfiguredModelData, WarmUpConfiguredModelErrors, WarmUpConfiguredModelResponses } from './types.gen';
+import type { AddScanCampaignTargetData, AddScanCampaignTargetErrors, AddScanCampaignTargetResponses, ArchiveProjectData, ArchiveProjectErrors, ArchiveProjectResponses, CancelScanCampaignData, CancelScanCampaignErrors, CancelScanCampaignResponses, CommitScanTargetImportData, CommitScanTargetImportErrors, CommitScanTargetImportResponses, CreateDatasetData, CreateDatasetErrors, CreateDatasetResponses, CreateDatasetVersionData, CreateDatasetVersionErrors, CreateDatasetVersionResponses, CreateEmbeddingRunData, CreateEmbeddingRunErrors, CreateEmbeddingRunResponses, CreateProjectData, CreateProjectErrors, CreateProjectResponses, CreateScanArtifactReadUrlData, CreateScanArtifactReadUrlErrors, CreateScanArtifactReadUrlResponses, CreateScanCampaignData, CreateScanCampaignErrors, CreateScanCampaignResponses, CuratePageProfileData, CuratePageProfileErrors, CuratePageProfileResponses, CurateSectionPatternData, CurateSectionPatternErrors, CurateSectionPatternResponses, CurateWebsiteProfileData, CurateWebsiteProfileErrors, CurateWebsiteProfileResponses, DeleteDatasetData, DeleteDatasetErrors, DeleteDatasetResponses, DeleteDraftScanCampaignData, DeleteDraftScanCampaignErrors, DeleteDraftScanCampaignResponses, DeleteDraftScanCampaignTargetData, DeleteDraftScanCampaignTargetErrors, DeleteDraftScanCampaignTargetResponses, ExportScanTargetImportErrorsData, ExportScanTargetImportErrorsErrors, ExportScanTargetImportErrorsResponses, GetApiVersionData, GetApiVersionErrors, GetApiVersionResponses, GetConfiguredModelReadinessData, GetConfiguredModelReadinessErrors, GetConfiguredModelReadinessResponses, GetCurrentUserData, GetCurrentUserErrors, GetCurrentUserResponses, GetDatasetData, GetDatasetErrors, GetDatasetResponses, GetDatasetVersionData, GetDatasetVersionErrors, GetDatasetVersionResponses, GetDependencyHealthData, GetDependencyHealthErrors, GetDependencyHealthResponses, GetEmbeddingRunData, GetEmbeddingRunErrors, GetEmbeddingRunResponses, GetLivenessData, GetLivenessErrors, GetLivenessResponses, GetPageProfileData, GetPageProfileErrors, GetPageProfileResponses, GetProjectData, GetProjectErrors, GetProjectResponses, GetReadinessData, GetReadinessErrors, GetReadinessResponses, GetScanCampaignData, GetScanCampaignErrors, GetScanCampaignPageData, GetScanCampaignPageErrors, GetScanCampaignPageResponses, GetScanCampaignResponses, GetScanCampaignSummaryData, GetScanCampaignSummaryErrors, GetScanCampaignSummaryResponses, GetScanCampaignTargetSummaryData, GetScanCampaignTargetSummaryErrors, GetScanCampaignTargetSummaryResponses, GetScanTargetImportData, GetScanTargetImportErrors, GetScanTargetImportResponses, GetSectionPatternData, GetSectionPatternErrors, GetSectionPatternResponses, GetVectorCollectionStatisticsData, GetVectorCollectionStatisticsErrors, GetVectorCollectionStatisticsResponses, GetWebsiteProfileData, GetWebsiteProfileErrors, GetWebsiteProfileResponses, ImportScanCampaignTargetsData, ImportScanCampaignTargetsErrors, ImportScanCampaignTargetsResponses, ListAnalysisRunsData, ListAnalysisRunsErrors, ListAnalysisRunsResponses, ListDatasetItemsData, ListDatasetItemsErrors, ListDatasetItemsResponses, ListDatasetsData, ListDatasetsErrors, ListDatasetsResponses, ListDatasetVersionsData, ListDatasetVersionsErrors, ListDatasetVersionsResponses, ListEmbeddingRunFailuresData, ListEmbeddingRunFailuresErrors, ListEmbeddingRunFailuresResponses, ListEmbeddingRunsData, ListEmbeddingRunsErrors, ListEmbeddingRunsResponses, ListPageProfilesData, ListPageProfilesErrors, ListPageProfilesResponses, ListProjectsData, ListProjectsErrors, ListProjectsResponses, ListScanCampaignActivityData, ListScanCampaignActivityErrors, ListScanCampaignActivityResponses, ListScanCampaignDuplicateGroupsData, ListScanCampaignDuplicateGroupsErrors, ListScanCampaignDuplicateGroupsResponses, ListScanCampaignFailuresData, ListScanCampaignFailuresErrors, ListScanCampaignFailuresResponses, ListScanCampaignPagesData, ListScanCampaignPagesErrors, ListScanCampaignPagesResponses, ListScanCampaignRepresentativeDecisionsData, ListScanCampaignRepresentativeDecisionsErrors, ListScanCampaignRepresentativeDecisionsResponses, ListScanCampaignsData, ListScanCampaignsErrors, ListScanCampaignsResponses, ListScanCampaignTargetsData, ListScanCampaignTargetsErrors, ListScanCampaignTargetsResponses, ListScanPageArtifactsData, ListScanPageArtifactsErrors, ListScanPageArtifactsResponses, ListSectionPatternsData, ListSectionPatternsErrors, ListSectionPatternsResponses, ListWebsiteProfilesData, ListWebsiteProfilesErrors, ListWebsiteProfilesResponses, LoginData, LoginErrors, LoginResponses, LogoutAllData, LogoutAllErrors, LogoutAllResponses, LogoutData, LogoutErrors, LogoutResponses, OverrideScanCampaignPageRepresentativeData, OverrideScanCampaignPageRepresentativeErrors, OverrideScanCampaignPageRepresentativeResponses, PauseScanCampaignData, PauseScanCampaignErrors, PauseScanCampaignResponses, PollJobEventsData, PollJobEventsErrors, PollJobEventsResponses, RefreshAccessTokenData, RefreshAccessTokenErrors, RefreshAccessTokenResponses, RegisterData, RegisterErrors, RegisterResponses, RequestPasswordResetData, RequestPasswordResetErrors, RequestPasswordResetResponses, RequestScanArtifactRemovalData, RequestScanArtifactRemovalErrors, RequestScanArtifactRemovalResponses, ResetPasswordData, ResetPasswordErrors, ResetPasswordResponses, RestoreProjectData, RestoreProjectErrors, RestoreProjectResponses, ResumeScanCampaignData, ResumeScanCampaignErrors, ResumeScanCampaignResponses, RetryScanCampaignFailuresData, RetryScanCampaignFailuresErrors, RetryScanCampaignFailuresResponses, RetrySelectedScanCampaignFailuresData, RetrySelectedScanCampaignFailuresErrors, RetrySelectedScanCampaignFailuresResponses, SealDatasetVersionData, SealDatasetVersionErrors, SealDatasetVersionResponses, StartScanCampaignData, StartScanCampaignErrors, StartScanCampaignResponses, StreamJobEventsData, StreamJobEventsErrors, StreamJobEventsResponses, UpdateDatasetData, UpdateDatasetErrors, UpdateDatasetResponses, UpdateDatasetVersionData, UpdateDatasetVersionErrors, UpdateDatasetVersionResponses, UpdateProjectData, UpdateProjectErrors, UpdateProjectResponses, UpdateScanCampaignData, UpdateScanCampaignErrors, UpdateScanCampaignResponses, VerifyEmailData, VerifyEmailErrors, VerifyEmailResponses, ViewScanArtifactScreenshotData, ViewScanArtifactScreenshotErrors, ViewScanArtifactScreenshotResponses, WarmUpConfiguredModelData, WarmUpConfiguredModelErrors, WarmUpConfiguredModelResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -428,6 +428,150 @@ export class AnalysisProfiles {
         return (options.client ?? client).patch<CurateWebsiteProfileResponses, CurateWebsiteProfileErrors, ThrowOnError>({
             security: [{ scheme: 'bearer', type: 'http' }],
             url: '/api/v1/projects/{project_id}/analysis/website-profiles/{profile_id}/curation',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+}
+
+@Injectable({ providedIn: 'root' })
+export class Datasets {
+    /**
+     * List Datasets
+     */
+    public listDatasets<ThrowOnError extends boolean = false>(options: Options<ListDatasetsData, ThrowOnError>): RequestResult<ListDatasetsResponses, ListDatasetsErrors, ThrowOnError> {
+        return (options.client ?? client).get<ListDatasetsResponses, ListDatasetsErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/datasets',
+            ...options
+        });
+    }
+    
+    /**
+     * Create Dataset
+     */
+    public createDataset<ThrowOnError extends boolean = false>(options: Options<CreateDatasetData, ThrowOnError>): RequestResult<CreateDatasetResponses, CreateDatasetErrors, ThrowOnError> {
+        return (options.client ?? client).post<CreateDatasetResponses, CreateDatasetErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/datasets',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Delete Dataset
+     */
+    public deleteDataset<ThrowOnError extends boolean = false>(options: Options<DeleteDatasetData, ThrowOnError>): RequestResult<DeleteDatasetResponses, DeleteDatasetErrors, ThrowOnError> {
+        return (options.client ?? client).delete<DeleteDatasetResponses, DeleteDatasetErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/datasets/{dataset_id}',
+            ...options
+        });
+    }
+    
+    /**
+     * Get Dataset
+     */
+    public getDataset<ThrowOnError extends boolean = false>(options: Options<GetDatasetData, ThrowOnError>): RequestResult<GetDatasetResponses, GetDatasetErrors, ThrowOnError> {
+        return (options.client ?? client).get<GetDatasetResponses, GetDatasetErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/datasets/{dataset_id}',
+            ...options
+        });
+    }
+    
+    /**
+     * Update Dataset
+     */
+    public updateDataset<ThrowOnError extends boolean = false>(options: Options<UpdateDatasetData, ThrowOnError>): RequestResult<UpdateDatasetResponses, UpdateDatasetErrors, ThrowOnError> {
+        return (options.client ?? client).patch<UpdateDatasetResponses, UpdateDatasetErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/datasets/{dataset_id}',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * List Dataset Versions
+     */
+    public listDatasetVersions<ThrowOnError extends boolean = false>(options: Options<ListDatasetVersionsData, ThrowOnError>): RequestResult<ListDatasetVersionsResponses, ListDatasetVersionsErrors, ThrowOnError> {
+        return (options.client ?? client).get<ListDatasetVersionsResponses, ListDatasetVersionsErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/datasets/{dataset_id}/versions',
+            ...options
+        });
+    }
+    
+    /**
+     * Create Dataset Version
+     */
+    public createDatasetVersion<ThrowOnError extends boolean = false>(options: Options<CreateDatasetVersionData, ThrowOnError>): RequestResult<CreateDatasetVersionResponses, CreateDatasetVersionErrors, ThrowOnError> {
+        return (options.client ?? client).post<CreateDatasetVersionResponses, CreateDatasetVersionErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/datasets/{dataset_id}/versions',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Get Dataset Version
+     */
+    public getDatasetVersion<ThrowOnError extends boolean = false>(options: Options<GetDatasetVersionData, ThrowOnError>): RequestResult<GetDatasetVersionResponses, GetDatasetVersionErrors, ThrowOnError> {
+        return (options.client ?? client).get<GetDatasetVersionResponses, GetDatasetVersionErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/datasets/{dataset_id}/versions/{version_id}',
+            ...options
+        });
+    }
+    
+    /**
+     * Update Dataset Version
+     */
+    public updateDatasetVersion<ThrowOnError extends boolean = false>(options: Options<UpdateDatasetVersionData, ThrowOnError>): RequestResult<UpdateDatasetVersionResponses, UpdateDatasetVersionErrors, ThrowOnError> {
+        return (options.client ?? client).patch<UpdateDatasetVersionResponses, UpdateDatasetVersionErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/datasets/{dataset_id}/versions/{version_id}',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * List Dataset Items
+     */
+    public listDatasetItems<ThrowOnError extends boolean = false>(options: Options<ListDatasetItemsData, ThrowOnError>): RequestResult<ListDatasetItemsResponses, ListDatasetItemsErrors, ThrowOnError> {
+        return (options.client ?? client).get<ListDatasetItemsResponses, ListDatasetItemsErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/datasets/{dataset_id}/versions/{version_id}/items',
+            ...options
+        });
+    }
+    
+    /**
+     * Seal Dataset Version
+     */
+    public sealDatasetVersion<ThrowOnError extends boolean = false>(options: Options<SealDatasetVersionData, ThrowOnError>): RequestResult<SealDatasetVersionResponses, SealDatasetVersionErrors, ThrowOnError> {
+        return (options.client ?? client).post<SealDatasetVersionResponses, SealDatasetVersionErrors, ThrowOnError>({
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/projects/{project_id}/datasets/{dataset_id}/versions/{version_id}/seal',
             ...options,
             headers: {
                 'Content-Type': 'application/json',

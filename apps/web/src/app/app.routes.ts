@@ -91,7 +91,14 @@ export const routes: Routes = [
             (module) => module.ScanTargetImportPageComponent,
           ),
       },
-      featureRoute('datasets', 'Datasets', 'Review governed datasets and their provenance.'),
+      {
+        path: 'datasets',
+        title: 'Datasets',
+        loadComponent: () =>
+          import('./features/datasets/dataset-list-page.component').then(
+            (module) => module.DatasetListPageComponent,
+          ),
+      },
       featureRoute('models', 'Models', 'Review configured inference and embedding models.'),
       featureRoute(
         'generator',
@@ -231,7 +238,30 @@ function projectRoutes(): Routes {
             { path: '', pathMatch: 'full', redirectTo: 'overview' },
           ],
         },
-        section('datasets', 'Datasets', 'Project datasets will appear here.'),
+        {
+          path: 'datasets',
+          title: 'Datasets',
+          loadComponent: () =>
+            import('./features/datasets/dataset-list-page.component').then(
+              (module) => module.DatasetListPageComponent,
+            ),
+        },
+        {
+          path: 'datasets/:datasetId/versions/:versionId',
+          title: 'Dataset version',
+          loadComponent: () =>
+            import('./features/datasets/dataset-version-detail.component').then(
+              (module) => module.DatasetVersionDetailComponent,
+            ),
+        },
+        {
+          path: 'datasets/:datasetId',
+          title: 'Dataset detail',
+          loadComponent: () =>
+            import('./features/datasets/dataset-detail-shell.component').then(
+              (module) => module.DatasetDetailShellComponent,
+            ),
+        },
         {
           path: 'analysis',
           title: 'Analysis profiles',

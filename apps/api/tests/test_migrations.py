@@ -46,6 +46,11 @@ def test_initial_migration_renders_postgresql_upgrade_sql(
     assert "CREATE TABLE embedding_runs" in upgrade_sql
     assert "CREATE TABLE section_pattern_embeddings" in upgrade_sql
     assert "CREATE TABLE embedding_index_failures" in upgrade_sql
+    assert "CREATE TABLE datasets" in upgrade_sql
+    assert "CREATE TABLE dataset_versions" in upgrade_sql
+    assert "CREATE TABLE dataset_items" in upgrade_sql
+    assert "CREATE TABLE dataset_quality_reports" in upgrade_sql
+    assert "CREATE FUNCTION prevent_sealed_dataset_version_mutation" in upgrade_sql
     assert "CREATE TABLE scan_target_imports" in upgrade_sql
     assert "CREATE TABLE scan_target_import_rows" in upgrade_sql
     assert "CREATE TABLE crawl_policy_records" in upgrade_sql

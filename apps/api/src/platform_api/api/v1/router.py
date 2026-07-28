@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from platform_api.api.v1.analysis_profiles import router as analysis_profiles_router
 from platform_api.api.v1.auth import router as auth_router
+from platform_api.api.v1.datasets import router as datasets_router
 from platform_api.api.v1.job_events import router as job_events_router
 from platform_api.api.v1.models import router as models_router
 from platform_api.api.v1.projects import router as projects_router
@@ -14,6 +15,7 @@ from platform_api.api.v1.vector_collections import router as vector_collections_
 router = APIRouter()
 router.include_router(analysis_profiles_router, tags=["analysis-profiles"])
 router.include_router(auth_router, tags=["auth"])
+router.include_router(datasets_router, tags=["datasets"])
 router.include_router(job_events_router, tags=["job-events"])
 router.include_router(models_router, tags=["models"])
 router.include_router(projects_router, tags=["projects"])

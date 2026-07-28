@@ -1072,6 +1072,414 @@ export type CurationRequest = {
 };
 
 /**
+ * DatasetCreateRequest
+ */
+export type DatasetCreateRequest = {
+    /**
+     * Category Filters
+     */
+    category_filters?: Array<string>;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Item Types
+     */
+    item_types?: Array<'section_pattern' | 'full_site_spec'>;
+    /**
+     * Language Filters
+     */
+    language_filters?: Array<string>;
+    /**
+     * Minimum Confidence
+     */
+    minimum_confidence?: number;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Provenance Requirements
+     */
+    provenance_requirements?: Array<'authorized' | 'restricted'>;
+    /**
+     * Purpose
+     */
+    purpose: string;
+    /**
+     * Require Approved
+     */
+    require_approved?: boolean;
+    /**
+     * Source Campaign Filters
+     */
+    source_campaign_filters?: Array<string>;
+};
+
+/**
+ * DatasetItemResponse
+ */
+export type DatasetItemResponse = {
+    /**
+     * Analyzer Version
+     */
+    analyzer_version: string;
+    /**
+     * Availability Status
+     */
+    availability_status: 'active' | 'removed' | 'suppressed';
+    /**
+     * Category
+     */
+    category: string;
+    /**
+     * Confidence
+     */
+    confidence: number;
+    /**
+     * Content Sha256
+     */
+    content_sha256: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Dataset Version Id
+     */
+    dataset_version_id: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Item Type
+     */
+    item_type: 'section_pattern' | 'full_site_spec';
+    /**
+     * Language
+     */
+    language: string;
+    /**
+     * Schema Version
+     */
+    schema_version: number;
+    /**
+     * Source Campaign Id
+     */
+    source_campaign_id: string;
+    /**
+     * Source Domain
+     */
+    source_domain: string;
+    /**
+     * Source Page Id
+     */
+    source_page_id: string | null;
+    /**
+     * Source Record Id
+     */
+    source_record_id: string;
+    /**
+     * Source Website Id
+     */
+    source_website_id: string;
+    /**
+     * Split
+     */
+    split: 'train' | 'validation' | 'test';
+};
+
+/**
+ * DatasetQualityReportResponse
+ */
+export type DatasetQualityReportResponse = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Dataset Version Id
+     */
+    dataset_version_id: string;
+    /**
+     * Findings
+     */
+    findings: Array<{
+        [key: string]: JsonValueOutput;
+    }>;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Item Count
+     */
+    item_count: number;
+    /**
+     * Report Version
+     */
+    report_version: number;
+    /**
+     * Statistics
+     */
+    statistics: {
+        [key: string]: JsonValueOutput;
+    };
+    /**
+     * Status
+     */
+    status: 'passed' | 'failed';
+};
+
+/**
+ * DatasetResponse
+ */
+export type DatasetResponse = {
+    /**
+     * Category Filters
+     */
+    category_filters?: Array<string>;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Created By User Id
+     */
+    created_by_user_id: string | null;
+    /**
+     * Description
+     */
+    description: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Item Types
+     */
+    item_types?: Array<'section_pattern' | 'full_site_spec'>;
+    /**
+     * Language Filters
+     */
+    language_filters?: Array<string>;
+    /**
+     * Minimum Confidence
+     */
+    minimum_confidence?: number;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Project Id
+     */
+    project_id: string;
+    /**
+     * Provenance Requirements
+     */
+    provenance_requirements?: Array<'authorized' | 'restricted'>;
+    /**
+     * Purpose
+     */
+    purpose: string;
+    /**
+     * Require Approved
+     */
+    require_approved?: boolean;
+    /**
+     * Source Campaign Filters
+     */
+    source_campaign_filters?: Array<string>;
+    /**
+     * Status
+     */
+    status: 'active' | 'archived';
+    /**
+     * Updated At
+     */
+    updated_at: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * DatasetUpdateRequest
+ */
+export type DatasetUpdateRequest = {
+    /**
+     * Category Filters
+     */
+    category_filters?: Array<string> | null;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Item Types
+     */
+    item_types?: Array<'section_pattern' | 'full_site_spec'> | null;
+    /**
+     * Language Filters
+     */
+    language_filters?: Array<string> | null;
+    /**
+     * Minimum Confidence
+     */
+    minimum_confidence?: number | null;
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Provenance Requirements
+     */
+    provenance_requirements?: Array<'authorized' | 'restricted'> | null;
+    /**
+     * Purpose
+     */
+    purpose?: string | null;
+    /**
+     * Require Approved
+     */
+    require_approved?: boolean | null;
+    /**
+     * Source Campaign Filters
+     */
+    source_campaign_filters?: Array<string> | null;
+    /**
+     * Status
+     */
+    status?: 'active' | 'archived' | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * DatasetVersionCreateRequest
+ */
+export type DatasetVersionCreateRequest = {
+    /**
+     * Embedding Version
+     */
+    embedding_version?: string | null;
+    /**
+     * Schema Version
+     */
+    schema_version?: number;
+    selection_policy?: SelectionPolicy | null;
+};
+
+/**
+ * DatasetVersionDetailResponse
+ */
+export type DatasetVersionDetailResponse = {
+    dataset: DatasetResponse;
+    quality_report: DatasetQualityReportResponse | null;
+    version: DatasetVersionResponse;
+};
+
+/**
+ * DatasetVersionResponse
+ */
+export type DatasetVersionResponse = {
+    /**
+     * Analyzer Versions
+     */
+    analyzer_versions: Array<string>;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Created By User Id
+     */
+    created_by_user_id: string | null;
+    /**
+     * Dataset Id
+     */
+    dataset_id: string;
+    /**
+     * Embedding Version
+     */
+    embedding_version: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Manifest Sha256
+     */
+    manifest_sha256: string | null;
+    /**
+     * Schema Version
+     */
+    schema_version: number;
+    /**
+     * Sealed At
+     */
+    sealed_at: string | null;
+    /**
+     * Sealed By User Id
+     */
+    sealed_by_user_id: string | null;
+    selection_config: SelectionPolicy;
+    /**
+     * Selection Manifest
+     */
+    selection_manifest: {
+        [key: string]: JsonValueOutput;
+    };
+    /**
+     * Statistics
+     */
+    statistics: {
+        [key: string]: JsonValueOutput;
+    };
+    /**
+     * Status
+     */
+    status: 'draft' | 'sealed';
+    /**
+     * Updated At
+     */
+    updated_at: string;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Version Number
+     */
+    version_number: number;
+};
+
+/**
+ * DatasetVersionUpdateRequest
+ */
+export type DatasetVersionUpdateRequest = {
+    /**
+     * Embedding Version
+     */
+    embedding_version?: string | null;
+    /**
+     * Schema Version
+     */
+    schema_version?: number | null;
+    selection_policy?: SelectionPolicy | null;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * DeduplicationStatistics
  */
 export type DeduplicationStatistics = {
@@ -1825,6 +2233,42 @@ export type PageResponseCrawlPageWithScansResponse = {
      * Items
      */
     items: Array<CrawlPageWithScansResponse>;
+    meta?: ResponseMeta;
+    pagination: PaginationMeta;
+};
+
+/**
+ * PageResponse[DatasetItemResponse]
+ */
+export type PageResponseDatasetItemResponse = {
+    /**
+     * Items
+     */
+    items: Array<DatasetItemResponse>;
+    meta?: ResponseMeta;
+    pagination: PaginationMeta;
+};
+
+/**
+ * PageResponse[DatasetResponse]
+ */
+export type PageResponseDatasetResponse = {
+    /**
+     * Items
+     */
+    items: Array<DatasetResponse>;
+    meta?: ResponseMeta;
+    pagination: PaginationMeta;
+};
+
+/**
+ * PageResponse[DatasetVersionResponse]
+ */
+export type PageResponseDatasetVersionResponse = {
+    /**
+     * Items
+     */
+    items: Array<DatasetVersionResponse>;
     meta?: ResponseMeta;
     pagination: PaginationMeta;
 };
@@ -3203,6 +3647,16 @@ export type ScanTimeoutLimits = {
 };
 
 /**
+ * SealDatasetVersionRequest
+ */
+export type SealDatasetVersionRequest = {
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
  * SectionPattern
  *
  * Ordered abstract page section using only controlled pattern vocabularies.
@@ -3388,6 +3842,40 @@ export type SelectedFailureRetryRequest = {
      * Version
      */
     version: number;
+};
+
+/**
+ * SelectionPolicy
+ */
+export type SelectionPolicy = {
+    /**
+     * Category Filters
+     */
+    category_filters?: Array<string>;
+    /**
+     * Item Types
+     */
+    item_types?: Array<'section_pattern' | 'full_site_spec'>;
+    /**
+     * Language Filters
+     */
+    language_filters?: Array<string>;
+    /**
+     * Minimum Confidence
+     */
+    minimum_confidence?: number;
+    /**
+     * Provenance Requirements
+     */
+    provenance_requirements?: Array<'authorized' | 'restricted'>;
+    /**
+     * Require Approved
+     */
+    require_approved?: boolean;
+    /**
+     * Source Campaign Filters
+     */
+    source_campaign_filters?: Array<string>;
 };
 
 /**
@@ -5080,6 +5568,576 @@ export type ArchiveProjectResponses = {
 };
 
 export type ArchiveProjectResponse = ArchiveProjectResponses[keyof ArchiveProjectResponses];
+
+export type ListDatasetsData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+    };
+    query?: {
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/projects/{project_id}/datasets';
+};
+
+export type ListDatasetsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type ListDatasetsError = ListDatasetsErrors[keyof ListDatasetsErrors];
+
+export type ListDatasetsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageResponseDatasetResponse;
+};
+
+export type ListDatasetsResponse = ListDatasetsResponses[keyof ListDatasetsResponses];
+
+export type CreateDatasetData = {
+    body: DatasetCreateRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/datasets';
+};
+
+export type CreateDatasetErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type CreateDatasetError = CreateDatasetErrors[keyof CreateDatasetErrors];
+
+export type CreateDatasetResponses = {
+    /**
+     * Successful Response
+     */
+    201: DatasetResponse;
+};
+
+export type CreateDatasetResponse = CreateDatasetResponses[keyof CreateDatasetResponses];
+
+export type DeleteDatasetData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Dataset Id
+         */
+        dataset_id: string;
+    };
+    query: {
+        /**
+         * Version
+         */
+        version: number;
+    };
+    url: '/api/v1/projects/{project_id}/datasets/{dataset_id}';
+};
+
+export type DeleteDatasetErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type DeleteDatasetError = DeleteDatasetErrors[keyof DeleteDatasetErrors];
+
+export type DeleteDatasetResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteDatasetResponse = DeleteDatasetResponses[keyof DeleteDatasetResponses];
+
+export type GetDatasetData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Dataset Id
+         */
+        dataset_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/datasets/{dataset_id}';
+};
+
+export type GetDatasetErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type GetDatasetError = GetDatasetErrors[keyof GetDatasetErrors];
+
+export type GetDatasetResponses = {
+    /**
+     * Successful Response
+     */
+    200: DatasetResponse;
+};
+
+export type GetDatasetResponse = GetDatasetResponses[keyof GetDatasetResponses];
+
+export type UpdateDatasetData = {
+    body: DatasetUpdateRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Dataset Id
+         */
+        dataset_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/datasets/{dataset_id}';
+};
+
+export type UpdateDatasetErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type UpdateDatasetError = UpdateDatasetErrors[keyof UpdateDatasetErrors];
+
+export type UpdateDatasetResponses = {
+    /**
+     * Successful Response
+     */
+    200: DatasetResponse;
+};
+
+export type UpdateDatasetResponse = UpdateDatasetResponses[keyof UpdateDatasetResponses];
+
+export type ListDatasetVersionsData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Dataset Id
+         */
+        dataset_id: string;
+    };
+    query?: {
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/projects/{project_id}/datasets/{dataset_id}/versions';
+};
+
+export type ListDatasetVersionsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type ListDatasetVersionsError = ListDatasetVersionsErrors[keyof ListDatasetVersionsErrors];
+
+export type ListDatasetVersionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageResponseDatasetVersionResponse;
+};
+
+export type ListDatasetVersionsResponse = ListDatasetVersionsResponses[keyof ListDatasetVersionsResponses];
+
+export type CreateDatasetVersionData = {
+    body: DatasetVersionCreateRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Dataset Id
+         */
+        dataset_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/datasets/{dataset_id}/versions';
+};
+
+export type CreateDatasetVersionErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type CreateDatasetVersionError = CreateDatasetVersionErrors[keyof CreateDatasetVersionErrors];
+
+export type CreateDatasetVersionResponses = {
+    /**
+     * Successful Response
+     */
+    201: DatasetVersionResponse;
+};
+
+export type CreateDatasetVersionResponse = CreateDatasetVersionResponses[keyof CreateDatasetVersionResponses];
+
+export type GetDatasetVersionData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Dataset Id
+         */
+        dataset_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/datasets/{dataset_id}/versions/{version_id}';
+};
+
+export type GetDatasetVersionErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type GetDatasetVersionError = GetDatasetVersionErrors[keyof GetDatasetVersionErrors];
+
+export type GetDatasetVersionResponses = {
+    /**
+     * Successful Response
+     */
+    200: DatasetVersionDetailResponse;
+};
+
+export type GetDatasetVersionResponse = GetDatasetVersionResponses[keyof GetDatasetVersionResponses];
+
+export type UpdateDatasetVersionData = {
+    body: DatasetVersionUpdateRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Dataset Id
+         */
+        dataset_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/datasets/{dataset_id}/versions/{version_id}';
+};
+
+export type UpdateDatasetVersionErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type UpdateDatasetVersionError = UpdateDatasetVersionErrors[keyof UpdateDatasetVersionErrors];
+
+export type UpdateDatasetVersionResponses = {
+    /**
+     * Successful Response
+     */
+    200: DatasetVersionResponse;
+};
+
+export type UpdateDatasetVersionResponse = UpdateDatasetVersionResponses[keyof UpdateDatasetVersionResponses];
+
+export type ListDatasetItemsData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Dataset Id
+         */
+        dataset_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: {
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/projects/{project_id}/datasets/{dataset_id}/versions/{version_id}/items';
+};
+
+export type ListDatasetItemsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type ListDatasetItemsError = ListDatasetItemsErrors[keyof ListDatasetItemsErrors];
+
+export type ListDatasetItemsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageResponseDatasetItemResponse;
+};
+
+export type ListDatasetItemsResponse = ListDatasetItemsResponses[keyof ListDatasetItemsResponses];
+
+export type SealDatasetVersionData = {
+    body: SealDatasetVersionRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Dataset Id
+         */
+        dataset_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/datasets/{dataset_id}/versions/{version_id}/seal';
+};
+
+export type SealDatasetVersionErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type SealDatasetVersionError = SealDatasetVersionErrors[keyof SealDatasetVersionErrors];
+
+export type SealDatasetVersionResponses = {
+    /**
+     * Successful Response
+     */
+    200: DatasetVersionDetailResponse;
+};
+
+export type SealDatasetVersionResponse = SealDatasetVersionResponses[keyof SealDatasetVersionResponses];
 
 export type StreamJobEventsData = {
     body?: never;

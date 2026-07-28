@@ -16,6 +16,7 @@ from sqlalchemy import (
     Integer,
     String,
     UniqueConstraint,
+    func,
     text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -25,6 +26,7 @@ from platform_api.persistence.base import (
     OptimisticVersionMixin,
     TimestampMixin,
     UUIDPrimaryKeyMixin,
+    utc_now,
 )
 from platform_api.persistence.json import JsonValue, SafeJSONB
 
@@ -968,6 +970,163 @@ class SectionPattern(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin
     )
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     review_note: Mapped[str | None] = mapped_column(String(500))
+
+
+class Dataset(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base):
+    """Project-owned governed dataset definition and default selection policy."""
+
+    __tablename__ = "datasets"
+    __table_args__ = (
+        CheckConstraint("status IN ('active', 'archived')", name="status_allowed"),
+        CheckConstraint("minimum_confidence BETWEEN 0 AND 1", name="confidence_valid"),
+        Index("ix_datasets_project_updated", "project_id", "updated_at"),
+        UniqueConstraint("project_id", "name"),
+    )
+
+    project_id: Mapped[UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(String(2_000))
+    purpose: Mapped[str] = mapped_column(String(500), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="active")
+    source_campaign_filters: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+    )
+    category_filters: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+    )
+    language_filters: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+    )
+    item_types: Mapped[JsonValue] = mapped_column(
+        SafeJSONB,
+        nullable=False,
+        default=lambda: ["section_pattern"],
+        server_default=text("'[\"section_pattern\"]'::jsonb"),
+    )
+    minimum_confidence: Mapped[float] = mapped_column(Float, nullable=False, default=0.7)
+    require_approved: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    provenance_requirements: Mapped[JsonValue] = mapped_column(
+        SafeJSONB,
+        nullable=False,
+        default=lambda: ["authorized"],
+        server_default=text("'[\"authorized\"]'::jsonb"),
+    )
+    created_by_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+
+
+class DatasetVersion(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base):
+    """Editable draft or immutable sealed dataset selection."""
+
+    __tablename__ = "dataset_versions"
+    __table_args__ = (
+        CheckConstraint("status IN ('draft', 'sealed')", name="status_allowed"),
+        CheckConstraint("version_number >= 1", name="version_number_positive"),
+        CheckConstraint("schema_version >= 1", name="schema_version_positive"),
+        UniqueConstraint("dataset_id", "version_number"),
+        Index("ix_dataset_versions_dataset_created", "dataset_id", "created_at"),
+    )
+
+    dataset_id: Mapped[UUID] = mapped_column(
+        ForeignKey("datasets.id", ondelete="CASCADE"), nullable=False
+    )
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="draft")
+    version_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    selection_config: Mapped[JsonValue] = mapped_column(SafeJSONB, nullable=False)
+    selection_manifest: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")
+    )
+    manifest_sha256: Mapped[str | None] = mapped_column(String(64))
+    schema_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    embedding_version: Mapped[str | None] = mapped_column(String(240))
+    analyzer_versions: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+    )
+    statistics: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")
+    )
+    created_by_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    sealed_by_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    sealed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class DatasetItem(UUIDPrimaryKeyMixin, Base):
+    """Immutable abstract training item with audit-only source references."""
+
+    __tablename__ = "dataset_items"
+    __table_args__ = (
+        CheckConstraint(
+            "item_type IN ('section_pattern', 'full_site_spec')", name="item_type_allowed"
+        ),
+        CheckConstraint("split IN ('train', 'validation', 'test')", name="split_allowed"),
+        CheckConstraint(
+            "availability_status IN ('active', 'removed', 'suppressed')",
+            name="availability_status_allowed",
+        ),
+        CheckConstraint("confidence BETWEEN 0 AND 1", name="confidence_valid"),
+        UniqueConstraint("dataset_version_id", "item_type", "source_record_id"),
+        Index("ix_dataset_items_version_split", "dataset_version_id", "split"),
+        Index("ix_dataset_items_version_domain", "dataset_version_id", "source_domain"),
+    )
+
+    dataset_version_id: Mapped[UUID] = mapped_column(
+        ForeignKey("dataset_versions.id", ondelete="CASCADE"), nullable=False
+    )
+    item_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    source_record_id: Mapped[UUID] = mapped_column(nullable=False)
+    source_campaign_id: Mapped[UUID] = mapped_column(
+        ForeignKey("scan_campaigns.id", ondelete="RESTRICT"), nullable=False
+    )
+    source_website_id: Mapped[UUID] = mapped_column(
+        ForeignKey("scan_targets.id", ondelete="RESTRICT"), nullable=False
+    )
+    source_page_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("crawl_pages.id", ondelete="RESTRICT")
+    )
+    source_domain: Mapped[str] = mapped_column(String(253), nullable=False)
+    split: Mapped[str] = mapped_column(String(16), nullable=False)
+    category: Mapped[str] = mapped_column(String(64), nullable=False)
+    language: Mapped[str] = mapped_column(String(35), nullable=False)
+    confidence: Mapped[float] = mapped_column(Float, nullable=False)
+    schema_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    analyzer_version: Mapped[str] = mapped_column(String(100), nullable=False)
+    content_snapshot: Mapped[JsonValue] = mapped_column(SafeJSONB, nullable=False)
+    source_reference: Mapped[JsonValue] = mapped_column(SafeJSONB, nullable=False)
+    content_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    availability_status: Mapped[str] = mapped_column(String(16), nullable=False, default="active")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now, server_default=func.now()
+    )
+
+
+class DatasetQualityReport(UUIDPrimaryKeyMixin, Base):
+    """Immutable quality and leakage report produced when a version is sealed."""
+
+    __tablename__ = "dataset_quality_reports"
+    __table_args__ = (
+        CheckConstraint("status IN ('passed', 'failed')", name="status_allowed"),
+        CheckConstraint("item_count >= 0", name="item_count_nonnegative"),
+        Index("ix_dataset_quality_reports_version_created", "dataset_version_id", "created_at"),
+    )
+
+    dataset_version_id: Mapped[UUID] = mapped_column(
+        ForeignKey("dataset_versions.id", ondelete="CASCADE"), nullable=False
+    )
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    item_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    statistics: Mapped[JsonValue] = mapped_column(SafeJSONB, nullable=False)
+    findings: Mapped[JsonValue] = mapped_column(SafeJSONB, nullable=False)
+    report_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now, server_default=func.now()
+    )
 
 
 class EmbeddingRun(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base):

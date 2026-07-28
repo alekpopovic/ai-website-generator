@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from collections.abc import Iterator
 from datetime import UTC, datetime
+from typing import cast
 from urllib.parse import urlsplit
 
 import pytest
@@ -16,6 +17,8 @@ from platform_api.persistence.models import (
     AuditLog,
     CrawlPage,
     CrawlPolicyRecord,
+    Dataset,
+    DatasetVersion,
     Project,
     ScanCampaign,
     ScanTarget,
@@ -114,6 +117,72 @@ async def test_transaction_rolls_back_on_failure(migrated_database: str) -> None
                 await session.scalar(select(User).where(User.email == "rollback@local.test"))
                 is None
             )
+    finally:
+        await manager.close()
+
+
+@pytest.mark.anyio
+async def test_dataset_draft_policy_persists_in_postgresql(migrated_database: str) -> None:
+    """Real PostgreSQL preserves version policy JSON and ownership relationships."""
+    manager = DatabaseManager(DatabaseSettings(url=SecretStr(migrated_database)))
+    try:
+        async with manager.transaction() as session:
+            user = User(email="dataset-integration@local.test", display_name="Dataset")
+            session.add(user)
+            await session.flush()
+            project = Project(
+                owner_id=user.id,
+                name="Dataset integration",
+                slug="dataset-integration",
+                default_language="en",
+                status="draft",
+                settings={},
+            )
+            session.add(project)
+            await session.flush()
+            dataset = Dataset(
+                project_id=project.id,
+                name="Approved patterns",
+                purpose="Integration coverage",
+                status="active",
+                source_campaign_filters=[],
+                category_filters=["technology"],
+                language_filters=["en"],
+                item_types=["section_pattern"],
+                minimum_confidence=0.8,
+                require_approved=True,
+                provenance_requirements=["authorized"],
+                created_by_user_id=user.id,
+            )
+            session.add(dataset)
+            await session.flush()
+            session.add(
+                DatasetVersion(
+                    dataset_id=dataset.id,
+                    status="draft",
+                    version_number=1,
+                    selection_config={
+                        "source_campaign_filters": [],
+                        "category_filters": ["technology"],
+                        "language_filters": ["en"],
+                        "item_types": ["section_pattern"],
+                        "minimum_confidence": 0.8,
+                        "require_approved": True,
+                        "provenance_requirements": ["authorized"],
+                    },
+                    selection_manifest={},
+                    schema_version=1,
+                    analyzer_versions=[],
+                    statistics={},
+                    created_by_user_id=user.id,
+                )
+            )
+        async with manager.session() as session:
+            stored = await session.scalar(select(DatasetVersion))
+            assert stored is not None
+            assert stored.status == "draft"
+            assert cast(dict[str, object], stored.selection_config)["minimum_confidence"] == 0.8
+            assert stored.created_at.utcoffset() is not None
     finally:
         await manager.close()
 
