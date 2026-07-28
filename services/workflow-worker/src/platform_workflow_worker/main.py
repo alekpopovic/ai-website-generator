@@ -5,6 +5,8 @@ import logging
 import os
 import signal
 
+from platform_api.config import get_settings
+from platform_api.database import DatabaseManager
 from platform_workflows.client import TemporalClientConfig, create_temporal_client
 from platform_workflows.queues import TaskQueue
 from platform_workflows.worker import (
@@ -15,12 +17,16 @@ from platform_workflows.worker import (
 )
 from platform_workflows.workflows import WORKFLOW_TYPES
 
+from platform_workflow_worker.activities import ScanControlActivities
+
 logger = logging.getLogger(__name__)
 
 
 async def run() -> None:
     """Connect, report readiness, and shut down cooperatively on process signals."""
     logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"))
+    settings = get_settings()
+    database = DatabaseManager(settings.database)
     client = await create_temporal_client(
         TemporalClientConfig(
             address=os.environ.get("TEMPORAL_ADDRESS", "127.0.0.1:7233"),
@@ -29,7 +35,10 @@ async def run() -> None:
     )
     config = WorkerConfig(task_queue=TaskQueue.CONTROL)
     health = WorkerHealthIndicator("workflow-worker", config.task_queue)
-    worker = create_worker(client, config, workflows=WORKFLOW_TYPES)
+    activities = ScanControlActivities(database, settings.qdrant)
+    worker = create_worker(
+        client, config, workflows=WORKFLOW_TYPES, activities=activities.registered()
+    )
     stop = asyncio.Event()
     loop = asyncio.get_running_loop()
     for process_signal in (signal.SIGINT, signal.SIGTERM):
@@ -53,6 +62,7 @@ async def run() -> None:
         logger.info("worker_stopping %s", health.snapshot())
         await worker.shutdown()
         await worker_task
+    await database.close()
     health.transition(WorkerState.STOPPED)
     logger.info("worker_stopped %s", health.snapshot())
 

@@ -94,6 +94,11 @@ class EmbeddingIndexer:
             # Legal suppression and curation removals must not depend on the
             # configured embedding model still being installed or unchanged.
             deleted = await self._remove_ineligible(run, progress)
+            total = await self._repository.eligible_count(run)
+            if total == 0:
+                await self._repository.complete_run(run.id, alias_switched=False)
+                await progress("complete", deleted)
+                return IndexOutcome(run.id, 0, deleted, 0, False)
             metadata = await self._embeddings.model_metadata(ModelRole.EMBEDDING)
             dimensions = metadata.embedding_dimensions
             if dimensions is None:
@@ -115,7 +120,6 @@ class EmbeddingIndexer:
                 readiness = await self._vector_store.readiness(identity, dimensions)
                 if not readiness.ready:
                     raise EmbeddingIndexError("embedding_reindex_required")
-            total = await self._repository.eligible_count(run)
             await self._repository.configure_run(run.id, identity, dimensions, total)
             indexed, skipped = await self._index_patterns(
                 run, identity, dimensions, metadata.digest, progress

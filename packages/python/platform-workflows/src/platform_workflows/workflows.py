@@ -1,17 +1,29 @@
-"""Deterministic orchestration skeletons with no external calls."""
+"""Deterministic durable orchestration with identifier-only history payloads."""
 
+import asyncio
 from dataclasses import dataclass
 from datetime import timedelta
 
 from temporalio import workflow
+from temporalio.exceptions import ActivityError
 from temporalio.workflow import ActivityCancellationType
 
 from platform_workflows.commands import (
     ActivityCommand,
     ActivityResult,
     CompactWorkflowInput,
+    CrawlTargetInput,
     EmbeddingIndexInput,
     ModelWarmupInput,
+    RenderPageInput,
+    ScanAggregationInput,
+    ScanCampaignPlan,
+    ScanIdentifierPage,
+    ScanListInput,
+    ScanPageInput,
+    ScanProgressInput,
+    ScanTargetResult,
+    ScanTargetWorkflowInput,
     WorkflowResult,
 )
 from platform_workflows.queues import TaskQueue
@@ -135,11 +147,12 @@ _TRAINING_STAGES = (
 
 @workflow.defn(name="ScanCampaignWorkflow")
 class ScanCampaignWorkflow:
-    """Control-only scan skeleton; no crawl activity exists in this prompt."""
+    """Page targets and durably coordinate bounded child workflows."""
 
     def __init__(self) -> None:
         self._paused = False
         self._cancel_requested = False
+        self._running = False
 
     @workflow.signal(name="pause")
     async def pause(self) -> None:
@@ -157,12 +170,292 @@ class ScanCampaignWorkflow:
     def control_state(self) -> str:
         if self._cancel_requested:
             return "cancelling"
-        return "paused" if self._paused else "queued"
+        if self._paused:
+            return "paused"
+        return "running" if self._running else "queued"
 
     @workflow.run
     async def run(self, command: CompactWorkflowInput) -> WorkflowResult:
-        await workflow.wait_condition(lambda: self._cancel_requested)
-        return WorkflowResult(job_id=command.job_id, status="cancelled")
+        plan = await workflow.execute_activity(
+            "validate-scan-campaign",
+            command,
+            result_type=ScanCampaignPlan,
+            task_queue=TaskQueue.CONTROL.value,
+            start_to_close_timeout=timedelta(minutes=2),
+            heartbeat_timeout=timedelta(seconds=20),
+            retry_policy=retry_policy(ActivityCategory.CONTROL),
+        )
+        self._running = True
+        await self._progress(command, "campaign.validate", "running", 1)
+        cursor: str | None = None
+        succeeded = failed = sequence = 0
+        while not self._cancel_requested:
+            await self._pause_checkpoint(command, sequence + 2)
+            page = await workflow.execute_activity(
+                "list-scan-targets",
+                ScanListInput(
+                    command.job_id,
+                    cursor=cursor,
+                    limit=plan.page_size,
+                    failure_ids=command.resource_ids,
+                ),
+                result_type=ScanIdentifierPage,
+                task_queue=TaskQueue.CONTROL.value,
+                start_to_close_timeout=timedelta(minutes=2),
+                retry_policy=retry_policy(ActivityCategory.CONTROL),
+            )
+            for offset in range(0, len(page.identifiers), plan.target_concurrency):
+                batch = page.identifiers[offset : offset + plan.target_concurrency]
+                child_tasks = [
+                    asyncio.create_task(
+                        workflow.execute_child_workflow(
+                            ScanTargetWorkflow.run,
+                            ScanTargetWorkflowInput(
+                                command.job_id,
+                                command.project_id,
+                                target_id,
+                                plan.browser_concurrency,
+                                plan.ai_concurrency,
+                            ),
+                            id=f"{workflow.info().workflow_id}:target:{target_id}",
+                            task_queue=TaskQueue.CONTROL.value,
+                        )
+                    )
+                    for target_id in batch
+                ]
+                batch_task = asyncio.gather(*child_tasks, return_exceptions=True)
+                cancel_task = asyncio.create_task(
+                    workflow.wait_condition(lambda: self._cancel_requested)
+                )
+                done, _ = await asyncio.wait(
+                    (batch_task, cancel_task), return_when=asyncio.FIRST_COMPLETED
+                )
+                if cancel_task in done:
+                    for child_task in child_tasks:
+                        child_task.cancel()
+                    results = await batch_task
+                else:
+                    cancel_task.cancel()
+                    await asyncio.gather(cancel_task, return_exceptions=True)
+                    results = await batch_task
+                for result in results:
+                    if isinstance(result, ScanTargetResult):
+                        if result.status in {"succeeded", "partially_succeeded"}:
+                            succeeded += 1
+                        if result.status != "succeeded":
+                            failed += 1
+                    else:
+                        failed += 1
+                sequence += 1
+                await self._progress(
+                    command,
+                    "campaign.targets",
+                    "running",
+                    sequence + 1,
+                    completed=succeeded,
+                    failed=failed,
+                )
+                await self._pause_checkpoint(command, sequence + 2)
+            cursor = page.next_cursor
+            if cursor is None:
+                break
+
+        if self._cancel_requested:
+            await self._aggregate(command, succeeded, failed, cancelled=True)
+            return WorkflowResult(job_id=command.job_id, status="cancelled")
+
+        embedding = await workflow.execute_activity(
+            "prepare-scan-embedding",
+            command,
+            result_type=ActivityResult,
+            task_queue=TaskQueue.CONTROL.value,
+            start_to_close_timeout=timedelta(minutes=2),
+            retry_policy=retry_policy(ActivityCategory.CONTROL),
+        )
+        try:
+            await workflow.execute_activity(
+                "index-section-patterns",
+                EmbeddingIndexInput(embedding.record_id),
+                result_type=ActivityResult,
+                task_queue=TaskQueue.EMBEDDING.value,
+                start_to_close_timeout=timedelta(hours=4),
+                heartbeat_timeout=timedelta(seconds=30),
+                retry_policy=retry_policy(ActivityCategory.INFERENCE),
+                cancellation_type=ActivityCancellationType.WAIT_CANCELLATION_COMPLETED,
+            )
+        except ActivityError:
+            failed += 1
+        await self._aggregate(command, succeeded, failed)
+        return WorkflowResult(
+            job_id=command.job_id,
+            status="partially_completed" if failed else "completed",
+        )
+
+    async def _pause_checkpoint(self, command: CompactWorkflowInput, sequence: int) -> None:
+        if not self._paused:
+            return
+        await self._progress(command, "campaign.paused", "paused", sequence)
+        await workflow.wait_condition(lambda: not self._paused or self._cancel_requested)
+        if not self._cancel_requested:
+            await self._progress(command, "campaign.resumed", "running", sequence + 1)
+
+    @staticmethod
+    async def _progress(
+        command: CompactWorkflowInput,
+        stage: str,
+        status: str,
+        sequence: int,
+        *,
+        completed: int = 0,
+        failed: int = 0,
+    ) -> None:
+        await workflow.execute_activity(
+            "persist-scan-progress",
+            ScanProgressInput(
+                command.job_id,
+                command.project_id,
+                stage,
+                status,
+                sequence,
+                completed=completed,
+                failed=failed,
+            ),
+            result_type=ActivityResult,
+            task_queue=TaskQueue.CONTROL.value,
+            start_to_close_timeout=timedelta(minutes=1),
+            retry_policy=retry_policy(ActivityCategory.CONTROL),
+        )
+
+    @staticmethod
+    async def _aggregate(
+        command: CompactWorkflowInput, succeeded: int, failed: int, *, cancelled: bool = False
+    ) -> None:
+        await workflow.execute_activity(
+            "aggregate-scan-campaign",
+            ScanAggregationInput(command.job_id, command.project_id, succeeded, failed, cancelled),
+            result_type=ActivityResult,
+            task_queue=TaskQueue.CONTROL.value,
+            start_to_close_timeout=timedelta(minutes=2),
+            retry_policy=retry_policy(ActivityCategory.CONTROL),
+        )
+
+
+@workflow.defn(name="ScanTargetWorkflow")
+class ScanTargetWorkflow:
+    """Restart-safe target pipeline; artifacts never enter workflow history."""
+
+    @workflow.run
+    async def run(self, command: ScanTargetWorkflowInput) -> ScanTargetResult:
+        for name, category in (
+            ("crawl-scan-target", ActivityCategory.NETWORK),
+            ("fingerprint-scan-target", ActivityCategory.STORAGE),
+            ("classify-scan-target", ActivityCategory.CONTROL),
+            ("select-scan-representatives", ActivityCategory.CONTROL),
+        ):
+            try:
+                await self._target_activity(name, command, category)
+            except ActivityError:
+                return ScanTargetResult(command.target_id, "failed", failed_pages=1)
+
+        cursor: str | None = None
+        rendered = analyzed = failed = 0
+        while True:
+            pages = await workflow.execute_activity(
+                "list-representative-pages",
+                ScanListInput(
+                    command.campaign_id,
+                    cursor=cursor,
+                    limit=100,
+                    target_id=command.target_id,
+                ),
+                result_type=ScanIdentifierPage,
+                task_queue=TaskQueue.CONTROL.value,
+                start_to_close_timeout=timedelta(minutes=2),
+                retry_policy=retry_policy(ActivityCategory.CONTROL),
+            )
+            for offset in range(0, len(pages.identifiers), command.browser_concurrency):
+                batch = pages.identifiers[offset : offset + command.browser_concurrency]
+                render_results = await asyncio.gather(
+                    *(self._render(command.campaign_id, page_id) for page_id in batch),
+                    return_exceptions=True,
+                )
+                ready = [
+                    page_id
+                    for page_id, result in zip(batch, render_results, strict=True)
+                    if result is True
+                ]
+                rendered += len(ready)
+                failed += len(batch) - len(ready)
+                for ai_offset in range(0, len(ready), command.ai_concurrency):
+                    ai_batch = ready[ai_offset : ai_offset + command.ai_concurrency]
+                    results = await asyncio.gather(
+                        *(self._analyze(command.campaign_id, page_id) for page_id in ai_batch),
+                        return_exceptions=True,
+                    )
+                    analyzed += sum(result is True for result in results)
+                    failed += sum(result is not True for result in results)
+            cursor = pages.next_cursor
+            if cursor is None:
+                break
+        return ScanTargetResult(
+            command.target_id,
+            "succeeded" if failed == 0 else "partially_succeeded",
+            rendered,
+            analyzed,
+            failed,
+        )
+
+    @staticmethod
+    async def _target_activity(
+        name: str, command: ScanTargetWorkflowInput, category: ActivityCategory
+    ) -> None:
+        await workflow.execute_activity(
+            name,
+            CrawlTargetInput(command.campaign_id, command.target_id),
+            result_type=ActivityResult,
+            task_queue=TaskQueue.CRAWL.value,
+            start_to_close_timeout=timedelta(hours=2),
+            heartbeat_timeout=timedelta(seconds=30),
+            retry_policy=retry_policy(category),
+            cancellation_type=ActivityCancellationType.WAIT_CANCELLATION_COMPLETED,
+            activity_id=f"{command.target_id}:{name}",
+        )
+
+    @staticmethod
+    async def _render(campaign_id: str, page_id: str) -> bool:
+        try:
+            await workflow.execute_activity(
+                "render-representative-page",
+                RenderPageInput(campaign_id, page_id),
+                result_type=ActivityResult,
+                task_queue=TaskQueue.BROWSER.value,
+                start_to_close_timeout=timedelta(minutes=15),
+                heartbeat_timeout=timedelta(seconds=30),
+                retry_policy=retry_policy(ActivityCategory.BROWSER),
+                cancellation_type=ActivityCancellationType.WAIT_CANCELLATION_COMPLETED,
+                activity_id=f"{page_id}:browser",
+            )
+            return True
+        except ActivityError:
+            return False
+
+    @staticmethod
+    async def _analyze(campaign_id: str, page_id: str) -> bool:
+        try:
+            await workflow.execute_activity(
+                "analyze-and-persist-page-profile",
+                ScanPageInput(campaign_id, page_id),
+                result_type=ActivityResult,
+                task_queue=TaskQueue.AI_ANALYSIS.value,
+                start_to_close_timeout=timedelta(minutes=30),
+                heartbeat_timeout=timedelta(seconds=30),
+                retry_policy=retry_policy(ActivityCategory.INFERENCE),
+                cancellation_type=ActivityCancellationType.WAIT_CANCELLATION_COMPLETED,
+                activity_id=f"{page_id}:analysis",
+            )
+            return True
+        except ActivityError:
+            return False
 
 
 @workflow.defn(name="DatasetBuildWorkflow")
@@ -247,6 +540,7 @@ class EmbeddingIndexWorkflow:
 
 WORKFLOW_TYPES = (
     ScanCampaignWorkflow,
+    ScanTargetWorkflow,
     DatasetBuildWorkflow,
     SiteGenerationWorkflow,
     TrainingRunWorkflow,

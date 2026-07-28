@@ -5,6 +5,8 @@ import logging
 import os
 import signal
 
+from platform_api.config import get_settings
+from platform_api.database import DatabaseManager
 from platform_workflows.client import TemporalClientConfig, create_temporal_client
 from platform_workflows.queues import TaskQueue
 from platform_workflows.worker import (
@@ -22,6 +24,8 @@ logger = logging.getLogger(__name__)
 
 async def run() -> None:
     logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"))
+    settings = get_settings()
+    database = DatabaseManager(settings.database)
     client = await create_temporal_client(
         TemporalClientConfig(
             address=os.environ.get("TEMPORAL_ADDRESS", "127.0.0.1:7233"),
@@ -33,8 +37,17 @@ async def run() -> None:
         max_concurrent_activities=int(os.environ.get("CRAWLER_WORKER_MAX_PROCESSES", "2")),
     )
     health = WorkerHealthIndicator("crawler-worker", config.task_queue)
-    activities = CrawlActivities(SubprocessCrawlerRunner())
-    worker = create_worker(client, config, activities=(activities.crawl_scan_target,))
+    activities = CrawlActivities(SubprocessCrawlerRunner(), database)
+    worker = create_worker(
+        client,
+        config,
+        activities=(
+            activities.crawl_scan_target,
+            activities.fingerprint_scan_target,
+            activities.classify_scan_target,
+            activities.select_scan_representatives,
+        ),
+    )
     stop = asyncio.Event()
     loop = asyncio.get_running_loop()
     for process_signal in (signal.SIGINT, signal.SIGTERM):
@@ -52,6 +65,7 @@ async def run() -> None:
         await worker.shutdown()
         await worker_task
     health.transition(WorkerState.STOPPED)
+    await database.close()
 
 
 def main() -> None:

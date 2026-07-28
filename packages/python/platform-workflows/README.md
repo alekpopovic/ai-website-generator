@@ -5,5 +5,5 @@ dispatch, orchestration, and test foundations. Workflow code is deterministic an
 and object-storage keys. Network, database, storage, browser, model, and clock-dependent work belongs
 in activities.
 
-The four initial workflows are orchestration skeletons. Their named activities deliberately have no
-business implementation yet.
+The scan campaign workflow is fully orchestrated through bounded target children and registered
+activities. Dataset, generation, and training workflows remain staged foundations for later prompts.

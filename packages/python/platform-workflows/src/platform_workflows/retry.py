@@ -32,7 +32,13 @@ _POLICIES: dict[ActivityCategory, RetryPolicy] = {
         backoff_coefficient=2,
         maximum_interval=timedelta(minutes=1),
         maximum_attempts=5,
-        non_retryable_error_types=["PolicyViolation", "AuthorizationDenied", "InvalidUrl"],
+        non_retryable_error_types=[
+            "AuthorizationDenied",
+            "InvalidUrl",
+            "NetworkSafetyBlocked",
+            "PolicyViolation",
+            "RobotsPolicyDenied",
+        ],
     ),
     ActivityCategory.BROWSER: RetryPolicy(
         initial_interval=timedelta(seconds=5),

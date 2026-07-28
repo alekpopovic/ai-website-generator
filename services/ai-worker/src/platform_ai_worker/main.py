@@ -5,8 +5,12 @@ import logging
 import os
 import signal
 
+from platform_api.config import get_settings
+from platform_api.database import DatabaseManager
 from platform_clients.llm.ollama import OllamaConfig, OllamaGateway
 from platform_clients.llm.protocols import LLMGateway
+from platform_clients.object_storage import S3ObjectStorage, StorageConfig
+from platform_clients.object_storage.models import StorageProvider
 from platform_workflows.client import TemporalClientConfig, create_temporal_client
 from platform_workflows.queues import TaskQueue
 from platform_workflows.worker import (
@@ -19,6 +23,7 @@ from platform_workflows.worker import (
 from platform_ai_worker.activities import ModelActivities
 from platform_ai_worker.dspy_program import DspyOllamaVisionProgram
 from platform_ai_worker.page_analyzer import DspyPageAnalyzer
+from platform_ai_worker.scan_analysis import PersistedScanPageAnalyzer
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +76,21 @@ def create_page_analyzer(gateway: LLMGateway, config: OllamaConfig) -> DspyPageA
 
 async def run() -> None:
     logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"))
-    gateway = OllamaGateway.create(ollama_config_from_environment())
+    settings = get_settings()
+    database = DatabaseManager(settings.database)
+    gateway_config = ollama_config_from_environment()
+    gateway = OllamaGateway.create(gateway_config)
+    minio = settings.minio
+    storage = await S3ObjectStorage.create(
+        StorageConfig(
+            provider=StorageProvider(minio.provider),
+            region=minio.region,
+            endpoint_url=str(minio.endpoint) if minio.endpoint is not None else None,
+            access_key=minio.access_key.get_secret_value() if minio.access_key else None,
+            secret_key=minio.secret_key.get_secret_value() if minio.secret_key else None,
+            session_token=minio.session_token.get_secret_value() if minio.session_token else None,
+        )
+    )
     try:
         client = await create_temporal_client(
             TemporalClientConfig(
@@ -84,8 +103,18 @@ async def run() -> None:
             max_concurrent_activities=_int("AI_WORKER_MAX_CONCURRENT_ACTIVITIES", 2),
         )
         health = WorkerHealthIndicator("ai-worker", config.task_queue)
-        activities = ModelActivities(gateway)
-        worker = create_worker(client, config, activities=(activities.warm_up_model,))
+        analyzer = create_page_analyzer(gateway, gateway_config)
+        activities = ModelActivities(
+            gateway, PersistedScanPageAnalyzer(database, storage, analyzer)
+        )
+        worker = create_worker(
+            client,
+            config,
+            activities=(
+                activities.warm_up_model,
+                activities.analyze_and_persist_page_profile,
+            ),
+        )
         stop = asyncio.Event()
         loop = asyncio.get_running_loop()
         for process_signal in (signal.SIGINT, signal.SIGTERM):
@@ -111,6 +140,8 @@ async def run() -> None:
         health.transition(WorkerState.STOPPED)
         logger.info("worker_stopped %s", health.snapshot())
     finally:
+        await storage.close()
+        await database.close()
         await gateway.close()
 
 

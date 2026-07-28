@@ -70,7 +70,7 @@ _WORKFLOW_NAMES = {
     WorkflowKind.EMBEDDING_INDEX: "EmbeddingIndexWorkflow",
 }
 _EXECUTION_TIMEOUTS = {
-    WorkflowKind.SCAN_CAMPAIGN: timedelta(hours=4),
+    WorkflowKind.SCAN_CAMPAIGN: timedelta(days=7),
     WorkflowKind.DATASET_BUILD: timedelta(hours=4),
     WorkflowKind.SITE_GENERATION: timedelta(hours=2),
     WorkflowKind.TRAINING_RUN: timedelta(days=2),

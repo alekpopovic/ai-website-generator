@@ -5,6 +5,7 @@ description = "Private structured inference Temporal activity worker"
 requires-python = ">=3.12,<3.15"
 dependencies = [
     "dspy==3.2.1",
+    "platform-api",
     "platform-clients",
     "platform-schemas",
     "platform-workflows",
@@ -24,6 +25,7 @@ packages = ["src/platform_ai_worker"]
 package = true
 
 [tool.uv.sources]
+platform-api = { workspace = true }
 platform-clients = { workspace = true }
 platform-schemas = { workspace = true }
 platform-workflows = { workspace = true }

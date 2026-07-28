@@ -3,7 +3,7 @@ name = "platform-workflow-worker"
 version = "0.0.0"
 description = "Temporal workflow orchestration worker"
 requires-python = ">=3.12,<3.15"
-dependencies = ["platform-workflows"]
+dependencies = ["platform-api", "platform-workflows"]
 
 [project.scripts]
 platform-workflow-worker = "platform_workflow_worker.main:main"
@@ -19,4 +19,5 @@ packages = ["src/platform_workflow_worker"]
 package = true
 
 [tool.uv.sources]
+platform-api = { workspace = true }
 platform-workflows = { workspace = true }

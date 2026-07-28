@@ -109,12 +109,6 @@ async def _run(campaign_id: UUID, target_id: UUID) -> None:
                 deferred.asFuture(asyncio.get_running_loop()),
                 timeout=configuration.campaign_timeout_seconds,
             )
-            await repository.recalculate_deduplication(campaign_id)
-            await repository.recalculate_classification_and_selection(
-                campaign_id,
-                maximum_pages=configuration.max_visual_pages_per_domain,
-                include_restricted=configuration.include_restricted_representatives,
-            )
             await repository.mark_target(target_id, "completed")
         except Exception as error:
             await preliminary.record_failure(

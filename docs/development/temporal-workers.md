@@ -51,11 +51,11 @@ The service registers `ScanCampaignWorkflow`, `DatasetBuildWorkflow`, `SiteGener
 on `control`. Other business activities remain future work except for the target-level Scrapy crawl
 activity and PostgreSQL-authoritative embedding indexing.
 
-`ScanCampaignWorkflow` is intentionally control-only in the current increment. It retains durable
-queued/paused/cancelling control state and accepts pause, resume, and cancel signals, but it has no
-campaign fan-out, browser, AI, embedding, or completion activities. The implemented
-`crawl-scan-target` activity is registered separately on `crawl` and receives only campaign and target
-UUIDs.
+`ScanCampaignWorkflow` is a parent orchestrator and `ScanTargetWorkflow` is its failure-isolated child.
+The parent pages target IDs, limits active children, persists progress events, handles pause/resume/cancel,
+queues identifier-only embedding work, and aggregates success or partial success. Children route crawl
+and deterministic post-processing to `crawl`, representative captures to `browser`, and bounded
+structured analysis plus transactional profile persistence to `ai-analysis`.
 
 Start the crawler activity worker in another terminal:
 
@@ -120,6 +120,14 @@ TEMPORAL_TEST_SERVER_PATH=/absolute/path/to/temporal-test-server task integratio
 If the variable is absent, these tests skip. This prevents default CI from downloading tools or
 requiring internet access. The executable should be provisioned and checksum-verified separately by
 the development or CI environment.
+
+The complete scan suite combines the Temporal pipeline test with an opt-in real-stack dependency
+check using the fixture website, PostgreSQL, MinIO, Qdrant, and deterministic fake Ollama:
+
+```sh
+SCAN_CAMPAIGN_E2E_TESTS=true TEMPORAL_TEST_SERVER_PATH=/absolute/path/to/temporal-test-server \
+  uv run pytest tests/integration/test_scan_campaign_stack.py tests/integration/test_temporal_workflows.py
+```
 
 ## Duplicate prevention
 

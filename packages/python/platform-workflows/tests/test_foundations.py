@@ -5,7 +5,14 @@ from uuid import uuid4
 
 import pytest
 from platform_workflows.cancellation import raise_if_activity_cancelled
-from platform_workflows.commands import CompactWorkflowInput, EmbeddingIndexInput, ModelWarmupInput
+from platform_workflows.commands import (
+    CompactWorkflowInput,
+    EmbeddingIndexInput,
+    ModelWarmupInput,
+    ScanCampaignPlan,
+    ScanIdentifierPage,
+    ScanTargetWorkflowInput,
+)
 from platform_workflows.dispatcher import (
     DuplicateWorkflowDispatchError,
     FakeWorkflowDispatcher,
@@ -17,6 +24,7 @@ from platform_workflows.identifiers import ModelRole, WorkflowKind, workflow_id
 from platform_workflows.queues import TaskQueue
 from platform_workflows.retry import ActivityCategory, retry_policy
 from platform_workflows.worker import WorkerHealthIndicator, WorkerState
+from platform_workflows.workflows import WORKFLOW_TYPES, ScanTargetWorkflow
 from temporalio import activity
 from temporalio.testing import ActivityEnvironment
 
@@ -65,6 +73,22 @@ def test_compact_commands_reject_non_ids_and_unbounded_payload_shapes() -> None:
             requested_by_user_id=str(uuid4()),
             idempotency_key="request",
         )
+
+
+def test_scan_workflow_contracts_bound_history_and_concurrency() -> None:
+    campaign_id = str(uuid4())
+    project_id = str(uuid4())
+    target_id = str(uuid4())
+    plan = ScanCampaignPlan(campaign_id, 8, 4, 2)
+    target = ScanTargetWorkflowInput(campaign_id, project_id, target_id, 4, 2)
+    page = ScanIdentifierPage((target_id,))
+
+    assert plan.page_size == 100
+    assert target.browser_concurrency != target.ai_concurrency
+    assert page.identifiers == (target_id,)
+    assert ScanTargetWorkflow in WORKFLOW_TYPES
+    with pytest.raises(ValueError, match="at most 100"):
+        ScanIdentifierPage(tuple(str(uuid4()) for _ in range(101)))
     with pytest.raises(ValueError, match="object-storage key"):
         CompactWorkflowInput(
             job_id=str(uuid4()),

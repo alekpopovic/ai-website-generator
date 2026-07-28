@@ -2158,6 +2158,7 @@ version = "0.0.0"
 source = { editable = "services/ai-worker" }
 dependencies = [
     { name = "dspy" },
+    { name = "platform-api" },
     { name = "platform-clients" },
     { name = "platform-schemas" },
     { name = "platform-workflows" },
@@ -2166,6 +2167,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "dspy", specifier = "==3.2.1" },
+    { name = "platform-api", editable = "apps/api" },
     { name = "platform-clients", editable = "packages/python/platform-clients" },
     { name = "platform-schemas", editable = "packages/python/platform-schemas" },
     { name = "platform-workflows", editable = "packages/python/platform-workflows" },
@@ -2334,11 +2336,15 @@ name = "platform-workflow-worker"
 version = "0.0.0"
 source = { editable = "services/workflow-worker" }
 dependencies = [
+    { name = "platform-api" },
     { name = "platform-workflows" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "platform-workflows", editable = "packages/python/platform-workflows" }]
+requires-dist = [
+    { name = "platform-api", editable = "apps/api" },
+    { name = "platform-workflows", editable = "packages/python/platform-workflows" },
+]
 
 [[package]]
 name = "platform-workflows"

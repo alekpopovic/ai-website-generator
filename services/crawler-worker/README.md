@@ -67,3 +67,7 @@ types, and one content page while choosing at most one automatic representative 
 cluster. Legal and authentication pages remain excluded unless the campaign explicitly enables them
 or an owner manually includes one. Every page stores its selection score and reason, including
 rejections. This stage only records candidates; it does not invoke Playwright.
+
+Temporal exposes restart-safe `fingerprint-scan-target`, `classify-scan-target`, and
+`select-scan-representatives` activities after the isolated discovery subprocess exits. Campaign
+advisory locks make repeated or concurrent post-processing safe.

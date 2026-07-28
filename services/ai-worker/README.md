@@ -11,8 +11,9 @@ latency metadata. A capability probe must prove that the installed DSPy/LiteLLM 
 local image to the configured Ollama vision model. If that probe fails, the same `PageAnalyzer`
 boundary uses the provider-neutral direct Ollama structured-vision method and records the reason.
 
-The currently registered `warm-up-model` activity receives only IDs and a configured model role,
-heartbeats during model loading, and never pulls a model. Page-analysis orchestration likewise
-belongs in this worker: Temporal payloads carry IDs/object keys and repository code resolves artifact
-bodies inside the activity process. Start the worker with `task ai-worker` after Temporal and private
-Ollama are available. See [page analysis](../../docs/development/page-analysis.md).
+The `warm-up-model` activity receives only IDs and a configured model role, heartbeats during model
+loading, and never pulls a model. `analyze-and-persist-page-profile` receives campaign/page UUIDs,
+resolves and bounds private MinIO artifacts, runs the analyzer, and transactionally persists an
+idempotent profile and section-pattern history in PostgreSQL. Temporal never receives screenshots or
+model output. Start the worker with `task ai-worker` after Temporal and private Ollama are available.
+See [page analysis](../../docs/development/page-analysis.md).

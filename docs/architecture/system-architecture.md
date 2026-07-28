@@ -64,9 +64,9 @@ The scan never promotes third-party logos, names, copy, media, code, or complete
 The current implementation establishes campaign configuration, targets, page/viewport/failure
 projections, ownership-scoped APIs, lifecycle transitions, durable workflow control, and the shared
 crawl-policy evaluation boundary. Domain robots snapshots and effective per-page decisions have
-durable provenance fields. Starting a campaign still dispatches a control-only Temporal workflow after
-PostgreSQL commits. Target-level crawl and representative-page browser activities are implemented, but
-campaign fan-out, analysis, and embedding activities are not yet wired. The browser worker keeps a
+durable provenance fields. The complete Temporal workflow pages targets into concurrency-bounded child
+workflows, executes restart-safe crawl, fingerprint, classification, selection, browser, analysis,
+profile-persistence, embedding, and aggregation activities, and preserves partial success. The browser worker keeps a
 warm Chromium process while isolating every viewport in a new context and stores bounded private
 captures by checksum. See
 [Scan campaign API](../api/scan-campaigns.md), [Crawl policy](../security/crawl-policy.md), and

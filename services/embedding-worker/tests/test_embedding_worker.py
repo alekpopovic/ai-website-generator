@@ -263,12 +263,13 @@ async def test_legal_removal_does_not_depend_on_embedding_model_readiness() -> N
     record = RemovalRecord(uuid4(), identity, identity.physical_name("design-patterns"))
     repository.removals.append(record)
 
-    with pytest.raises(RuntimeError, match="model is unavailable"):
-        await EmbeddingIndexer(repository, UnavailableGateway(), vectors).run(
-            repository.run.id, no_progress
-        )
+    outcome = await EmbeddingIndexer(repository, UnavailableGateway(), vectors).run(
+        repository.run.id, no_progress
+    )
 
     assert repository.deleted == [record.section_pattern_id]
+    assert outcome.deleted == 1
+    assert repository.completed
 
 
 def test_removed_expired_and_legally_suppressed_patterns_are_not_eligible() -> None:

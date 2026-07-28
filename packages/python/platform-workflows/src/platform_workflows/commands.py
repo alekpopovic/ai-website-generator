@@ -109,7 +109,7 @@ class WorkflowResult:
 
     def __post_init__(self) -> None:
         _validate_uuid("job_id", self.job_id)
-        if self.status not in {"completed", "cancelled"}:
+        if self.status not in {"completed", "partially_completed", "failed", "cancelled"}:
             raise ValueError("unsupported workflow result status")
         _validate_object_key("output_object_key", self.output_object_key)
 
@@ -138,3 +138,142 @@ class EmbeddingIndexInput:
 
     def __post_init__(self) -> None:
         _validate_uuid("embedding_run_id", self.embedding_run_id)
+
+
+@dataclass(frozen=True, slots=True)
+class ScanCampaignPlan:
+    campaign_id: str
+    target_concurrency: int
+    browser_concurrency: int
+    ai_concurrency: int
+    page_size: int = 100
+
+    def __post_init__(self) -> None:
+        _validate_uuid("campaign_id", self.campaign_id)
+        if not 1 <= self.target_concurrency <= 128:
+            raise ValueError("target_concurrency must be between 1 and 128")
+        if not 1 <= self.browser_concurrency <= 32:
+            raise ValueError("browser_concurrency must be between 1 and 32")
+        if not 1 <= self.ai_concurrency <= 16:
+            raise ValueError("ai_concurrency must be between 1 and 16")
+        if not 1 <= self.page_size <= 100:
+            raise ValueError("page_size must be between 1 and 100")
+
+
+@dataclass(frozen=True, slots=True)
+class ScanIdentifierPage:
+    identifiers: tuple[str, ...]
+    next_cursor: str | None = None
+
+    def __post_init__(self) -> None:
+        if len(self.identifiers) > 100 or len(self.identifiers) != len(set(self.identifiers)):
+            raise ValueError("identifier page must contain at most 100 unique UUIDs")
+        for value in self.identifiers:
+            _validate_uuid("identifier", value)
+        if self.next_cursor is not None:
+            _validate_uuid("next_cursor", self.next_cursor)
+
+
+@dataclass(frozen=True, slots=True)
+class ScanListInput:
+    campaign_id: str
+    cursor: str | None = None
+    limit: int = 100
+    target_id: str | None = None
+    failure_ids: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        _validate_uuid("campaign_id", self.campaign_id)
+        if self.cursor is not None:
+            _validate_uuid("cursor", self.cursor)
+        if self.target_id is not None:
+            _validate_uuid("target_id", self.target_id)
+        if not 1 <= self.limit <= 100:
+            raise ValueError("limit must be between 1 and 100")
+        if len(self.failure_ids) > 100:
+            raise ValueError("failure_ids must contain at most 100 UUIDs")
+        for value in self.failure_ids:
+            _validate_uuid("failure_id", value)
+
+
+@dataclass(frozen=True, slots=True)
+class ScanTargetWorkflowInput:
+    campaign_id: str
+    project_id: str
+    target_id: str
+    browser_concurrency: int
+    ai_concurrency: int
+
+    def __post_init__(self) -> None:
+        _validate_uuid("campaign_id", self.campaign_id)
+        _validate_uuid("project_id", self.project_id)
+        _validate_uuid("target_id", self.target_id)
+        if not 1 <= self.browser_concurrency <= 32:
+            raise ValueError("browser_concurrency must be between 1 and 32")
+        if not 1 <= self.ai_concurrency <= 16:
+            raise ValueError("ai_concurrency must be between 1 and 16")
+
+
+@dataclass(frozen=True, slots=True)
+class ScanPageInput:
+    campaign_id: str
+    crawl_page_id: str
+
+    def __post_init__(self) -> None:
+        _validate_uuid("campaign_id", self.campaign_id)
+        _validate_uuid("crawl_page_id", self.crawl_page_id)
+
+
+@dataclass(frozen=True, slots=True)
+class ScanProgressInput:
+    campaign_id: str
+    project_id: str
+    stage: str
+    status: str
+    sequence: int
+    target_id: str | None = None
+    completed: int = 0
+    failed: int = 0
+
+    def __post_init__(self) -> None:
+        _validate_uuid("campaign_id", self.campaign_id)
+        _validate_uuid("project_id", self.project_id)
+        if self.target_id is not None:
+            _validate_uuid("target_id", self.target_id)
+        if not re.fullmatch(r"[a-z][a-z0-9.-]{0,99}", self.stage):
+            raise ValueError("stage must be a bounded stable identifier")
+        if self.status not in {"queued", "running", "paused", "succeeded", "failed", "cancelled"}:
+            raise ValueError("unsupported scan progress status")
+        if self.sequence < 0 or self.completed < 0 or self.failed < 0:
+            raise ValueError("scan progress counts must not be negative")
+
+
+@dataclass(frozen=True, slots=True)
+class ScanAggregationInput:
+    campaign_id: str
+    project_id: str
+    succeeded_targets: int
+    failed_targets: int
+    cancelled: bool = False
+
+    def __post_init__(self) -> None:
+        _validate_uuid("campaign_id", self.campaign_id)
+        _validate_uuid("project_id", self.project_id)
+        if self.succeeded_targets < 0 or self.failed_targets < 0:
+            raise ValueError("aggregation counts must not be negative")
+
+
+@dataclass(frozen=True, slots=True)
+class ScanTargetResult:
+    target_id: str
+    status: str
+    rendered_pages: int = 0
+    analyzed_pages: int = 0
+    failed_pages: int = 0
+
+    def __post_init__(self) -> None:
+        _validate_uuid("target_id", self.target_id)
+        if self.status not in {"succeeded", "partially_succeeded", "failed", "cancelled"}:
+            raise ValueError("unsupported target result status")
+        if min(self.rendered_pages, self.analyzed_pages, self.failed_pages) < 0:
+            raise ValueError("target result counts must not be negative")
