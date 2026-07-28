@@ -368,14 +368,24 @@ class QdrantVectorStore:
             payload={"points": encoded},
         )
 
-    async def delete_points(self, point_ids: tuple[UUID, ...]) -> None:
+    async def delete_points(
+        self,
+        point_ids: tuple[UUID, ...],
+        identity: CollectionIdentity | None = None,
+        physical_collection: str | None = None,
+    ) -> None:
         if not point_ids or len(point_ids) > self._config.max_batch_size:
             raise ValueError(
                 f"delete batch size must be between 1 and {self._config.max_batch_size}"
             )
+        collection = physical_collection or (
+            identity.physical_name(self._config.collection_alias)
+            if identity is not None
+            else self._config.collection_alias
+        )
         await self._request(
             "POST",
-            f"/collections/{self._path_name(self._config.collection_alias)}/points/delete?wait=true",
+            f"/collections/{self._path_name(collection)}/points/delete?wait=true",
             payload={"points": [str(point_id) for point_id in point_ids]},
         )
 

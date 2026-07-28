@@ -79,8 +79,8 @@ class DesignPatternPayload(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
     project_id: UUID
-    dataset_id: UUID
-    dataset_version_id: UUID
+    dataset_id: UUID | None = None
+    dataset_version_id: UUID | None = None
     source_website_id: UUID
     source_page_id: UUID
     section_pattern_id: UUID

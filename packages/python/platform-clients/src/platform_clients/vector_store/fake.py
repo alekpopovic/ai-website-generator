@@ -98,13 +98,21 @@ class InMemoryVectorStore:
             raise ValueError("point dimensions do not match the collection")
         self._collections[name].update({point.point_id: point for point in points})
 
-    async def delete_points(self, point_ids: tuple[UUID, ...]) -> None:
+    async def delete_points(
+        self,
+        point_ids: tuple[UUID, ...],
+        identity: CollectionIdentity | None = None,
+        physical_collection: str | None = None,
+    ) -> None:
         if not point_ids or len(point_ids) > 1_000:
             raise ValueError("delete batch size must be between 1 and 1000")
-        if self._active is None:
+        collection = physical_collection or (
+            identity.physical_name(self.alias) if identity is not None else self._active
+        )
+        if collection is None:
             raise ValueError("collection alias is not active")
         for point_id in point_ids:
-            self._collections[self._active].pop(point_id, None)
+            self._collections.get(collection, {}).pop(point_id, None)
 
     async def query(self, request: VectorQuery) -> tuple[VectorMatch, ...]:
         if self._active is None:

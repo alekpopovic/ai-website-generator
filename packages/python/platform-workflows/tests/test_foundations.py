@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import pytest
 from platform_workflows.cancellation import raise_if_activity_cancelled
-from platform_workflows.commands import CompactWorkflowInput, ModelWarmupInput
+from platform_workflows.commands import CompactWorkflowInput, EmbeddingIndexInput, ModelWarmupInput
 from platform_workflows.dispatcher import (
     DuplicateWorkflowDispatchError,
     FakeWorkflowDispatcher,
@@ -121,6 +121,24 @@ async def test_model_warmup_dispatch_is_compact_and_duplicate_safe() -> None:
     assert dispatcher.warmups == [command]
     with pytest.raises(DuplicateWorkflowDispatchError):
         await dispatcher.dispatch_model_warmup(command)
+
+
+@pytest.mark.anyio
+async def test_embedding_dispatch_accepts_only_run_and_project_identifiers() -> None:
+    dispatcher = FakeWorkflowDispatcher()
+    project_id = str(uuid4())
+    command = EmbeddingIndexInput(str(uuid4()))
+
+    dispatched = await dispatcher.dispatch_embedding_index(
+        command, project_id=project_id, idempotency_key="embedding-001"
+    )
+
+    assert dispatched.workflow_id.startswith("aiwg:embedding-index:")
+    assert dispatcher.embedding_indexes == [command]
+    with pytest.raises(DuplicateWorkflowDispatchError):
+        await dispatcher.dispatch_embedding_index(
+            command, project_id=project_id, idempotency_key="embedding-001"
+        )
 
 
 @pytest.mark.anyio

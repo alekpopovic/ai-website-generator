@@ -31,7 +31,7 @@ This checklist tracks completion of prompts 00 through 56. Check an item only wh
 - [x] Prompt 26
 - [x] Prompt 27
 - [x] Prompt 28
-- [ ] Prompt 29
+- [x] Prompt 29
 - [ ] Prompt 30
 - [ ] Prompt 31
 - [ ] Prompt 32

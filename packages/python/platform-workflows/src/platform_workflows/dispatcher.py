@@ -8,7 +8,12 @@ from typing import Protocol
 
 from temporalio.client import Client
 
-from platform_workflows.commands import CompactWorkflowInput, ModelWarmupInput, WorkflowResult
+from platform_workflows.commands import (
+    CompactWorkflowInput,
+    EmbeddingIndexInput,
+    ModelWarmupInput,
+    WorkflowResult,
+)
 from platform_workflows.identifiers import (
     WORKFLOW_ID_CONFLICT_POLICY,
     WORKFLOW_ID_REUSE_POLICY,
@@ -43,6 +48,10 @@ class WorkflowDispatcher(Protocol):
 
     async def dispatch_model_warmup(self, command: ModelWarmupInput) -> WorkflowDispatch: ...
 
+    async def dispatch_embedding_index(
+        self, command: EmbeddingIndexInput, *, project_id: str, idempotency_key: str
+    ) -> WorkflowDispatch: ...
+
     async def signal_scan_campaign(self, workflow_id: str, signal: ScanCampaignSignal) -> None: ...
 
 
@@ -58,6 +67,7 @@ _WORKFLOW_NAMES = {
     WorkflowKind.SITE_GENERATION: "SiteGenerationWorkflow",
     WorkflowKind.TRAINING_RUN: "TrainingRunWorkflow",
     WorkflowKind.ARTIFACT_DELETION: "ArtifactDeletionWorkflow",
+    WorkflowKind.EMBEDDING_INDEX: "EmbeddingIndexWorkflow",
 }
 _EXECUTION_TIMEOUTS = {
     WorkflowKind.SCAN_CAMPAIGN: timedelta(hours=4),
@@ -65,6 +75,7 @@ _EXECUTION_TIMEOUTS = {
     WorkflowKind.SITE_GENERATION: timedelta(hours=2),
     WorkflowKind.TRAINING_RUN: timedelta(days=2),
     WorkflowKind.ARTIFACT_DELETION: timedelta(minutes=10),
+    WorkflowKind.EMBEDDING_INDEX: timedelta(hours=4),
 }
 
 
@@ -75,8 +86,8 @@ class TemporalWorkflowDispatcher:
         self._clients = clients
 
     async def dispatch(self, kind: WorkflowKind, command: CompactWorkflowInput) -> WorkflowDispatch:
-        if kind is WorkflowKind.MODEL_WARMUP:
-            raise ValueError("model warm-up requires dispatch_model_warmup")
+        if kind in {WorkflowKind.MODEL_WARMUP, WorkflowKind.EMBEDDING_INDEX}:
+            raise ValueError("workflow kind requires its typed dispatch method")
         client = await self._clients.get()
         resource_id = (
             command.job_id
@@ -115,6 +126,23 @@ class TemporalWorkflowDispatcher:
         )
         return WorkflowDispatch(workflow_id=handle.id, run_id=handle.first_execution_run_id)
 
+    async def dispatch_embedding_index(
+        self, command: EmbeddingIndexInput, *, project_id: str, idempotency_key: str
+    ) -> WorkflowDispatch:
+        client = await self._clients.get()
+        dispatch_id = workflow_id(WorkflowKind.EMBEDDING_INDEX, project_id, idempotency_key)
+        handle = await client.start_workflow(
+            "EmbeddingIndexWorkflow",
+            command,
+            id=dispatch_id,
+            task_queue=TaskQueue.CONTROL.value,
+            result_type=WorkflowResult,
+            execution_timeout=_EXECUTION_TIMEOUTS[WorkflowKind.EMBEDDING_INDEX],
+            id_reuse_policy=WORKFLOW_ID_REUSE_POLICY,
+            id_conflict_policy=WORKFLOW_ID_CONFLICT_POLICY,
+        )
+        return WorkflowDispatch(workflow_id=handle.id, run_id=handle.first_execution_run_id)
+
     async def signal_scan_campaign(self, workflow_id: str, signal: ScanCampaignSignal) -> None:
         if not re.fullmatch(r"aiwg:scan-campaign:[0-9a-f-]{36}:[A-Za-z0-9._-]{1,128}", workflow_id):
             raise ValueError("scan workflow ID is invalid")
@@ -134,10 +162,11 @@ class FakeWorkflowDispatcher:
         self.warmups: list[ModelWarmupInput] = []
         self._workflow_ids: set[str] = set()
         self.scan_signals: list[tuple[str, ScanCampaignSignal]] = []
+        self.embedding_indexes: list[EmbeddingIndexInput] = []
 
     async def dispatch(self, kind: WorkflowKind, command: CompactWorkflowInput) -> WorkflowDispatch:
-        if kind is WorkflowKind.MODEL_WARMUP:
-            raise ValueError("model warm-up requires dispatch_model_warmup")
+        if kind in {WorkflowKind.MODEL_WARMUP, WorkflowKind.EMBEDDING_INDEX}:
+            raise ValueError("workflow kind requires its typed dispatch method")
         resource_id = (
             command.job_id
             if kind in {WorkflowKind.SCAN_CAMPAIGN, WorkflowKind.ARTIFACT_DELETION}
@@ -160,6 +189,16 @@ class FakeWorkflowDispatcher:
             raise DuplicateWorkflowDispatchError(dispatch_id)
         self._workflow_ids.add(dispatch_id)
         self.warmups.append(command)
+        return WorkflowDispatch(workflow_id=dispatch_id, run_id=None)
+
+    async def dispatch_embedding_index(
+        self, command: EmbeddingIndexInput, *, project_id: str, idempotency_key: str
+    ) -> WorkflowDispatch:
+        dispatch_id = workflow_id(WorkflowKind.EMBEDDING_INDEX, project_id, idempotency_key)
+        if dispatch_id in self._workflow_ids:
+            raise DuplicateWorkflowDispatchError(dispatch_id)
+        self._workflow_ids.add(dispatch_id)
+        self.embedding_indexes.append(command)
         return WorkflowDispatch(workflow_id=dispatch_id, run_id=None)
 
     async def signal_scan_campaign(self, workflow_id: str, signal: ScanCampaignSignal) -> None:

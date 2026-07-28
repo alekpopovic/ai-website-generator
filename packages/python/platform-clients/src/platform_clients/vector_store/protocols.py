@@ -38,7 +38,12 @@ class VectorStore(Protocol):
         self, identity: CollectionIdentity, points: tuple[VectorPoint, ...]
     ) -> None: ...
 
-    async def delete_points(self, point_ids: tuple[UUID, ...]) -> None: ...
+    async def delete_points(
+        self,
+        point_ids: tuple[UUID, ...],
+        identity: CollectionIdentity | None = None,
+        physical_collection: str | None = None,
+    ) -> None: ...
 
     async def query(self, request: VectorQuery) -> tuple[VectorMatch, ...]: ...
 

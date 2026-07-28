@@ -43,6 +43,9 @@ def test_initial_migration_renders_postgresql_upgrade_sql(
     assert "CREATE TABLE page_profiles" in upgrade_sql
     assert "CREATE TABLE website_profiles" in upgrade_sql
     assert "CREATE TABLE section_patterns" in upgrade_sql
+    assert "CREATE TABLE embedding_runs" in upgrade_sql
+    assert "CREATE TABLE section_pattern_embeddings" in upgrade_sql
+    assert "CREATE TABLE embedding_index_failures" in upgrade_sql
     assert "CREATE TABLE scan_target_imports" in upgrade_sql
     assert "CREATE TABLE scan_target_import_rows" in upgrade_sql
     assert "CREATE TABLE crawl_policy_records" in upgrade_sql
@@ -64,6 +67,7 @@ def test_initial_migration_renders_postgresql_upgrade_sql(
     assert "uq_scan_artifacts_bucket_object_key" in upgrade_sql
     assert "uq_page_profiles_current_source_page" in upgrade_sql
     assert "ix_section_patterns_hash" in upgrade_sql
+    assert "ix_section_pattern_embeddings_collection" in upgrade_sql
     assert "ck_users_status_allowed" in upgrade_sql
     assert "ck_users_ck_" not in upgrade_sql
     assert "CREATE TYPE" not in upgrade_sql

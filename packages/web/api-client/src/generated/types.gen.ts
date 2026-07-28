@@ -1243,6 +1243,176 @@ export type EmbeddingCollectionVersion = {
 };
 
 /**
+ * EmbeddingFailureResponse
+ */
+export type EmbeddingFailureResponse = {
+    /**
+     * Attempt
+     */
+    attempt: number;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Embedding Run Id
+     */
+    embedding_run_id: string;
+    /**
+     * Error Code
+     */
+    error_code: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Retryable
+     */
+    retryable: boolean;
+    /**
+     * Section Pattern Id
+     */
+    section_pattern_id: string | null;
+};
+
+/**
+ * EmbeddingRunCreateRequest
+ */
+export type EmbeddingRunCreateRequest = {
+    /**
+     * Batch Size
+     */
+    batch_size?: number;
+    /**
+     * Idempotency Key
+     */
+    idempotency_key: string;
+    /**
+     * Kind
+     */
+    kind?: 'incremental' | 'reindex';
+    /**
+     * Promote Alias
+     */
+    promote_alias?: boolean;
+};
+
+/**
+ * EmbeddingRunResponse
+ */
+export type EmbeddingRunResponse = {
+    /**
+     * Alias Switched At
+     */
+    alias_switched_at: string | null;
+    /**
+     * Batch Size
+     */
+    batch_size: number;
+    /**
+     * Collection Alias
+     */
+    collection_alias: string;
+    /**
+     * Completed At
+     */
+    completed_at: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Deleted Patterns
+     */
+    deleted_patterns: number;
+    /**
+     * Dimensions
+     */
+    dimensions: number | null;
+    /**
+     * Embedding Model
+     */
+    embedding_model: string | null;
+    /**
+     * Embedding Model Digest
+     */
+    embedding_model_digest: string | null;
+    /**
+     * Embedding Provider
+     */
+    embedding_provider: string | null;
+    /**
+     * Failed Patterns
+     */
+    failed_patterns: number;
+    /**
+     * Failure Code
+     */
+    failure_code: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Indexed Patterns
+     */
+    indexed_patterns: number;
+    /**
+     * Kind
+     */
+    kind: 'incremental' | 'reindex';
+    /**
+     * Physical Collection
+     */
+    physical_collection: string | null;
+    /**
+     * Processed Patterns
+     */
+    processed_patterns: number;
+    /**
+     * Project Id
+     */
+    project_id: string;
+    /**
+     * Promote Alias
+     */
+    promote_alias: boolean;
+    /**
+     * Serialization Schema Version
+     */
+    serialization_schema_version: number;
+    /**
+     * Started At
+     */
+    started_at: string | null;
+    /**
+     * Status
+     */
+    status: 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
+    /**
+     * Total Patterns
+     */
+    total_patterns: number;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+    /**
+     * Vector Name
+     */
+    vector_name: string;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Workflow Id
+     */
+    workflow_id: string | null;
+};
+
+/**
  * FontCategory
  *
  * Abstract font classification that cannot carry a source-specific family name.
@@ -1605,6 +1775,30 @@ export type PageResponseDuplicateGroupResponse = {
      * Items
      */
     items: Array<DuplicateGroupResponse>;
+    meta?: ResponseMeta;
+    pagination: PaginationMeta;
+};
+
+/**
+ * PageResponse[EmbeddingFailureResponse]
+ */
+export type PageResponseEmbeddingFailureResponse = {
+    /**
+     * Items
+     */
+    items: Array<EmbeddingFailureResponse>;
+    meta?: ResponseMeta;
+    pagination: PaginationMeta;
+};
+
+/**
+ * PageResponse[EmbeddingRunResponse]
+ */
+export type PageResponseEmbeddingRunResponse = {
+    /**
+     * Items
+     */
+    items: Array<EmbeddingRunResponse>;
     meta?: ResponseMeta;
     pagination: PaginationMeta;
 };
@@ -3038,6 +3232,10 @@ export type SectionPatternResponse = {
      */
     layout: 'single-column' | 'two-column' | 'three-column' | 'multi-column' | 'grid' | 'split' | 'overlay' | 'unknown';
     /**
+     * Legally Suppressed At
+     */
+    legally_suppressed_at: string | null;
+    /**
      * Model Digest
      */
     model_digest: string;
@@ -3062,6 +3260,14 @@ export type SectionPatternResponse = {
      * Retrieval Document
      */
     retrieval_document: string;
+    /**
+     * Retrieval Expires At
+     */
+    retrieval_expires_at: string | null;
+    /**
+     * Retrieval Removed At
+     */
+    retrieval_removed_at: string | null;
     /**
      * Review Note
      */
@@ -4060,6 +4266,204 @@ export type UpdateProjectResponses = {
 };
 
 export type UpdateProjectResponse = UpdateProjectResponses[keyof UpdateProjectResponses];
+
+export type ListEmbeddingRunsData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+    };
+    query?: {
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/projects/{project_id}/analysis/embedding-runs';
+};
+
+export type ListEmbeddingRunsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type ListEmbeddingRunsError = ListEmbeddingRunsErrors[keyof ListEmbeddingRunsErrors];
+
+export type ListEmbeddingRunsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageResponseEmbeddingRunResponse;
+};
+
+export type ListEmbeddingRunsResponse = ListEmbeddingRunsResponses[keyof ListEmbeddingRunsResponses];
+
+export type CreateEmbeddingRunData = {
+    body: EmbeddingRunCreateRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/analysis/embedding-runs';
+};
+
+export type CreateEmbeddingRunErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type CreateEmbeddingRunError = CreateEmbeddingRunErrors[keyof CreateEmbeddingRunErrors];
+
+export type CreateEmbeddingRunResponses = {
+    /**
+     * Successful Response
+     */
+    202: EmbeddingRunResponse;
+};
+
+export type CreateEmbeddingRunResponse = CreateEmbeddingRunResponses[keyof CreateEmbeddingRunResponses];
+
+export type GetEmbeddingRunData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/analysis/embedding-runs/{run_id}';
+};
+
+export type GetEmbeddingRunErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type GetEmbeddingRunError = GetEmbeddingRunErrors[keyof GetEmbeddingRunErrors];
+
+export type GetEmbeddingRunResponses = {
+    /**
+     * Successful Response
+     */
+    200: EmbeddingRunResponse;
+};
+
+export type GetEmbeddingRunResponse = GetEmbeddingRunResponses[keyof GetEmbeddingRunResponses];
+
+export type ListEmbeddingRunFailuresData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: {
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/projects/{project_id}/analysis/embedding-runs/{run_id}/failures';
+};
+
+export type ListEmbeddingRunFailuresErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type ListEmbeddingRunFailuresError = ListEmbeddingRunFailuresErrors[keyof ListEmbeddingRunFailuresErrors];
+
+export type ListEmbeddingRunFailuresResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageResponseEmbeddingFailureResponse;
+};
+
+export type ListEmbeddingRunFailuresResponse = ListEmbeddingRunFailuresResponses[keyof ListEmbeddingRunFailuresResponses];
 
 export type ListPageProfilesData = {
     body?: never;

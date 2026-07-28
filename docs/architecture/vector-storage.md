@@ -12,7 +12,8 @@ ownership, dataset lifecycle, source authorization, licensing, provenance, appro
 Every query requires a `project_id` and defaults to approved, verified records.
 
 Each point stores one named dense vector (`design-pattern`), bounded `abstract_pattern_text`, and
-only these validated metadata fields:
+only these validated metadata fields. Dataset identifiers remain null until a pattern is curated
+into an immutable dataset version; all other fields are populated during pattern indexing:
 
 - `project_id`, `dataset_id`, and `dataset_version_id`;
 - `source_website_id`, `source_page_id`, `section_pattern_id`, and normalized `source_domain`;
@@ -36,10 +37,11 @@ Embedding dimensions come from the configured model's Ollama `model_info.*.embed
 metadata. API readiness never generates an embedding. The explicit reindex command may use one
 fixed, non-proprietary abstract probe only when an installed provider omits dimension metadata.
 
-Reindexing creates or resumes the new physical collection, creates payload indexes, scrolls only
-the allowlisted abstract records from the active alias, re-embeds and idempotently upserts batches,
-and atomically changes the alias after success. The old physical collection is retained for
-rollback; removal is a separate reviewed operation.
+Reindexing creates or resumes the new physical collection, creates payload indexes, reloads only
+eligible abstract records from authoritative PostgreSQL state, re-embeds and idempotently upserts
+batches, and atomically changes the alias after success. The old physical collection is retained
+for rollback but remains subject to removal sweeps. See
+[Embedding indexing and drift](embedding-indexing.md).
 
 ## Filtering and diversity
 

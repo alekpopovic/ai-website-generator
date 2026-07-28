@@ -10,6 +10,7 @@ from platform_workflows.commands import (
     ActivityCommand,
     ActivityResult,
     CompactWorkflowInput,
+    EmbeddingIndexInput,
     ModelWarmupInput,
     WorkflowResult,
 )
@@ -224,6 +225,26 @@ class ArtifactDeletionWorkflow:
         )
 
 
+@workflow.defn(name="EmbeddingIndexWorkflow")
+class EmbeddingIndexWorkflow:
+    """Run heavy embedding and Qdrant mutation only on the embedding queue."""
+
+    @workflow.run
+    async def run(self, command: EmbeddingIndexInput) -> WorkflowResult:
+        await workflow.execute_activity(
+            "index-section-patterns",
+            command,
+            result_type=ActivityResult,
+            task_queue=TaskQueue.EMBEDDING.value,
+            start_to_close_timeout=timedelta(hours=4),
+            heartbeat_timeout=timedelta(seconds=30),
+            retry_policy=retry_policy(ActivityCategory.INFERENCE),
+            cancellation_type=ActivityCancellationType.WAIT_CANCELLATION_COMPLETED,
+            activity_id=f"{command.embedding_run_id}:index-section-patterns",
+        )
+        return WorkflowResult(job_id=command.embedding_run_id, status="completed")
+
+
 WORKFLOW_TYPES = (
     ScanCampaignWorkflow,
     DatasetBuildWorkflow,
@@ -231,4 +252,5 @@ WORKFLOW_TYPES = (
     TrainingRunWorkflow,
     ModelWarmupWorkflow,
     ArtifactDeletionWorkflow,
+    EmbeddingIndexWorkflow,
 )

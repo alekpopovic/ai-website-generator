@@ -85,6 +85,11 @@ tasks:
     cmds:
       - uv run platform-ai-worker
 
+  embedding-worker:
+    desc: Run source-safe Ollama embedding and Qdrant indexing activities
+    cmds:
+      - uv run platform-embedding-worker
+
   crawler-worker:
     desc: Run the isolated-subprocess Scrapy activity worker on the crawl queue
     cmds:

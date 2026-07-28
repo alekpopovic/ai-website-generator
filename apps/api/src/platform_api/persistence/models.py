@@ -960,11 +960,134 @@ class SectionPattern(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin
     provenance_state: Mapped[str] = mapped_column(String(32), nullable=False, default="authorized")
     retrieval_document: Mapped[str] = mapped_column(String(4_000), nullable=False)
     pattern_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    retrieval_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    retrieval_removed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    legally_suppressed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     reviewed_by_user_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL")
     )
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     review_note: Mapped[str | None] = mapped_column(String(500))
+
+
+class EmbeddingRun(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base):
+    """Durable incremental index or full-reindex progress record."""
+
+    __tablename__ = "embedding_runs"
+    __table_args__ = (
+        CheckConstraint("kind IN ('incremental', 'reindex')", name="kind_allowed"),
+        CheckConstraint(
+            "status IN ('queued', 'running', 'succeeded', 'failed', 'cancelled')",
+            name="status_allowed",
+        ),
+        CheckConstraint("batch_size BETWEEN 1 AND 256", name="batch_size_valid"),
+        CheckConstraint(
+            "total_patterns >= 0 AND processed_patterns >= 0 AND indexed_patterns >= 0 "
+            "AND deleted_patterns >= 0 AND failed_patterns >= 0",
+            name="counts_nonnegative",
+        ),
+        Index("ix_embedding_runs_project_created", "project_id", "created_at"),
+        Index("ix_embedding_runs_project_status", "project_id", "status"),
+        UniqueConstraint("project_id", "idempotency_key"),
+    )
+
+    project_id: Mapped[UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
+    )
+    requested_by_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="queued")
+    idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    batch_size: Mapped[int] = mapped_column(Integer, nullable=False, default=64)
+    promote_alias: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    collection_alias: Mapped[str] = mapped_column(String(64), nullable=False)
+    physical_collection: Mapped[str | None] = mapped_column(String(240))
+    embedding_provider: Mapped[str | None] = mapped_column(String(32))
+    embedding_model: Mapped[str | None] = mapped_column(String(200))
+    embedding_model_digest: Mapped[str | None] = mapped_column(String(128))
+    serialization_schema_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    vector_name: Mapped[str] = mapped_column(String(64), nullable=False, default="design-pattern")
+    dimensions: Mapped[int | None] = mapped_column(Integer)
+    total_patterns: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    processed_patterns: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    indexed_patterns: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    deleted_patterns: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    failed_patterns: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    workflow_id: Mapped[str | None] = mapped_column(String(255))
+    workflow_run_id: Mapped[str | None] = mapped_column(String(255))
+    failure_code: Mapped[str | None] = mapped_column(String(100))
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    alias_switched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class SectionPatternEmbedding(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base):
+    """Per-physical-collection index state for one authoritative section pattern."""
+
+    __tablename__ = "section_pattern_embeddings"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending', 'indexing', 'indexed', 'deleting', 'deleted', 'failed')",
+            name="status_allowed",
+        ),
+        CheckConstraint("attempts >= 0", name="attempts_nonnegative"),
+        Index("ix_section_pattern_embeddings_run_status", "embedding_run_id", "status"),
+        Index("ix_section_pattern_embeddings_pattern", "section_pattern_id", "status"),
+        Index("ix_section_pattern_embeddings_collection", "physical_collection", "status"),
+        UniqueConstraint("section_pattern_id", "physical_collection"),
+    )
+
+    project_id: Mapped[UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
+    )
+    section_pattern_id: Mapped[UUID] = mapped_column(
+        ForeignKey("section_patterns.id", ondelete="CASCADE"), nullable=False
+    )
+    embedding_run_id: Mapped[UUID] = mapped_column(
+        ForeignKey("embedding_runs.id", ondelete="CASCADE"), nullable=False
+    )
+    dataset_id: Mapped[UUID | None]
+    dataset_version_id: Mapped[UUID | None]
+    physical_collection: Mapped[str] = mapped_column(String(240), nullable=False)
+    embedding_provider: Mapped[str] = mapped_column(String(32), nullable=False)
+    embedding_model: Mapped[str] = mapped_column(String(200), nullable=False)
+    embedding_model_digest: Mapped[str] = mapped_column(String(128), nullable=False)
+    serialization_schema_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    vector_name: Mapped[str] = mapped_column(String(64), nullable=False)
+    document_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending")
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    error_code: Mapped[str | None] = mapped_column(String(100))
+    indexed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class EmbeddingIndexFailure(UUIDPrimaryKeyMixin, Base):
+    """Append-only sanitized indexing failure history."""
+
+    __tablename__ = "embedding_index_failures"
+    __table_args__ = (
+        CheckConstraint("attempt >= 1", name="attempt_positive"),
+        Index("ix_embedding_index_failures_run_created", "embedding_run_id", "created_at"),
+    )
+
+    project_id: Mapped[UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
+    )
+    embedding_run_id: Mapped[UUID] = mapped_column(
+        ForeignKey("embedding_runs.id", ondelete="CASCADE"), nullable=False
+    )
+    section_pattern_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("section_patterns.id", ondelete="SET NULL")
+    )
+    error_code: Mapped[str] = mapped_column(String(100), nullable=False)
+    attempt: Mapped[int] = mapped_column(Integer, nullable=False)
+    retryable: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=text("CURRENT_TIMESTAMP")
+    )
 
 
 class ScanFailure(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base):

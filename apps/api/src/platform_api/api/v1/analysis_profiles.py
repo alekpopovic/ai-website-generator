@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Query, Request, status
 
 from platform_api.analysis.dependencies import AnalysisProfileServiceDependency
 from platform_api.analysis.schemas import (
@@ -16,6 +16,12 @@ from platform_api.analysis.schemas import (
     WebsiteProfileResponse,
 )
 from platform_api.auth.dependencies import CurrentUserDependency
+from platform_api.embedding.dependencies import EmbeddingRunServiceDependency
+from platform_api.embedding.schemas import (
+    EmbeddingFailureResponse,
+    EmbeddingRunCreateRequest,
+    EmbeddingRunResponse,
+)
 from platform_api.errors import problem_responses, request_id_from
 from platform_api.models.common import PageResponse, PaginationMeta, PaginationParams, ResponseMeta
 
@@ -220,3 +226,83 @@ def _page[ItemT](
         pagination=PaginationMeta.from_params(params, total),
         meta=ResponseMeta(request_id=request_id_from(request)),
     )
+
+
+@router.post(
+    "/embedding-runs",
+    response_model=EmbeddingRunResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    operation_id="createEmbeddingRun",
+    responses=problem_responses(401, 404, 409, 422, 503),
+)
+async def create_embedding_run(
+    project_id: UUID,
+    payload: EmbeddingRunCreateRequest,
+    request: Request,
+    user: CurrentUserDependency,
+    service: EmbeddingRunServiceDependency,
+) -> EmbeddingRunResponse:
+    return await service.create(
+        project_id,
+        payload,
+        owner_id=user.id,
+        request_id=request_id_from(request),
+    )
+
+
+@router.get(
+    "/embedding-runs",
+    response_model=PageResponse[EmbeddingRunResponse],
+    operation_id="listEmbeddingRuns",
+    responses=problem_responses(401, 404, 422, 503),
+)
+async def list_embedding_runs(
+    project_id: UUID,
+    request: Request,
+    user: CurrentUserDependency,
+    service: EmbeddingRunServiceDependency,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> PageResponse[EmbeddingRunResponse]:
+    page = await service.list(project_id, owner_id=user.id, limit=limit, offset=offset)
+    return _page(request, page.items, page.total, offset, limit)
+
+
+@router.get(
+    "/embedding-runs/{run_id}",
+    response_model=EmbeddingRunResponse,
+    operation_id="getEmbeddingRun",
+    responses=problem_responses(401, 404, 503),
+)
+async def get_embedding_run(
+    project_id: UUID,
+    run_id: UUID,
+    user: CurrentUserDependency,
+    service: EmbeddingRunServiceDependency,
+) -> EmbeddingRunResponse:
+    return await service.get(project_id, run_id, owner_id=user.id)
+
+
+@router.get(
+    "/embedding-runs/{run_id}/failures",
+    response_model=PageResponse[EmbeddingFailureResponse],
+    operation_id="listEmbeddingRunFailures",
+    responses=problem_responses(401, 404, 422, 503),
+)
+async def list_embedding_run_failures(
+    project_id: UUID,
+    run_id: UUID,
+    request: Request,
+    user: CurrentUserDependency,
+    service: EmbeddingRunServiceDependency,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> PageResponse[EmbeddingFailureResponse]:
+    page = await service.failures(
+        project_id,
+        run_id,
+        owner_id=user.id,
+        limit=limit,
+        offset=offset,
+    )
+    return _page(request, page.items, page.total, offset, limit)

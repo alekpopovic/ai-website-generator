@@ -16,6 +16,7 @@ class WorkflowKind(StrEnum):
     TRAINING_RUN = "training-run"
     MODEL_WARMUP = "model-warmup"
     ARTIFACT_DELETION = "artifact-deletion"
+    EMBEDDING_INDEX = "embedding-index"
 
 
 class ModelRole(StrEnum):

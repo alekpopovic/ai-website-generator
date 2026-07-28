@@ -46,7 +46,11 @@ _POLICIES: dict[ActivityCategory, RetryPolicy] = {
         backoff_coefficient=2,
         maximum_interval=timedelta(minutes=2),
         maximum_attempts=3,
-        non_retryable_error_types=["InvalidModelOutput", "UnsupportedModel"],
+        non_retryable_error_types=[
+            "EmbeddingIndexError",
+            "InvalidModelOutput",
+            "UnsupportedModel",
+        ],
     ),
     ActivityCategory.STORAGE: RetryPolicy(
         initial_interval=timedelta(seconds=1),

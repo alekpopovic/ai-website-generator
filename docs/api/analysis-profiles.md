@@ -37,3 +37,7 @@ All paths are under `/api/v1/projects/{project_id}/analysis`:
 Curation uses optimistic versions and records the actor, timestamp, optional bounded note, and an audit event. Audit details include only the old and new state, never profile JSON or source content.
 
 The project **Analysis** tab uses the generated TypeScript client. It renders typed values as text and has no scanned-HTML rendering path.
+
+## Embedding indexing progress
+
+`POST /embedding-runs` queues an incremental index or full reindex Temporal workflow and returns `202`; FastAPI performs no embedding or Qdrant mutation. `GET /embedding-runs`, `GET /embedding-runs/{run_id}`, and `GET /embedding-runs/{run_id}/failures` expose owner-scoped counts, collection/model identity, alias-switch time, and sanitized failures. An idempotency key prevents duplicate logical runs, and alias promotion is accepted only for a full reindex.

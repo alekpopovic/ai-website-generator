@@ -47,12 +47,15 @@ def test_metadata_contains_named_foundation_tables_and_constraints() -> None:
         "scan_targets",
         "crawl_pages",
         "crawl_policy_records",
+        "embedding_index_failures",
+        "embedding_runs",
         "page_scans",
         "page_profiles",
         "scan_failures",
         "scan_target_imports",
         "scan_target_import_rows",
         "section_patterns",
+        "section_pattern_embeddings",
         "website_profiles",
     }
     assert Base.metadata.tables["users"].primary_key.name == "pk_users"

@@ -47,8 +47,9 @@ task workflow-worker
 ```
 
 The service registers `ScanCampaignWorkflow`, `DatasetBuildWorkflow`, `SiteGenerationWorkflow`,
-`TrainingRunWorkflow`, and the administrator-only `ModelWarmupWorkflow` on `control`. Other business
-activities remain future work except for the target-level Scrapy crawl activity.
+`TrainingRunWorkflow`, the administrator-only `ModelWarmupWorkflow`, and `EmbeddingIndexWorkflow`
+on `control`. Other business activities remain future work except for the target-level Scrapy crawl
+activity and PostgreSQL-authoritative embedding indexing.
 
 `ScanCampaignWorkflow` is intentionally control-only in the current increment. It retains durable
 queued/paused/cancelling control state and accepts pause, resume, and cancel signals, but it has no
@@ -86,9 +87,21 @@ task ai-worker
 ```
 
 It polls `ai-analysis`, heartbeats during model loading, and uses the provider-neutral gateway. It
-never downloads models and never runs model work inside FastAPI. Future activity-worker entry points
-use the shared `WorkerConfig`, their assigned queue, and `WorkerHealthIndicator` for explicit
-ready/stopping/failed process state.
+never downloads models and never runs model work inside FastAPI.
+
+Start the embedding worker when an embedding run has been queued through the control-plane API:
+
+```sh
+task embedding-worker
+```
+
+It polls `embedding`, receives only an embedding-run UUID, and performs bounded Ollama and Qdrant
+work outside FastAPI. Full reindex runs switch the stable alias only after successful completion;
+incremental runs refuse model drift. See
+[Embedding indexing and drift](../architecture/embedding-indexing.md).
+
+All workers use the shared `WorkerConfig`, their assigned queue, and `WorkerHealthIndicator` for
+explicit ready/stopping/failed process state.
 
 Stop the foreground worker with `Ctrl-C`, then stop dependencies with `task compose-down`.
 

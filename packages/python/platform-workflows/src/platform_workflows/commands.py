@@ -128,3 +128,13 @@ class ModelWarmupInput:
         _validate_uuid("requested_by_user_id", self.requested_by_user_id)
         if not _IDEMPOTENCY_KEY.fullmatch(self.idempotency_key):
             raise ValueError("idempotency_key must be a bounded URL-safe identifier")
+
+
+@dataclass(frozen=True, slots=True)
+class EmbeddingIndexInput:
+    """Identifier-only command for an incremental index or full reindex run."""
+
+    embedding_run_id: str
+
+    def __post_init__(self) -> None:
+        _validate_uuid("embedding_run_id", self.embedding_run_id)

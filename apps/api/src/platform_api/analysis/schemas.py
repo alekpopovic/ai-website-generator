@@ -183,6 +183,9 @@ class SectionPatternResponse(BaseModel):
     provenance_state: ProvenanceState
     retrieval_document: str
     pattern_hash: str
+    retrieval_expires_at: datetime | None
+    retrieval_removed_at: datetime | None
+    legally_suppressed_at: datetime | None
     review_note: str | None
     reviewed_at: datetime | None
     created_at: datetime
