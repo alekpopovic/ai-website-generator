@@ -170,14 +170,67 @@ function projectRoutes(): Routes {
       children: [
         section('generated-sites', 'Generated sites', 'Generated site versions will appear here.'),
         {
-          path: 'scans/:campaignId/import-targets',
-          title: 'Import scan targets',
+          path: 'scans',
+          title: 'Scan campaigns',
           loadComponent: () =>
-            import('./features/scanner/scan-target-import-page.component').then(
-              (module) => module.ScanTargetImportPageComponent,
+            import('./features/scanner/scan-campaign-list-page.component').then(
+              (module) => module.ScanCampaignListPageComponent,
             ),
         },
-        section('scans', 'Scans', 'Project scans will appear here.'),
+        {
+          path: 'scans/new',
+          title: 'Create scan campaign',
+          loadComponent: () =>
+            import('./features/scanner/scan-campaign-create-page.component').then(
+              (module) => module.ScanCampaignCreatePageComponent,
+            ),
+        },
+        {
+          path: 'scans/:campaignId',
+          title: 'Review scan campaign',
+          loadComponent: () =>
+            import('./features/scanner/scan-campaign-detail-shell.component').then(
+              (module) => module.ScanCampaignDetailShellComponent,
+            ),
+          children: [
+            scanReviewTab('overview', 'Campaign overview', 'overview'),
+            scanReviewTab('targets', 'Scan targets', 'targets'),
+            {
+              path: 'import-targets',
+              title: 'Import scan targets',
+              loadComponent: () =>
+                import('./features/scanner/scan-target-import-page.component').then(
+                  (module) => module.ScanTargetImportPageComponent,
+                ),
+            },
+            {
+              path: 'pages',
+              title: 'Discovered pages',
+              loadComponent: () =>
+                import('./features/scanner/scan-page-list.component').then(
+                  (module) => module.ScanPageListComponent,
+                ),
+            },
+            {
+              path: 'pages/:pageId',
+              title: 'Page scan review',
+              loadComponent: () =>
+                import('./features/scanner/scan-page-detail.component').then(
+                  (module) => module.ScanPageDetailComponent,
+                ),
+            },
+            {
+              path: 'failures',
+              title: 'Scan failures',
+              loadComponent: () =>
+                import('./features/scanner/scan-failure-list.component').then(
+                  (module) => module.ScanFailureListComponent,
+                ),
+            },
+            scanReviewTab('activity', 'Campaign activity', 'activity'),
+            { path: '', pathMatch: 'full', redirectTo: 'overview' },
+          ],
+        },
         section('datasets', 'Datasets', 'Project datasets will appear here.'),
         section('assets', 'Assets', 'Project assets will appear here.'),
         section('settings', 'Settings', 'Use Edit project to change workspace defaults.'),
@@ -185,6 +238,22 @@ function projectRoutes(): Routes {
       ],
     },
   ];
+}
+
+function scanReviewTab(
+  path: string,
+  title: string,
+  tab: 'activity' | 'overview' | 'targets',
+): Routes[number] {
+  return {
+    path,
+    title,
+    data: { tab },
+    loadComponent: () =>
+      import('./features/scanner/scan-campaign-review-tab.component').then(
+        (module) => module.ScanCampaignReviewTabComponent,
+      ),
+  };
 }
 
 function developerRoutes(): Routes {

@@ -5,7 +5,7 @@ from __future__ import annotations
 import csv
 import io
 from collections.abc import AsyncIterator
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Query, Request, Response, status
@@ -31,9 +31,13 @@ from platform_api.scans.dependencies import (
 )
 from platform_api.scans.schemas import (
     CampaignActionRequest,
+    CampaignActivityResponse,
     CampaignVersionRequest,
+    CrawlPageDetailResponse,
     CrawlPageResponse,
     CrawlPageWithScansResponse,
+    DuplicateGroupResponse,
+    RepresentativeDecisionResponse,
     RepresentativeOverrideRequest,
     ScanCampaignCreateRequest,
     ScanCampaignResponse,
@@ -44,7 +48,9 @@ from platform_api.scans.schemas import (
     ScanTargetImportCommitRequest,
     ScanTargetImportResponse,
     ScanTargetResponse,
+    SelectedFailureRetryRequest,
     TargetImportSource,
+    TargetSummaryResponse,
 )
 
 router = APIRouter(prefix="/projects/{project_id}/scan-campaigns")
@@ -279,6 +285,32 @@ async def retry_scan_campaign_failures(
     )
 
 
+@router.post(
+    "/{campaign_id}/retry-selected-failures",
+    response_model=ScanCampaignResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    operation_id="retrySelectedScanCampaignFailures",
+    responses=problem_responses(401, 404, 409, 422, 503),
+)
+async def retry_selected_scan_campaign_failures(
+    project_id: UUID,
+    campaign_id: UUID,
+    payload: SelectedFailureRetryRequest,
+    request: Request,
+    user: CurrentUserDependency,
+    service: ScanCampaignServiceDependency,
+) -> ScanCampaignResponse:
+    return await service.retry_selected_failures(
+        project_id,
+        campaign_id,
+        version=payload.version,
+        idempotency_key=payload.idempotency_key,
+        failure_ids=payload.failure_ids,
+        owner_id=user.id,
+        request_id=request_id_from(request),
+    )
+
+
 @router.get(
     "/{campaign_id}/summary",
     response_model=ScanCampaignSummaryResponse,
@@ -468,6 +500,22 @@ async def list_scan_campaign_targets(
     return _page_response(request, page.items, page.total, params)
 
 
+@router.get(
+    "/{campaign_id}/targets/{target_id}/summary",
+    response_model=TargetSummaryResponse,
+    operation_id="getScanCampaignTargetSummary",
+    responses=problem_responses(401, 404, 503),
+)
+async def get_scan_campaign_target_summary(
+    project_id: UUID,
+    campaign_id: UUID,
+    target_id: UUID,
+    user: CurrentUserDependency,
+    service: ScanCampaignServiceDependency,
+) -> TargetSummaryResponse:
+    return await service.target_summary(project_id, campaign_id, target_id, owner_id=user.id)
+
+
 @router.delete(
     "/{campaign_id}/targets/{target_id}",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -510,6 +558,104 @@ async def list_scan_campaign_pages(
 ) -> PageResponse[CrawlPageWithScansResponse]:
     page = await service.list_pages(project_id, campaign_id, owner_id=user.id, params=params)
     return _page_response(request, page.items, page.total, params)
+
+
+@router.get(
+    "/{campaign_id}/pages/{page_id}",
+    response_model=CrawlPageDetailResponse,
+    operation_id="getScanCampaignPage",
+    responses=problem_responses(401, 404, 503),
+)
+async def get_scan_campaign_page(
+    project_id: UUID,
+    campaign_id: UUID,
+    page_id: UUID,
+    user: CurrentUserDependency,
+    service: ScanCampaignServiceDependency,
+    artifacts: ScanArtifactServiceDependency,
+) -> CrawlPageDetailResponse:
+    page, page_scans, failures = await service.page_detail(
+        project_id, campaign_id, page_id, owner_id=user.id
+    )
+    manifest = await artifacts.list_for_page(project_id, campaign_id, page_id, owner_id=user.id)
+    return CrawlPageDetailResponse(
+        page=page, page_scans=page_scans, failures=failures, artifacts=manifest
+    )
+
+
+@router.get(
+    "/{campaign_id}/duplicate-groups",
+    response_model=PageResponse[DuplicateGroupResponse],
+    operation_id="listScanCampaignDuplicateGroups",
+    responses=problem_responses(401, 404, 422, 503),
+)
+async def list_scan_campaign_duplicate_groups(
+    project_id: UUID,
+    campaign_id: UUID,
+    request: Request,
+    user: CurrentUserDependency,
+    service: ScanCampaignServiceDependency,
+    group_type: Annotated[Literal["exact", "near", "template"], Query()] = "exact",
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> PageResponse[DuplicateGroupResponse]:
+    page = await service.duplicate_groups(
+        project_id,
+        campaign_id,
+        owner_id=user.id,
+        group_type=group_type,
+        limit=limit,
+        offset=offset,
+    )
+    return _page_response(
+        request, page.items, page.total, PaginationParams(offset=offset, limit=limit)
+    )
+
+
+@router.get(
+    "/{campaign_id}/representative-decisions",
+    response_model=PageResponse[RepresentativeDecisionResponse],
+    operation_id="listScanCampaignRepresentativeDecisions",
+    responses=problem_responses(401, 404, 422, 503),
+)
+async def list_scan_campaign_representative_decisions(
+    project_id: UUID,
+    campaign_id: UUID,
+    request: Request,
+    user: CurrentUserDependency,
+    service: ScanCampaignServiceDependency,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> PageResponse[RepresentativeDecisionResponse]:
+    page = await service.representative_decisions(
+        project_id, campaign_id, owner_id=user.id, limit=limit, offset=offset
+    )
+    return _page_response(
+        request, page.items, page.total, PaginationParams(offset=offset, limit=limit)
+    )
+
+
+@router.get(
+    "/{campaign_id}/activity",
+    response_model=PageResponse[CampaignActivityResponse],
+    operation_id="listScanCampaignActivity",
+    responses=problem_responses(401, 404, 422, 503),
+)
+async def list_scan_campaign_activity(
+    project_id: UUID,
+    campaign_id: UUID,
+    request: Request,
+    user: CurrentUserDependency,
+    service: ScanCampaignServiceDependency,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> PageResponse[CampaignActivityResponse]:
+    page = await service.activity(
+        project_id, campaign_id, owner_id=user.id, limit=limit, offset=offset
+    )
+    return _page_response(
+        request, page.items, page.total, PaginationParams(offset=offset, limit=limit)
+    )
 
 
 @router.get(

@@ -31,6 +31,7 @@ class CompactWorkflowInput:
     requested_by_user_id: str
     idempotency_key: str
     input_object_key: str | None = None
+    resource_ids: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         _validate_uuid("job_id", self.job_id)
@@ -39,6 +40,10 @@ class CompactWorkflowInput:
         if not _IDEMPOTENCY_KEY.fullmatch(self.idempotency_key):
             raise ValueError("idempotency_key must be a bounded URL-safe identifier")
         _validate_object_key("input_object_key", self.input_object_key)
+        if len(self.resource_ids) > 100 or len(self.resource_ids) != len(set(self.resource_ids)):
+            raise ValueError("resource_ids must contain at most 100 unique UUIDs")
+        for resource_id in self.resource_ids:
+            _validate_uuid("resource_id", resource_id)
 
 
 @dataclass(frozen=True, slots=True)

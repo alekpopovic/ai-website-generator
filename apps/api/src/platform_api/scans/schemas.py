@@ -12,6 +12,7 @@ from uuid import UUID
 from fastapi import Query
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from platform_api.artifacts.schemas import ScanArtifactResponse
 from platform_api.models.common import PaginationParams
 
 ScanCampaignStatus = Literal[
@@ -447,8 +448,94 @@ class PageScanResponse(ScanModel):
     completed_at: datetime | None
 
 
+class PageScanDetailResponse(PageScanResponse):
+    configuration_hash: str | None
+    capture_schema_version: int | None
+    browser_version: str | None
+    final_url: str | None
+    response_metadata: dict[str, object]
+    page_title: str | None
+    meta_description: str | None
+    canonical_url: str | None
+    language: str | None
+    visible_text_summary: str | None
+    extractor_version: str | None
+    extracted_node_count: int | None
+    extraction_payload_bytes: int | None
+    extraction_truncated: bool
+    semantic_snapshot_summary: dict[str, object]
+    console_errors: tuple[object, ...]
+    page_errors: tuple[object, ...]
+    failed_requests: tuple[object, ...]
+    external_host_manifest: tuple[object, ...]
+    document_width: int | None
+    document_height: int | None
+    screenshot_width: int | None
+    screenshot_height: int | None
+    full_page_truncated: bool
+
+
 class CrawlPageWithScansResponse(CrawlPageResponse):
     page_scans: tuple[PageScanResponse, ...] = ()
+
+
+class TargetSummaryResponse(ScanModel):
+    target: ScanTargetResponse
+    page_counts: dict[str, int]
+    page_scan_counts: dict[str, int]
+    failure_count: int
+    unresolved_failure_count: int
+
+
+class DuplicateGroupResponse(ScanModel):
+    group_type: Literal["exact", "near", "template"]
+    group_key: str
+    member_count: int
+    representative_page_id: UUID
+    representative_url: str
+    member_page_ids: tuple[UUID, ...]
+
+
+class RepresentativeDecisionResponse(ScanModel):
+    page_id: UUID
+    normalized_url: str
+    page_type: PageType | None
+    selected: bool
+    rank: int | None
+    score: float | None
+    explanation: tuple[str, ...]
+    selector: str | None
+    selector_version: int | None
+    manual_selection: Literal["automatic", "include", "exclude"]
+    manual_selection_reason: str | None
+    version: int
+
+
+class CampaignActivityResponse(ScanModel):
+    id: UUID
+    sequence: int
+    event_type: str
+    status: Literal["queued", "running", "succeeded", "failed", "cancelled"]
+    payload: dict[str, object]
+    created_at: datetime
+
+
+class CrawlPageDetailResponse(ScanModel):
+    page: CrawlPageResponse
+    page_scans: tuple[PageScanDetailResponse, ...]
+    failures: tuple[ScanFailureResponse, ...]
+    artifacts: tuple[ScanArtifactResponse, ...]
+
+
+class SelectedFailureRetryRequest(CampaignActionRequest):
+    failure_ids: tuple[UUID, ...] = Field(min_length=1, max_length=100)
+
+    @field_validator("failure_ids")
+    @classmethod
+    def unique_failure_ids(cls, values: tuple[UUID, ...]) -> tuple[UUID, ...]:
+        if len(values) != len(set(values)):
+            raise ValueError("Failure IDs must be unique.")
+        return values
 
 
 class ScanFailureResponse(ScanModel):
@@ -521,8 +608,15 @@ class ScanItemListParams(PaginationParams):
     status: str | None = None
 
 
+class PageReviewListParams(PaginationParams):
+    status: CrawlPageStatus | None = None
+    page_type: PageType | None = None
+    domain: str | None = None
+
+
 class FailureListParams(PaginationParams):
     stage: FailureStage | None = None
+    error_code: str | None = None
     retryable: bool | None = None
     unresolved_only: bool = False
 

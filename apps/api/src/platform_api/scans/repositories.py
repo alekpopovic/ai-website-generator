@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import cast
 from uuid import UUID
 
@@ -11,6 +12,7 @@ from sqlalchemy.orm import selectinload
 
 from platform_api.persistence.models import (
     CrawlPage,
+    JobEvent,
     PageScan,
     Project,
     ScanCampaign,
@@ -18,6 +20,13 @@ from platform_api.persistence.models import (
     ScanTarget,
 )
 from platform_api.persistence.pagination import Page, apply_pagination
+
+
+@dataclass(frozen=True, slots=True)
+class DuplicateGroupProjection:
+    group_type: str
+    group_key: str
+    members: tuple[CrawlPage, ...]
 
 
 class ScanCampaignRepository:
@@ -196,6 +205,8 @@ class ScanCampaignRepository:
         limit: int,
         offset: int,
         status: str | None,
+        page_type: str | None,
+        domain: str | None,
     ) -> Page[CrawlPage]:
         filters = [
             CrawlPage.campaign_id == campaign_id,
@@ -204,6 +215,10 @@ class ScanCampaignRepository:
         ]
         if status:
             filters.append(CrawlPage.status == status)
+        if page_type:
+            filters.append(CrawlPage.page_type == page_type)
+        if domain:
+            filters.append(CrawlPage.source_domain == domain.casefold())
         base = (
             select(CrawlPage)
             .join(ScanCampaign, CrawlPage.campaign_id == ScanCampaign.id)
@@ -245,6 +260,7 @@ class ScanCampaignRepository:
                 ScanCampaign.project_id == project_id,
                 Project.owner_id == owner_id,
             )
+            .options(selectinload(CrawlPage.page_scans))
         )
         if for_update:
             statement = statement.with_for_update(of=CrawlPage)
@@ -271,6 +287,7 @@ class ScanCampaignRepository:
         limit: int,
         offset: int,
         stage: str | None,
+        error_code: str | None,
         retryable: bool | None,
         unresolved_only: bool,
     ) -> Page[ScanFailure]:
@@ -281,6 +298,8 @@ class ScanCampaignRepository:
         ]
         if stage:
             filters.append(ScanFailure.stage == stage)
+        if error_code:
+            filters.append(ScanFailure.error_code == error_code)
         if retryable is not None:
             filters.append(ScanFailure.retryable.is_(retryable))
         if unresolved_only:
@@ -305,6 +324,140 @@ class ScanCampaignRepository:
             .where(*filters)
         )
         return Page(items=items, total=total or 0, limit=limit, offset=offset)
+
+    async def failures_for_page(self, page_id: UUID) -> tuple[ScanFailure, ...]:
+        return tuple(
+            (
+                await self._session.scalars(
+                    select(ScanFailure)
+                    .where(ScanFailure.crawl_page_id == page_id)
+                    .order_by(ScanFailure.created_at.desc(), ScanFailure.id.asc())
+                )
+            ).all()
+        )
+
+    async def selected_retryable_failures(
+        self, campaign_id: UUID, failure_ids: tuple[UUID, ...]
+    ) -> tuple[ScanFailure, ...]:
+        return tuple(
+            (
+                await self._session.scalars(
+                    select(ScanFailure).where(
+                        ScanFailure.campaign_id == campaign_id,
+                        ScanFailure.id.in_(failure_ids),
+                        ScanFailure.retryable.is_(True),
+                        ScanFailure.resolved_at.is_(None),
+                    )
+                )
+            ).all()
+        )
+
+    async def target_summary_counts(
+        self, campaign_id: UUID, target_id: UUID
+    ) -> tuple[dict[str, int], dict[str, int], int, int]:
+        page_rows = await self._session.execute(
+            select(CrawlPage.status, func.count())
+            .where(CrawlPage.campaign_id == campaign_id, CrawlPage.target_id == target_id)
+            .group_by(CrawlPage.status)
+        )
+        scan_rows = await self._session.execute(
+            select(PageScan.status, func.count())
+            .join(CrawlPage, PageScan.crawl_page_id == CrawlPage.id)
+            .where(CrawlPage.target_id == target_id)
+            .group_by(PageScan.status)
+        )
+        failure_count = await self._session.scalar(
+            select(func.count()).select_from(ScanFailure).where(ScanFailure.target_id == target_id)
+        )
+        unresolved = await self._session.scalar(
+            select(func.count())
+            .select_from(ScanFailure)
+            .where(ScanFailure.target_id == target_id, ScanFailure.resolved_at.is_(None))
+        )
+        return (
+            {str(status): int(count) for status, count in page_rows},
+            {str(status): int(count) for status, count in scan_rows},
+            int(failure_count or 0),
+            int(unresolved or 0),
+        )
+
+    async def duplicate_group_page(
+        self,
+        campaign_id: UUID,
+        *,
+        group_type: str,
+        limit: int,
+        offset: int,
+    ) -> Page[DuplicateGroupProjection]:
+        group_column = {
+            "exact": CrawlPage.exact_group_key,
+            "near": CrawlPage.near_group_key,
+            "template": CrawlPage.template_group_key,
+        }[group_type]
+        grouped = (
+            select(group_column.label("group_key"), func.count().label("member_count"))
+            .where(CrawlPage.campaign_id == campaign_id, group_column.is_not(None))
+            .group_by(group_column)
+            .having(func.count() > 1)
+            .subquery()
+        )
+        total = int(await self._session.scalar(select(func.count()).select_from(grouped)) or 0)
+        keys = tuple(
+            (
+                await self._session.scalars(
+                    select(grouped.c.group_key)
+                    .order_by(grouped.c.member_count.desc(), grouped.c.group_key.asc())
+                    .limit(limit)
+                    .offset(offset)
+                )
+            ).all()
+        )
+        if not keys:
+            return Page(items=(), total=total, limit=limit, offset=offset)
+        pages = tuple(
+            (
+                await self._session.scalars(
+                    select(CrawlPage)
+                    .where(CrawlPage.campaign_id == campaign_id, group_column.in_(keys))
+                    .order_by(CrawlPage.normalized_url.asc(), CrawlPage.id.asc())
+                )
+            ).all()
+        )
+        attribute = f"{group_type}_group_key"
+        by_key: dict[str, list[CrawlPage]] = {str(key): [] for key in keys}
+        for page in pages:
+            by_key[cast(str, getattr(page, attribute))].append(page)
+        return Page(
+            items=tuple(
+                DuplicateGroupProjection(group_type, str(key), tuple(by_key[str(key)]))
+                for key in keys
+            ),
+            total=total,
+            limit=limit,
+            offset=offset,
+        )
+
+    async def activity_page(self, campaign_id: UUID, *, limit: int, offset: int) -> Page[JobEvent]:
+        items = tuple(
+            (
+                await self._session.scalars(
+                    apply_pagination(
+                        select(JobEvent)
+                        .where(JobEvent.job_id == campaign_id)
+                        .order_by(JobEvent.sequence.desc()),
+                        limit=limit,
+                        offset=offset,
+                    )
+                )
+            ).all()
+        )
+        total = int(
+            await self._session.scalar(
+                select(func.count()).select_from(JobEvent).where(JobEvent.job_id == campaign_id)
+            )
+            or 0
+        )
+        return Page(items=items, total=total, limit=limit, offset=offset)
 
     async def summary_counts(
         self, campaign_id: UUID

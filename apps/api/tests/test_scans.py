@@ -16,6 +16,7 @@ from platform_api.persistence.audit import AuditLogService
 from platform_api.persistence.models import (
     AuditLog,
     CrawlPage,
+    JobEvent,
     Project,
     ScanCampaign,
     ScanFailure,
@@ -24,6 +25,7 @@ from platform_api.persistence.models import (
 )
 from platform_api.persistence.pagination import Page
 from platform_api.scans.dependencies import scan_campaign_service_dependency
+from platform_api.scans.repositories import DuplicateGroupProjection
 from platform_api.scans.schemas import (
     ScanCampaignCreateRequest,
     ScanCampaignUpdateRequest,
@@ -304,6 +306,52 @@ class FakeScanRepository:
             failure.campaign_id == campaign_id and failure.retryable and failure.resolved_at is None
             for failure in self.failures.values()
         )
+
+    async def selected_retryable_failures(
+        self, campaign_id: UUID, failure_ids: tuple[UUID, ...]
+    ) -> tuple[ScanFailure, ...]:
+        return tuple(
+            failure
+            for failure_id in failure_ids
+            if (failure := self.failures.get(failure_id)) is not None
+            and failure.campaign_id == campaign_id
+            and failure.retryable
+            and failure.resolved_at is None
+        )
+
+    async def failures_for_page(self, page_id: UUID) -> tuple[ScanFailure, ...]:
+        return tuple(
+            failure for failure in self.failures.values() if failure.crawl_page_id == page_id
+        )
+
+    async def target_summary_counts(
+        self, campaign_id: UUID, target_id: UUID
+    ) -> tuple[dict[str, int], dict[str, int], int, int]:
+        pages = [
+            page
+            for page in self.pages.values()
+            if page.campaign_id == campaign_id and page.target_id == target_id
+        ]
+        failures = [failure for failure in self.failures.values() if failure.target_id == target_id]
+        return (
+            {
+                status: sum(page.status == status for page in pages)
+                for status in {p.status for p in pages}
+            },
+            {},
+            len(failures),
+            sum(failure.resolved_at is None for failure in failures),
+        )
+
+    async def duplicate_group_page(
+        self, campaign_id: UUID, *, group_type: str, limit: int, offset: int
+    ) -> Page[DuplicateGroupProjection]:
+        del campaign_id, group_type
+        return Page(items=(), total=0, limit=limit, offset=offset)
+
+    async def activity_page(self, campaign_id: UUID, *, limit: int, offset: int) -> Page[JobEvent]:
+        del campaign_id
+        return Page(items=(), total=0, limit=limit, offset=offset)
 
 
 def fixture() -> tuple[
@@ -606,6 +654,44 @@ async def test_retry_failures_requires_terminal_state_and_retryable_projection()
     assert retried.status == "queued"
     assert retried.workflow_attempt == 1
     assert dispatcher.dispatched[0][1].job_id == str(campaign.id)
+
+
+@pytest.mark.anyio
+async def test_retry_selected_failures_passes_only_failure_ids_to_temporal() -> None:
+    service, repository, _, dispatcher, after_commit, owner_id = fixture()
+    campaign = await service.create(
+        repository.project.id, campaign_payload(), owner_id=owner_id, request_id="create"
+    )
+    repository.campaigns[campaign.id].status = "partially_succeeded"
+    failure = ScanFailure(
+        id=uuid4(),
+        campaign_id=campaign.id,
+        stage="browser",
+        error_code="navigation_timeout",
+        message="Navigation exceeded its bounded timeout.",
+        retryable=True,
+        attempt=1,
+        created_at=NOW,
+        updated_at=NOW,
+        version=1,
+    )
+    repository.failures[failure.id] = failure
+    await repository.flush()
+    current = await service.get(repository.project.id, campaign.id, owner_id=owner_id)
+
+    await service.retry_selected_failures(
+        repository.project.id,
+        campaign.id,
+        version=current.version,
+        idempotency_key="selected-retry",
+        failure_ids=(failure.id,),
+        owner_id=owner_id,
+        request_id="retry-selected",
+    )
+    await after_commit.run()
+
+    assert dispatcher.dispatched[0][1].resource_ids == (str(failure.id),)
+    assert dispatcher.dispatched[0][1].input_object_key is None
 
 
 @pytest.mark.anyio

@@ -77,3 +77,15 @@ def test_openapi_exposes_owned_scan_artifact_reads_and_removal_requests() -> Non
     assert "get" in paths[f"{prefix}/artifacts/{{artifact_id}}/read-url"]
     assert "get" in paths[f"{prefix}/artifacts/{{artifact_id}}/screenshot"]
     assert "post" in paths[f"{prefix}/artifacts/{{artifact_id}}/removal-request"]
+
+
+def test_openapi_exposes_complete_scan_review_contract() -> None:
+    paths = create_test_app().openapi()["paths"]
+    prefix = "/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}"
+
+    assert "get" in paths[f"{prefix}/targets/{{target_id}}/summary"]
+    assert "get" in paths[f"{prefix}/pages/{{page_id}}"]
+    assert "get" in paths[f"{prefix}/duplicate-groups"]
+    assert "get" in paths[f"{prefix}/representative-decisions"]
+    assert "get" in paths[f"{prefix}/activity"]
+    assert "post" in paths[f"{prefix}/retry-selected-failures"]

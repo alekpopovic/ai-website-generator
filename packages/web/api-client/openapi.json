@@ -162,6 +162,55 @@
         "title": "CampaignActionRequest",
         "type": "object"
       },
+      "CampaignActivityResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          },
+          "sequence": {
+            "title": "Sequence",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "sequence",
+          "event_type",
+          "status",
+          "payload",
+          "created_at"
+        ],
+        "title": "CampaignActivityResponse",
+        "type": "object"
+      },
       "CampaignVersionRequest": {
         "additionalProperties": false,
         "properties": {
@@ -175,6 +224,43 @@
           "version"
         ],
         "title": "CampaignVersionRequest",
+        "type": "object"
+      },
+      "CrawlPageDetailResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "artifacts": {
+            "items": {
+              "$ref": "#/components/schemas/ScanArtifactResponse"
+            },
+            "title": "Artifacts",
+            "type": "array"
+          },
+          "failures": {
+            "items": {
+              "$ref": "#/components/schemas/ScanFailureResponse"
+            },
+            "title": "Failures",
+            "type": "array"
+          },
+          "page": {
+            "$ref": "#/components/schemas/CrawlPageResponse"
+          },
+          "page_scans": {
+            "items": {
+              "$ref": "#/components/schemas/PageScanDetailResponse"
+            },
+            "title": "Page Scans",
+            "type": "array"
+          }
+        },
+        "required": [
+          "page",
+          "page_scans",
+          "failures",
+          "artifacts"
+        ],
+        "title": "CrawlPageDetailResponse",
         "type": "object"
       },
       "CrawlPageResponse": {
@@ -1747,6 +1833,55 @@
         "title": "DependencyState",
         "type": "string"
       },
+      "DuplicateGroupResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "group_key": {
+            "title": "Group Key",
+            "type": "string"
+          },
+          "group_type": {
+            "enum": [
+              "exact",
+              "near",
+              "template"
+            ],
+            "title": "Group Type",
+            "type": "string"
+          },
+          "member_count": {
+            "title": "Member Count",
+            "type": "integer"
+          },
+          "member_page_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Member Page Ids",
+            "type": "array"
+          },
+          "representative_page_id": {
+            "format": "uuid",
+            "title": "Representative Page Id",
+            "type": "string"
+          },
+          "representative_url": {
+            "title": "Representative Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "group_type",
+          "group_key",
+          "member_count",
+          "representative_page_id",
+          "representative_url",
+          "member_page_ids"
+        ],
+        "title": "DuplicateGroupResponse",
+        "type": "object"
+      },
       "EmbeddingCollectionVersion": {
         "additionalProperties": false,
         "properties": {
@@ -2091,6 +2226,30 @@
         "title": "ModelWarmupRequest",
         "type": "object"
       },
+      "PageResponse_CampaignActivityResponse_": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CampaignActivityResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "items",
+          "pagination"
+        ],
+        "title": "PageResponse[CampaignActivityResponse]",
+        "type": "object"
+      },
       "PageResponse_CrawlPageWithScansResponse_": {
         "additionalProperties": false,
         "properties": {
@@ -2115,6 +2274,30 @@
         "title": "PageResponse[CrawlPageWithScansResponse]",
         "type": "object"
       },
+      "PageResponse_DuplicateGroupResponse_": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DuplicateGroupResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "items",
+          "pagination"
+        ],
+        "title": "PageResponse[DuplicateGroupResponse]",
+        "type": "object"
+      },
       "PageResponse_ProjectResponse_": {
         "additionalProperties": false,
         "properties": {
@@ -2137,6 +2320,30 @@
           "pagination"
         ],
         "title": "PageResponse[ProjectResponse]",
+        "type": "object"
+      },
+      "PageResponse_RepresentativeDecisionResponse_": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RepresentativeDecisionResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "items",
+          "pagination"
+        ],
+        "title": "PageResponse[RepresentativeDecisionResponse]",
         "type": "object"
       },
       "PageResponse_ScanCampaignResponse_": {
@@ -2209,6 +2416,327 @@
           "pagination"
         ],
         "title": "PageResponse[ScanTargetResponse]",
+        "type": "object"
+      },
+      "PageScanDetailResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "attempt": {
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "browser_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Browser Version"
+          },
+          "canonical_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canonical Url"
+          },
+          "capture_schema_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capture Schema Version"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "configuration_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Configuration Hash"
+          },
+          "console_errors": {
+            "items": {},
+            "title": "Console Errors",
+            "type": "array"
+          },
+          "crawl_page_id": {
+            "format": "uuid",
+            "title": "Crawl Page Id",
+            "type": "string"
+          },
+          "document_height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Height"
+          },
+          "document_width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Width"
+          },
+          "external_host_manifest": {
+            "items": {},
+            "title": "External Host Manifest",
+            "type": "array"
+          },
+          "extracted_node_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extracted Node Count"
+          },
+          "extraction_payload_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extraction Payload Bytes"
+          },
+          "extraction_truncated": {
+            "title": "Extraction Truncated",
+            "type": "boolean"
+          },
+          "extractor_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extractor Version"
+          },
+          "failed_requests": {
+            "items": {},
+            "title": "Failed Requests",
+            "type": "array"
+          },
+          "final_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Url"
+          },
+          "full_page_truncated": {
+            "title": "Full Page Truncated",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "meta_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta Description"
+          },
+          "page_errors": {
+            "items": {},
+            "title": "Page Errors",
+            "type": "array"
+          },
+          "page_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Title"
+          },
+          "response_metadata": {
+            "additionalProperties": true,
+            "title": "Response Metadata",
+            "type": "object"
+          },
+          "screenshot_height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Screenshot Height"
+          },
+          "screenshot_width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Screenshot Width"
+          },
+          "semantic_snapshot_summary": {
+            "additionalProperties": true,
+            "title": "Semantic Snapshot Summary",
+            "type": "object"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "rendering",
+              "succeeded",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "viewport": {
+            "enum": [
+              "desktop",
+              "mobile"
+            ],
+            "title": "Viewport",
+            "type": "string"
+          },
+          "viewport_height": {
+            "title": "Viewport Height",
+            "type": "integer"
+          },
+          "viewport_width": {
+            "title": "Viewport Width",
+            "type": "integer"
+          },
+          "visible_text_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visible Text Summary"
+          }
+        },
+        "required": [
+          "id",
+          "crawl_page_id",
+          "viewport",
+          "viewport_width",
+          "viewport_height",
+          "attempt",
+          "status",
+          "started_at",
+          "completed_at",
+          "configuration_hash",
+          "capture_schema_version",
+          "browser_version",
+          "final_url",
+          "response_metadata",
+          "page_title",
+          "meta_description",
+          "canonical_url",
+          "language",
+          "visible_text_summary",
+          "extractor_version",
+          "extracted_node_count",
+          "extraction_payload_bytes",
+          "extraction_truncated",
+          "semantic_snapshot_summary",
+          "console_errors",
+          "page_errors",
+          "failed_requests",
+          "external_host_manifest",
+          "document_width",
+          "document_height",
+          "screenshot_width",
+          "screenshot_height",
+          "full_page_truncated"
+        ],
+        "title": "PageScanDetailResponse",
         "type": "object"
       },
       "PageScanResponse": {
@@ -2818,6 +3346,143 @@
           "password"
         ],
         "title": "RegisterRequest",
+        "type": "object"
+      },
+      "RepresentativeDecisionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "explanation": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Explanation",
+            "type": "array"
+          },
+          "manual_selection": {
+            "enum": [
+              "automatic",
+              "include",
+              "exclude"
+            ],
+            "title": "Manual Selection",
+            "type": "string"
+          },
+          "manual_selection_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manual Selection Reason"
+          },
+          "normalized_url": {
+            "title": "Normalized Url",
+            "type": "string"
+          },
+          "page_id": {
+            "format": "uuid",
+            "title": "Page Id",
+            "type": "string"
+          },
+          "page_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "homepage",
+                  "about",
+                  "services",
+                  "product",
+                  "features",
+                  "pricing",
+                  "contact",
+                  "documentation",
+                  "blog-index",
+                  "article",
+                  "case-study",
+                  "careers",
+                  "legal",
+                  "authentication",
+                  "unknown"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Type"
+          },
+          "rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "selected": {
+            "title": "Selected",
+            "type": "boolean"
+          },
+          "selector": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selector"
+          },
+          "selector_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selector Version"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "page_id",
+          "normalized_url",
+          "page_type",
+          "selected",
+          "rank",
+          "score",
+          "explanation",
+          "selector",
+          "selector_version",
+          "manual_selection",
+          "manual_selection_reason",
+          "version"
+        ],
+        "title": "RepresentativeDecisionResponse",
         "type": "object"
       },
       "RepresentativeOverrideRequest": {
@@ -4241,6 +4906,77 @@
           }
         },
         "title": "ScanTimeoutLimits",
+        "type": "object"
+      },
+      "SelectedFailureRetryRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "failure_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Failure Ids",
+            "type": "array"
+          },
+          "idempotency_key": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "idempotency_key",
+          "failure_ids"
+        ],
+        "title": "SelectedFailureRetryRequest",
+        "type": "object"
+      },
+      "TargetSummaryResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "failure_count": {
+            "title": "Failure Count",
+            "type": "integer"
+          },
+          "page_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Page Counts",
+            "type": "object"
+          },
+          "page_scan_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Page Scan Counts",
+            "type": "object"
+          },
+          "target": {
+            "$ref": "#/components/schemas/ScanTargetResponse"
+          },
+          "unresolved_failure_count": {
+            "title": "Unresolved Failure Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "target",
+          "page_counts",
+          "page_scan_counts",
+          "failure_count",
+          "unresolved_failure_count"
+        ],
+        "title": "TargetSummaryResponse",
         "type": "object"
       },
       "UserResponse": {
@@ -6300,6 +7036,117 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/activity": {
+      "get": {
+        "operationId": "listScanCampaignActivity",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "campaign_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Campaign Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponse_CampaignActivityResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List Scan Campaign Activity",
+        "tags": [
+          "scan-campaigns"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/artifacts/{artifact_id}/read-url": {
       "get": {
         "operationId": "createScanArtifactReadUrl",
@@ -6762,6 +7609,132 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/duplicate-groups": {
+      "get": {
+        "operationId": "listScanCampaignDuplicateGroups",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "campaign_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Campaign Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "group_type",
+            "required": false,
+            "schema": {
+              "default": "exact",
+              "enum": [
+                "exact",
+                "near",
+                "template"
+              ],
+              "title": "Group Type",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponse_DuplicateGroupResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List Scan Campaign Duplicate Groups",
+        "tags": [
+          "scan-campaigns"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/failures": {
       "get": {
         "operationId": "listScanCampaignFailures",
@@ -6830,6 +7803,24 @@
                 }
               ],
               "title": "Stage"
+            }
+          },
+          {
+            "in": "query",
+            "name": "error_code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Error Code"
             }
           },
           {
@@ -6991,6 +7982,57 @@
               ],
               "title": "Status"
             }
+          },
+          {
+            "in": "query",
+            "name": "page_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "homepage",
+                    "about",
+                    "services",
+                    "product",
+                    "features",
+                    "pricing",
+                    "contact",
+                    "documentation",
+                    "blog-index",
+                    "article",
+                    "case-study",
+                    "careers",
+                    "legal",
+                    "authentication",
+                    "unknown"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Page Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "domain",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 253,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Domain"
+            }
           }
         ],
         "responses": {
@@ -7051,6 +8093,104 @@
           }
         ],
         "summary": "List Scan Campaign Pages",
+        "tags": [
+          "scan-campaigns"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/pages/{page_id}": {
+      "get": {
+        "operationId": "getScanCampaignPage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "campaign_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Campaign Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "page_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Page Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrawlPageDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get Scan Campaign Page",
         "tags": [
           "scan-campaigns"
         ]
@@ -7384,6 +8524,117 @@
         ]
       }
     },
+    "/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/representative-decisions": {
+      "get": {
+        "operationId": "listScanCampaignRepresentativeDecisions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "campaign_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Campaign Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponse_RepresentativeDecisionResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List Scan Campaign Representative Decisions",
+        "tags": [
+          "scan-campaigns"
+        ]
+      }
+    },
     "/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/resume": {
       "post": {
         "operationId": "resumeScanCampaign",
@@ -7595,6 +8846,114 @@
           }
         ],
         "summary": "Retry Scan Campaign Failures",
+        "tags": [
+          "scan-campaigns"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/retry-selected-failures": {
+      "post": {
+        "operationId": "retrySelectedScanCampaignFailures",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "campaign_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Campaign Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectedFailureRetryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanCampaignResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Retry Selected Scan Campaign Failures",
         "tags": [
           "scan-campaigns"
         ]
@@ -8656,6 +10015,104 @@
           }
         ],
         "summary": "Delete Scan Campaign Target",
+        "tags": [
+          "scan-campaigns"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/targets/{target_id}/summary": {
+      "get": {
+        "operationId": "getScanCampaignTargetSummary",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "campaign_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Campaign Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "target_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Target Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TargetSummaryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get Scan Campaign Target Summary",
         "tags": [
           "scan-campaigns"
         ]

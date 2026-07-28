@@ -20,6 +20,8 @@ from platform_api.scans.schemas import (
     CrawlPageStatus,
     FailureListParams,
     FailureStage,
+    PageReviewListParams,
+    PageType,
     ScanCampaignStatus,
     ScanItemListParams,
     ScanTargetStatus,
@@ -100,17 +102,22 @@ async def page_list_params_dependency(
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     status: Annotated[CrawlPageStatus | None, Query()] = None,
-) -> ScanItemListParams:
-    return ScanItemListParams(offset=offset, limit=limit, status=status)
+    page_type: Annotated[PageType | None, Query()] = None,
+    domain: Annotated[str | None, Query(min_length=1, max_length=253)] = None,
+) -> PageReviewListParams:
+    return PageReviewListParams(
+        offset=offset, limit=limit, status=status, page_type=page_type, domain=domain
+    )
 
 
-PageListParamsDependency = Annotated[ScanItemListParams, Depends(page_list_params_dependency)]
+PageListParamsDependency = Annotated[PageReviewListParams, Depends(page_list_params_dependency)]
 
 
 async def failure_list_params_dependency(
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     stage: Annotated[FailureStage | None, Query()] = None,
+    error_code: Annotated[str | None, Query(min_length=1, max_length=100)] = None,
     retryable: Annotated[bool | None, Query()] = None,
     unresolved_only: Annotated[bool, Query()] = False,
 ) -> FailureListParams:
@@ -118,6 +125,7 @@ async def failure_list_params_dependency(
         offset=offset,
         limit=limit,
         stage=stage,
+        error_code=error_code,
         retryable=retryable,
         unresolved_only=unresolved_only,
     )

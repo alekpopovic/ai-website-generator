@@ -201,3 +201,130 @@ test('developer diagnostics uses generated API contracts with local UI fakes', a
   await expect(page.getByText('database')).toBeVisible();
   await expect(page.getByText('available')).toBeVisible();
 });
+
+test('scan review lists campaigns and never renders captured HTML', async ({ page }) => {
+  await fakeSession(page, true);
+  await fakeProjects(page, [PROJECT]);
+  const campaignId = '01941f10-7b2c-7000-8000-000000000101';
+  const pageId = '01941f10-7b2c-7000-8000-000000000102';
+  const targetId = '01941f10-7b2c-7000-8000-000000000103';
+  const now = '2026-07-28T09:00:00Z';
+  const campaign = {
+    id: campaignId,
+    project_id: PROJECT.id,
+    name: 'Fixture site review',
+    authorization_attested_at: now,
+    respect_robots_txt: true,
+    status: 'succeeded',
+    workflow_id: null,
+    workflow_run_id: null,
+    workflow_attempt: 1,
+    started_at: now,
+    completed_at: now,
+    created_at: now,
+    updated_at: now,
+    version: 2,
+  };
+  const scanPage = {
+    id: pageId,
+    campaign_id: campaignId,
+    target_id: targetId,
+    parent_page_id: null,
+    crawl_policy_record_id: null,
+    url: 'https://fixture.example/pricing',
+    normalized_url: 'https://fixture.example/pricing',
+    final_url: 'https://fixture.example/pricing',
+    declared_canonical_url: null,
+    source_domain: 'fixture.example',
+    depth: 1,
+    status: 'fetched',
+    robots_allowed: true,
+    crawl_decision_code: 'allowed',
+    crawl_policy_provenance: {},
+    http_status: 200,
+    content_type: 'text/html',
+    content_sha256: null,
+    title: 'Pricing',
+    meta_description: 'Fixture pricing page',
+    language: 'en',
+    hreflang_links: [],
+    last_modified_at: null,
+    content_length: 1200,
+    discovery_source: 'HTML link',
+    parent_url: null,
+    fingerprint_algorithm: 'deterministic',
+    fingerprint_version: 1,
+    normalized_url_sha256: null,
+    visible_text_sha256: null,
+    dom_structure_sha256: null,
+    heading_sequence_sha256: null,
+    link_structure_sha256: null,
+    semantic_simhash: null,
+    dom_template_sha256: null,
+    normalized_content_sha256: null,
+    normalized_text_length: 500,
+    exact_duplicate_of_id: null,
+    near_duplicate_of_id: null,
+    template_representative_id: null,
+    exact_group_key: null,
+    near_group_key: null,
+    template_group_key: 'pricing-template',
+    fingerprinted_at: now,
+    page_type: 'pricing',
+    page_type_score: 0.98,
+    classification_features: {},
+    classification_explanation: ['Path contains pricing'],
+    classifier: 'rules',
+    classifier_version: 1,
+    classified_at: now,
+    representative_selected: true,
+    representative_rank: 1,
+    representative_score: 9.5,
+    selection_explanation: ['Important page type'],
+    selector: 'rules',
+    selector_version: 1,
+    manual_selection: 'automatic',
+    manual_selection_reason: null,
+    manual_selected_by_user_id: null,
+    manual_selected_at: null,
+    discovered_at: now,
+    fetched_at: now,
+    created_at: now,
+    updated_at: now,
+    version: 1,
+    page_scans: [],
+  };
+  await page.route(
+    `http://127.0.0.1:8000/api/v1/projects/${PROJECT.id}/scan-campaigns**`,
+    async (route) => {
+      const path = new URL(route.request().url()).pathname;
+      const pageResponse = (items: unknown[]) => ({
+        items,
+        pagination: { offset: 0, limit: 20, total: items.length, has_more: false },
+        meta: { request_id: 'scan-e2e' },
+      });
+      if (path.endsWith(`/pages/${pageId}`)) {
+        await route.fulfill({
+          status: 200,
+          json: { page: scanPage, page_scans: [], failures: [], artifacts: [] },
+        });
+      } else if (path.endsWith('/pages')) {
+        await route.fulfill({ status: 200, json: pageResponse([scanPage]) });
+      } else if (path.endsWith(`/${campaignId}`)) {
+        await route.fulfill({ status: 200, json: campaign });
+      } else {
+        await route.fulfill({ status: 200, json: pageResponse([campaign]) });
+      }
+    },
+  );
+
+  await page.goto(`/projects/${PROJECT.id}/scans`);
+  await expect(page.getByRole('heading', { name: 'Scan campaigns' })).toBeVisible();
+  await page.getByRole('link', { name: campaign.name }).click();
+  await page.getByRole('link', { name: 'Pages', exact: true }).click();
+  await page.getByRole('link', { name: 'Pricing' }).click();
+  await expect(page.getByRole('heading', { name: 'Pricing' })).toBeVisible();
+  await expect(page.locator('iframe')).toHaveCount(0);
+  await expect(page.locator('[innerhtml]')).toHaveCount(0);
+  await expect(page.getByText('Artifact manifest')).toBeVisible();
+});

@@ -28,20 +28,27 @@ from platform_api.errors import ApiError
 from platform_api.persistence.audit import AuditLogService
 from platform_api.persistence.models import (
     CrawlPage,
+    JobEvent,
     Project,
     ScanCampaign,
     ScanFailure,
     ScanTarget,
 )
 from platform_api.persistence.pagination import Page
+from platform_api.scans.repositories import DuplicateGroupProjection
 from platform_api.scans.schemas import (
+    CampaignActivityResponse,
     CampaignConfiguration,
     CampaignListParams,
     CrawlPageResponse,
     CrawlPageWithScansResponse,
     DeduplicationStatistics,
+    DuplicateGroupResponse,
     FailureListParams,
+    PageReviewListParams,
+    PageScanDetailResponse,
     PageScanResponse,
+    RepresentativeDecisionResponse,
     RepresentativeOverrideRequest,
     ScanCampaignCreateRequest,
     ScanCampaignResponse,
@@ -51,6 +58,7 @@ from platform_api.scans.schemas import (
     ScanItemListParams,
     ScanTargetCreateRequest,
     ScanTargetResponse,
+    TargetSummaryResponse,
     normalize_public_scan_url,
 )
 
@@ -76,6 +84,10 @@ _CONFIGURATION_FIELDS = (
     "timeout_limits",
     "artifact_retention_policy",
 )
+
+
+def _string_tuple(value: object) -> tuple[str, ...]:
+    return tuple(item for item in value if isinstance(item, str)) if isinstance(value, list) else ()
 
 
 class AfterCommitScheduler(Protocol):
@@ -149,6 +161,8 @@ class ScanCampaignRepositoryContract(Protocol):
         limit: int,
         offset: int,
         status: str | None,
+        page_type: str | None,
+        domain: str | None,
     ) -> Page[CrawlPage]: ...
 
     async def crawl_page_owned(
@@ -172,6 +186,7 @@ class ScanCampaignRepositoryContract(Protocol):
         limit: int,
         offset: int,
         stage: str | None,
+        error_code: str | None,
         retryable: bool | None,
         unresolved_only: bool,
     ) -> Page[ScanFailure]: ...
@@ -190,6 +205,24 @@ class ScanCampaignRepositoryContract(Protocol):
     ]: ...
 
     async def has_retryable_failures(self, campaign_id: UUID) -> bool: ...
+
+    async def failures_for_page(self, page_id: UUID) -> tuple[ScanFailure, ...]: ...
+
+    async def selected_retryable_failures(
+        self, campaign_id: UUID, failure_ids: tuple[UUID, ...]
+    ) -> tuple[ScanFailure, ...]: ...
+
+    async def target_summary_counts(
+        self, campaign_id: UUID, target_id: UUID
+    ) -> tuple[dict[str, int], dict[str, int], int, int]: ...
+
+    async def duplicate_group_page(
+        self, campaign_id: UUID, *, group_type: str, limit: int, offset: int
+    ) -> Page[DuplicateGroupProjection]: ...
+
+    async def activity_page(
+        self, campaign_id: UUID, *, limit: int, offset: int
+    ) -> Page[JobEvent]: ...
 
 
 class ScanCampaignService:
@@ -414,13 +447,38 @@ class ScanCampaignService:
             offset=page.offset,
         )
 
+    async def target_summary(
+        self,
+        project_id: UUID,
+        campaign_id: UUID,
+        target_id: UUID,
+        *,
+        owner_id: UUID,
+    ) -> TargetSummaryResponse:
+        await self._campaign(project_id, campaign_id, owner_id)
+        target = await self._repository.target_owned(target_id, campaign_id, project_id, owner_id)
+        if target is None:
+            raise ApiError(
+                HTTPStatus.NOT_FOUND, "scan_target_not_found", "Scan target was not found."
+            )
+        pages, scans, failures, unresolved = await self._repository.target_summary_counts(
+            campaign_id, target_id
+        )
+        return TargetSummaryResponse(
+            target=ScanTargetResponse.model_validate(target),
+            page_counts=pages,
+            page_scan_counts=scans,
+            failure_count=failures,
+            unresolved_failure_count=unresolved,
+        )
+
     async def list_pages(
         self,
         project_id: UUID,
         campaign_id: UUID,
         *,
         owner_id: UUID,
-        params: ScanItemListParams,
+        params: PageReviewListParams,
     ) -> Page[CrawlPageWithScansResponse]:
         await self._campaign(project_id, campaign_id, owner_id)
         page = await self._repository.crawl_page_page(
@@ -430,6 +488,8 @@ class ScanCampaignService:
             limit=params.limit,
             offset=params.offset,
             status=params.status,
+            page_type=params.page_type,
+            domain=params.domain,
         )
         responses = []
         for item in page.items:
@@ -443,6 +503,131 @@ class ScanCampaignService:
                 )
             )
         return Page(items=tuple(responses), total=page.total, limit=page.limit, offset=page.offset)
+
+    async def page_detail(
+        self,
+        project_id: UUID,
+        campaign_id: UUID,
+        page_id: UUID,
+        *,
+        owner_id: UUID,
+    ) -> tuple[
+        CrawlPageResponse, tuple[PageScanDetailResponse, ...], tuple[ScanFailureResponse, ...]
+    ]:
+        await self._campaign(project_id, campaign_id, owner_id)
+        page = await self._repository.crawl_page_owned(page_id, campaign_id, project_id, owner_id)
+        if page is None:
+            raise ApiError(
+                HTTPStatus.NOT_FOUND, "crawl_page_not_found", "Crawl page was not found."
+            )
+        failures = await self._repository.failures_for_page(page_id)
+        return (
+            CrawlPageResponse.model_validate(page),
+            tuple(PageScanDetailResponse.model_validate(scan) for scan in page.page_scans),
+            tuple(ScanFailureResponse.model_validate(item) for item in failures),
+        )
+
+    async def duplicate_groups(
+        self,
+        project_id: UUID,
+        campaign_id: UUID,
+        *,
+        owner_id: UUID,
+        group_type: str,
+        limit: int,
+        offset: int,
+    ) -> Page[DuplicateGroupResponse]:
+        await self._campaign(project_id, campaign_id, owner_id)
+        groups = await self._repository.duplicate_group_page(
+            campaign_id, group_type=group_type, limit=limit, offset=offset
+        )
+        responses = []
+        for group in groups.items:
+            representative = next(
+                (
+                    page
+                    for page in group.members
+                    if page.exact_duplicate_of_id is None and page.near_duplicate_of_id is None
+                ),
+                group.members[0],
+            )
+            responses.append(
+                DuplicateGroupResponse(
+                    group_type=group.group_type,  # type: ignore[arg-type]
+                    group_key=group.group_key,
+                    member_count=len(group.members),
+                    representative_page_id=representative.id,
+                    representative_url=representative.normalized_url,
+                    member_page_ids=tuple(page.id for page in group.members),
+                )
+            )
+        return Page(
+            items=tuple(responses), total=groups.total, limit=groups.limit, offset=groups.offset
+        )
+
+    async def representative_decisions(
+        self,
+        project_id: UUID,
+        campaign_id: UUID,
+        *,
+        owner_id: UUID,
+        limit: int,
+        offset: int,
+    ) -> Page[RepresentativeDecisionResponse]:
+        await self._campaign(project_id, campaign_id, owner_id)
+        pages = await self._repository.crawl_page_page(
+            campaign_id=campaign_id,
+            project_id=project_id,
+            owner_id=owner_id,
+            limit=limit,
+            offset=offset,
+            status=None,
+            page_type=None,
+            domain=None,
+        )
+        return Page(
+            items=tuple(
+                RepresentativeDecisionResponse(
+                    page_id=page.id,
+                    normalized_url=page.normalized_url,
+                    page_type=page.page_type,  # type: ignore[arg-type]
+                    selected=page.representative_selected,
+                    rank=page.representative_rank,
+                    score=page.representative_score,
+                    explanation=_string_tuple(page.selection_explanation),
+                    selector=page.selector,
+                    selector_version=page.selector_version,
+                    manual_selection=page.manual_selection,  # type: ignore[arg-type]
+                    manual_selection_reason=page.manual_selection_reason,
+                    version=page.version,
+                )
+                for page in pages.items
+            ),
+            total=pages.total,
+            limit=pages.limit,
+            offset=pages.offset,
+        )
+
+    async def activity(
+        self,
+        project_id: UUID,
+        campaign_id: UUID,
+        *,
+        owner_id: UUID,
+        limit: int,
+        offset: int,
+    ) -> Page[CampaignActivityResponse]:
+        await self._campaign(project_id, campaign_id, owner_id)
+        events = await self._repository.activity_page(campaign_id, limit=limit, offset=offset)
+        return Page(
+            items=tuple(
+                CampaignActivityResponse.model_validate(event, from_attributes=True)
+                for event in events.items
+            ),
+            total=events.total,
+            limit=events.limit,
+            offset=events.offset,
+        )
 
     async def override_representative(
         self,
@@ -528,6 +713,7 @@ class ScanCampaignService:
             limit=params.limit,
             offset=params.offset,
             stage=params.stage,
+            error_code=params.error_code,
             retryable=params.retryable,
             unresolved_only=params.unresolved_only,
         )
@@ -708,6 +894,42 @@ class ScanCampaignService:
         )
         return ScanCampaignResponse.model_validate(campaign)
 
+    async def retry_selected_failures(
+        self,
+        project_id: UUID,
+        campaign_id: UUID,
+        *,
+        version: int,
+        idempotency_key: str,
+        failure_ids: tuple[UUID, ...],
+        owner_id: UUID,
+        request_id: str,
+    ) -> ScanCampaignResponse:
+        await self._project(project_id, owner_id, require_writable=True)
+        campaign = await self._campaign(project_id, campaign_id, owner_id, for_update=True)
+        self._check_version(campaign, version)
+        self._require_status(
+            campaign,
+            {"failed", "partially_succeeded"},
+            "Failures can only be retried after a failed or partially succeeded campaign.",
+        )
+        failures = await self._repository.selected_retryable_failures(campaign.id, failure_ids)
+        if {failure.id for failure in failures} != set(failure_ids):
+            raise ApiError(
+                HTTPStatus.CONFLICT,
+                "scan_failures_not_retryable",
+                "Every selected failure must belong to this campaign and remain retryable.",
+            )
+        await self._queue_workflow(
+            campaign,
+            idempotency_key=idempotency_key,
+            owner_id=owner_id,
+            request_id=request_id,
+            action="selected_failures_retried",
+            resource_ids=failure_ids,
+        )
+        return ScanCampaignResponse.model_validate(campaign)
+
     async def _queue_workflow(
         self,
         campaign: ScanCampaign,
@@ -716,6 +938,7 @@ class ScanCampaignService:
         owner_id: UUID,
         request_id: str,
         action: str,
+        resource_ids: tuple[UUID, ...] = (),
     ) -> None:
         previous = campaign.status
         command = CompactWorkflowInput(
@@ -723,6 +946,7 @@ class ScanCampaignService:
             project_id=str(campaign.project_id),
             requested_by_user_id=str(owner_id),
             idempotency_key=idempotency_key,
+            resource_ids=tuple(str(item) for item in resource_ids),
         )
         campaign.status = "queued"
         campaign.workflow_attempt += 1

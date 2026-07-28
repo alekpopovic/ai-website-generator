@@ -105,6 +105,38 @@ export type CampaignActionRequest = {
 };
 
 /**
+ * CampaignActivityResponse
+ */
+export type CampaignActivityResponse = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Event Type
+     */
+    event_type: string;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Payload
+     */
+    payload: {
+        [key: string]: unknown;
+    };
+    /**
+     * Sequence
+     */
+    sequence: number;
+    /**
+     * Status
+     */
+    status: 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
+};
+
+/**
  * CampaignVersionRequest
  */
 export type CampaignVersionRequest = {
@@ -112,6 +144,25 @@ export type CampaignVersionRequest = {
      * Version
      */
     version: number;
+};
+
+/**
+ * CrawlPageDetailResponse
+ */
+export type CrawlPageDetailResponse = {
+    /**
+     * Artifacts
+     */
+    artifacts: Array<ScanArtifactResponse>;
+    /**
+     * Failures
+     */
+    failures: Array<ScanFailureResponse>;
+    page: CrawlPageResponse;
+    /**
+     * Page Scans
+     */
+    page_scans: Array<PageScanDetailResponse>;
 };
 
 /**
@@ -754,6 +805,36 @@ export type DependencyHealthResponse = {
 export type DependencyState = 'available' | 'unavailable';
 
 /**
+ * DuplicateGroupResponse
+ */
+export type DuplicateGroupResponse = {
+    /**
+     * Group Key
+     */
+    group_key: string;
+    /**
+     * Group Type
+     */
+    group_type: 'exact' | 'near' | 'template';
+    /**
+     * Member Count
+     */
+    member_count: number;
+    /**
+     * Member Page Ids
+     */
+    member_page_ids: Array<string>;
+    /**
+     * Representative Page Id
+     */
+    representative_page_id: string;
+    /**
+     * Representative Url
+     */
+    representative_url: string;
+};
+
+/**
  * EmbeddingCollectionVersion
  */
 export type EmbeddingCollectionVersion = {
@@ -963,6 +1044,18 @@ export type ModelWarmupRequest = {
 };
 
 /**
+ * PageResponse[CampaignActivityResponse]
+ */
+export type PageResponseCampaignActivityResponse = {
+    /**
+     * Items
+     */
+    items: Array<CampaignActivityResponse>;
+    meta?: ResponseMeta;
+    pagination: PaginationMeta;
+};
+
+/**
  * PageResponse[CrawlPageWithScansResponse]
  */
 export type PageResponseCrawlPageWithScansResponse = {
@@ -975,6 +1068,18 @@ export type PageResponseCrawlPageWithScansResponse = {
 };
 
 /**
+ * PageResponse[DuplicateGroupResponse]
+ */
+export type PageResponseDuplicateGroupResponse = {
+    /**
+     * Items
+     */
+    items: Array<DuplicateGroupResponse>;
+    meta?: ResponseMeta;
+    pagination: PaginationMeta;
+};
+
+/**
  * PageResponse[ProjectResponse]
  */
 export type PageResponseProjectResponse = {
@@ -982,6 +1087,18 @@ export type PageResponseProjectResponse = {
      * Items
      */
     items: Array<ProjectResponse>;
+    meta?: ResponseMeta;
+    pagination: PaginationMeta;
+};
+
+/**
+ * PageResponse[RepresentativeDecisionResponse]
+ */
+export type PageResponseRepresentativeDecisionResponse = {
+    /**
+     * Items
+     */
+    items: Array<RepresentativeDecisionResponse>;
     meta?: ResponseMeta;
     pagination: PaginationMeta;
 };
@@ -1020,6 +1137,148 @@ export type PageResponseScanTargetResponse = {
     items: Array<ScanTargetResponse>;
     meta?: ResponseMeta;
     pagination: PaginationMeta;
+};
+
+/**
+ * PageScanDetailResponse
+ */
+export type PageScanDetailResponse = {
+    /**
+     * Attempt
+     */
+    attempt: number;
+    /**
+     * Browser Version
+     */
+    browser_version: string | null;
+    /**
+     * Canonical Url
+     */
+    canonical_url: string | null;
+    /**
+     * Capture Schema Version
+     */
+    capture_schema_version: number | null;
+    /**
+     * Completed At
+     */
+    completed_at: string | null;
+    /**
+     * Configuration Hash
+     */
+    configuration_hash: string | null;
+    /**
+     * Console Errors
+     */
+    console_errors: Array<unknown>;
+    /**
+     * Crawl Page Id
+     */
+    crawl_page_id: string;
+    /**
+     * Document Height
+     */
+    document_height: number | null;
+    /**
+     * Document Width
+     */
+    document_width: number | null;
+    /**
+     * External Host Manifest
+     */
+    external_host_manifest: Array<unknown>;
+    /**
+     * Extracted Node Count
+     */
+    extracted_node_count: number | null;
+    /**
+     * Extraction Payload Bytes
+     */
+    extraction_payload_bytes: number | null;
+    /**
+     * Extraction Truncated
+     */
+    extraction_truncated: boolean;
+    /**
+     * Extractor Version
+     */
+    extractor_version: string | null;
+    /**
+     * Failed Requests
+     */
+    failed_requests: Array<unknown>;
+    /**
+     * Final Url
+     */
+    final_url: string | null;
+    /**
+     * Full Page Truncated
+     */
+    full_page_truncated: boolean;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Language
+     */
+    language: string | null;
+    /**
+     * Meta Description
+     */
+    meta_description: string | null;
+    /**
+     * Page Errors
+     */
+    page_errors: Array<unknown>;
+    /**
+     * Page Title
+     */
+    page_title: string | null;
+    /**
+     * Response Metadata
+     */
+    response_metadata: {
+        [key: string]: unknown;
+    };
+    /**
+     * Screenshot Height
+     */
+    screenshot_height: number | null;
+    /**
+     * Screenshot Width
+     */
+    screenshot_width: number | null;
+    /**
+     * Semantic Snapshot Summary
+     */
+    semantic_snapshot_summary: {
+        [key: string]: unknown;
+    };
+    /**
+     * Started At
+     */
+    started_at: string | null;
+    /**
+     * Status
+     */
+    status: 'pending' | 'rendering' | 'succeeded' | 'failed' | 'cancelled';
+    /**
+     * Viewport
+     */
+    viewport: 'desktop' | 'mobile';
+    /**
+     * Viewport Height
+     */
+    viewport_height: number;
+    /**
+     * Viewport Width
+     */
+    viewport_width: number;
+    /**
+     * Visible Text Summary
+     */
+    visible_text_summary: string | null;
 };
 
 /**
@@ -1340,6 +1599,60 @@ export type RegisterRequest = {
      * Password
      */
     password: string;
+};
+
+/**
+ * RepresentativeDecisionResponse
+ */
+export type RepresentativeDecisionResponse = {
+    /**
+     * Explanation
+     */
+    explanation: Array<string>;
+    /**
+     * Manual Selection
+     */
+    manual_selection: 'automatic' | 'include' | 'exclude';
+    /**
+     * Manual Selection Reason
+     */
+    manual_selection_reason: string | null;
+    /**
+     * Normalized Url
+     */
+    normalized_url: string;
+    /**
+     * Page Id
+     */
+    page_id: string;
+    /**
+     * Page Type
+     */
+    page_type: 'homepage' | 'about' | 'services' | 'product' | 'features' | 'pricing' | 'contact' | 'documentation' | 'blog-index' | 'article' | 'case-study' | 'careers' | 'legal' | 'authentication' | 'unknown' | null;
+    /**
+     * Rank
+     */
+    rank: number | null;
+    /**
+     * Score
+     */
+    score: number | null;
+    /**
+     * Selected
+     */
+    selected: boolean;
+    /**
+     * Selector
+     */
+    selector: string | null;
+    /**
+     * Selector Version
+     */
+    selector_version: number | null;
+    /**
+     * Version
+     */
+    version: number;
 };
 
 /**
@@ -2022,6 +2335,51 @@ export type ScanTimeoutLimits = {
      * Response Seconds
      */
     response_seconds?: number;
+};
+
+/**
+ * SelectedFailureRetryRequest
+ */
+export type SelectedFailureRetryRequest = {
+    /**
+     * Failure Ids
+     */
+    failure_ids: Array<string>;
+    /**
+     * Idempotency Key
+     */
+    idempotency_key: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * TargetSummaryResponse
+ */
+export type TargetSummaryResponse = {
+    /**
+     * Failure Count
+     */
+    failure_count: number;
+    /**
+     * Page Counts
+     */
+    page_counts: {
+        [key: string]: number;
+    };
+    /**
+     * Page Scan Counts
+     */
+    page_scan_counts: {
+        [key: string]: number;
+    };
+    target: ScanTargetResponse;
+    /**
+     * Unresolved Failure Count
+     */
+    unresolved_failure_count: number;
 };
 
 /**
@@ -3101,6 +3459,61 @@ export type UpdateScanCampaignResponses = {
 
 export type UpdateScanCampaignResponse = UpdateScanCampaignResponses[keyof UpdateScanCampaignResponses];
 
+export type ListScanCampaignActivityData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+    };
+    query?: {
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/activity';
+};
+
+export type ListScanCampaignActivityErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type ListScanCampaignActivityError = ListScanCampaignActivityErrors[keyof ListScanCampaignActivityErrors];
+
+export type ListScanCampaignActivityResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageResponseCampaignActivityResponse;
+};
+
+export type ListScanCampaignActivityResponse = ListScanCampaignActivityResponses[keyof ListScanCampaignActivityResponses];
+
 export type CreateScanArtifactReadUrlData = {
     body?: never;
     path: {
@@ -3320,6 +3733,65 @@ export type CancelScanCampaignResponses = {
 
 export type CancelScanCampaignResponse = CancelScanCampaignResponses[keyof CancelScanCampaignResponses];
 
+export type ListScanCampaignDuplicateGroupsData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+    };
+    query?: {
+        /**
+         * Group Type
+         */
+        group_type?: 'exact' | 'near' | 'template';
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/duplicate-groups';
+};
+
+export type ListScanCampaignDuplicateGroupsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type ListScanCampaignDuplicateGroupsError = ListScanCampaignDuplicateGroupsErrors[keyof ListScanCampaignDuplicateGroupsErrors];
+
+export type ListScanCampaignDuplicateGroupsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageResponseDuplicateGroupResponse;
+};
+
+export type ListScanCampaignDuplicateGroupsResponse = ListScanCampaignDuplicateGroupsResponses[keyof ListScanCampaignDuplicateGroupsResponses];
+
 export type ListScanCampaignFailuresData = {
     body?: never;
     path: {
@@ -3345,6 +3817,10 @@ export type ListScanCampaignFailuresData = {
          * Stage
          */
         stage?: 'control' | 'crawl' | 'browser' | 'analysis' | 'embedding' | null;
+        /**
+         * Error Code
+         */
+        error_code?: string | null;
         /**
          * Retryable
          */
@@ -3412,6 +3888,14 @@ export type ListScanCampaignPagesData = {
          * Status
          */
         status?: 'discovered' | 'blocked' | 'fetching' | 'fetched' | 'failed' | null;
+        /**
+         * Page Type
+         */
+        page_type?: 'homepage' | 'about' | 'services' | 'product' | 'features' | 'pricing' | 'contact' | 'documentation' | 'blog-index' | 'article' | 'case-study' | 'careers' | 'legal' | 'authentication' | 'unknown' | null;
+        /**
+         * Domain
+         */
+        domain?: string | null;
     };
     url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/pages';
 };
@@ -3445,6 +3929,56 @@ export type ListScanCampaignPagesResponses = {
 };
 
 export type ListScanCampaignPagesResponse = ListScanCampaignPagesResponses[keyof ListScanCampaignPagesResponses];
+
+export type GetScanCampaignPageData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+        /**
+         * Page Id
+         */
+        page_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/pages/{page_id}';
+};
+
+export type GetScanCampaignPageErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type GetScanCampaignPageError = GetScanCampaignPageErrors[keyof GetScanCampaignPageErrors];
+
+export type GetScanCampaignPageResponses = {
+    /**
+     * Successful Response
+     */
+    200: CrawlPageDetailResponse;
+};
+
+export type GetScanCampaignPageResponse = GetScanCampaignPageResponses[keyof GetScanCampaignPageResponses];
 
 export type ListScanPageArtifactsData = {
     body?: never;
@@ -3602,6 +4136,61 @@ export type PauseScanCampaignResponses = {
 
 export type PauseScanCampaignResponse = PauseScanCampaignResponses[keyof PauseScanCampaignResponses];
 
+export type ListScanCampaignRepresentativeDecisionsData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+    };
+    query?: {
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/representative-decisions';
+};
+
+export type ListScanCampaignRepresentativeDecisionsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type ListScanCampaignRepresentativeDecisionsError = ListScanCampaignRepresentativeDecisionsErrors[keyof ListScanCampaignRepresentativeDecisionsErrors];
+
+export type ListScanCampaignRepresentativeDecisionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageResponseRepresentativeDecisionResponse;
+};
+
+export type ListScanCampaignRepresentativeDecisionsResponse = ListScanCampaignRepresentativeDecisionsResponses[keyof ListScanCampaignRepresentativeDecisionsResponses];
+
 export type ResumeScanCampaignData = {
     body: CampaignVersionRequest;
     path: {
@@ -3701,6 +4290,56 @@ export type RetryScanCampaignFailuresResponses = {
 };
 
 export type RetryScanCampaignFailuresResponse = RetryScanCampaignFailuresResponses[keyof RetryScanCampaignFailuresResponses];
+
+export type RetrySelectedScanCampaignFailuresData = {
+    body: SelectedFailureRetryRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/retry-selected-failures';
+};
+
+export type RetrySelectedScanCampaignFailuresErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Content
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type RetrySelectedScanCampaignFailuresError = RetrySelectedScanCampaignFailuresErrors[keyof RetrySelectedScanCampaignFailuresErrors];
+
+export type RetrySelectedScanCampaignFailuresResponses = {
+    /**
+     * Successful Response
+     */
+    202: ScanCampaignResponse;
+};
+
+export type RetrySelectedScanCampaignFailuresResponse = RetrySelectedScanCampaignFailuresResponses[keyof RetrySelectedScanCampaignFailuresResponses];
 
 export type StartScanCampaignData = {
     body: CampaignActionRequest;
@@ -4191,6 +4830,56 @@ export type DeleteDraftScanCampaignTargetResponses = {
 };
 
 export type DeleteDraftScanCampaignTargetResponse = DeleteDraftScanCampaignTargetResponses[keyof DeleteDraftScanCampaignTargetResponses];
+
+export type GetScanCampaignTargetSummaryData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Campaign Id
+         */
+        campaign_id: string;
+        /**
+         * Target Id
+         */
+        target_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/scan-campaigns/{campaign_id}/targets/{target_id}/summary';
+};
+
+export type GetScanCampaignTargetSummaryErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type GetScanCampaignTargetSummaryError = GetScanCampaignTargetSummaryErrors[keyof GetScanCampaignTargetSummaryErrors];
+
+export type GetScanCampaignTargetSummaryResponses = {
+    /**
+     * Successful Response
+     */
+    200: TargetSummaryResponse;
+};
+
+export type GetScanCampaignTargetSummaryResponse = GetScanCampaignTargetSummaryResponses[keyof GetScanCampaignTargetSummaryResponses];
 
 export type GetApiVersionData = {
     body?: never;
