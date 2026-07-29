@@ -48,8 +48,10 @@ task workflow-worker
 
 The service registers `ScanCampaignWorkflow`, `DatasetBuildWorkflow`, `SiteGenerationWorkflow`,
 `TrainingRunWorkflow`, the administrator-only `ModelWarmupWorkflow`, and `EmbeddingIndexWorkflow`
-on `control`. Other business activities remain future work except for the target-level Scrapy crawl
-activity and PostgreSQL-authoritative embedding indexing.
+on `control`. Dataset builds now use explicit control activities for policy validation, candidate
+selection, governance/quality checks, deterministic splitting, manifest materialization, optional
+embedding enqueue, and final sealing. Other business activities remain future work except for the
+target-level Scrapy crawl activity and PostgreSQL-authoritative embedding indexing.
 
 `ScanCampaignWorkflow` is a parent orchestrator and `ScanTargetWorkflow` is its failure-isolated child.
 The parent pages target IDs, limits active children, persists progress events, handles pause/resume/cancel,

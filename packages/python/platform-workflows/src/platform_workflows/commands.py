@@ -76,6 +76,37 @@ class ActivityResult:
 
 
 @dataclass(frozen=True, slots=True)
+class DatasetBuildStageInput:
+    """Identifier-only command for one deterministic dataset build stage."""
+
+    build_id: str
+    project_id: str
+    stage: str
+
+    def __post_init__(self) -> None:
+        _validate_uuid("build_id", self.build_id)
+        _validate_uuid("project_id", self.project_id)
+        if not re.fullmatch(r"[a-z][a-z0-9-]{0,63}", self.stage):
+            raise ValueError("stage must be a bounded stable identifier")
+
+
+@dataclass(frozen=True, slots=True)
+class DatasetBuildStageResult:
+    """Compact stage outcome; dataset bodies never enter workflow history."""
+
+    build_id: str
+    status: str
+    embedding_run_id: str | None = None
+
+    def __post_init__(self) -> None:
+        _validate_uuid("build_id", self.build_id)
+        if self.status not in {"running", "passed", "failed", "cancelled", "sealed"}:
+            raise ValueError("unsupported dataset build stage status")
+        if self.embedding_run_id is not None:
+            _validate_uuid("embedding_run_id", self.embedding_run_id)
+
+
+@dataclass(frozen=True, slots=True)
 class CrawlTargetInput:
     """Minimal crawl subprocess command; configuration remains database-owned."""
 

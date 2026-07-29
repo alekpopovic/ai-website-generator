@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Literal, cast
 from uuid import UUID
 
@@ -12,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from platform_api.persistence.json import JsonValue
 from platform_api.persistence.models import (
     Dataset,
+    DatasetBuild,
     DatasetItem,
     DatasetQualityReport,
     DatasetVersion,
@@ -39,6 +41,15 @@ class DatasetCandidate:
     schema_version: int
     analyzer_version: str
     content: JsonValue
+    pattern_hash: str | None = None
+    section_type: str | None = None
+    layout: str | None = None
+    style_tags: tuple[str, ...] = ()
+    approval_state: str = "approved"
+    provenance_state: str = "authorized"
+    expires_at: datetime | None = None
+    removed: bool = False
+    suppressed: bool = False
 
 
 class DatasetRepository:
@@ -53,6 +64,58 @@ class DatasetRepository:
 
     async def flush(self) -> None:
         await self._session.flush()
+
+    async def build_by_idempotency(
+        self, version_id: UUID, idempotency_key: str
+    ) -> DatasetBuild | None:
+        return cast(
+            DatasetBuild | None,
+            await self._session.scalar(
+                select(DatasetBuild).where(
+                    DatasetBuild.dataset_version_id == version_id,
+                    DatasetBuild.idempotency_key == idempotency_key,
+                )
+            ),
+        )
+
+    async def build(
+        self,
+        project_id: UUID,
+        dataset_id: UUID,
+        version_id: UUID,
+        build_id: UUID,
+        owner_id: UUID,
+        *,
+        for_update: bool = False,
+    ) -> DatasetBuild | None:
+        statement = (
+            select(DatasetBuild)
+            .join(Project, Project.id == DatasetBuild.project_id)
+            .where(
+                DatasetBuild.id == build_id,
+                DatasetBuild.project_id == project_id,
+                DatasetBuild.dataset_id == dataset_id,
+                DatasetBuild.dataset_version_id == version_id,
+                Project.owner_id == owner_id,
+            )
+        )
+        if for_update:
+            statement = statement.with_for_update(of=DatasetBuild)
+        return cast(DatasetBuild | None, await self._session.scalar(statement))
+
+    async def active_build(self, version_id: UUID) -> DatasetBuild | None:
+        return cast(
+            DatasetBuild | None,
+            await self._session.scalar(
+                select(DatasetBuild)
+                .where(
+                    DatasetBuild.dataset_version_id == version_id,
+                    DatasetBuild.status.in_(("queued", "running", "cancelling")),
+                )
+                .order_by(DatasetBuild.created_at.desc())
+                .limit(1)
+            ),
+        )
 
     async def delete(self, entity: Dataset | DatasetVersion) -> None:
         await self._session.delete(entity)
@@ -278,6 +341,94 @@ class DatasetRepository:
                         profile.schema_version,
                         profile.analyzer_version,
                         {"site_profile": profile.profile_json},
+                    )
+                )
+        return tuple(sorted(result, key=lambda item: (item.item_type, str(item.source_record_id))))
+
+    async def build_candidates(
+        self, project_id: UUID, config: SelectionPolicy
+    ) -> tuple[DatasetCandidate, ...]:
+        result: list[DatasetCandidate] = []
+        if "section_pattern" in config.item_types:
+            statement = (
+                select(SectionPattern, ScanTarget.source_domain)
+                .join(ScanTarget, ScanTarget.id == SectionPattern.source_website_id)
+                .where(SectionPattern.project_id == project_id)
+            )
+            if config.source_campaign_filters:
+                statement = statement.where(
+                    SectionPattern.campaign_id.in_(config.source_campaign_filters)
+                )
+            if config.category_filters:
+                statement = statement.where(SectionPattern.category.in_(config.category_filters))
+            if config.language_filters:
+                statement = statement.where(SectionPattern.language.in_(config.language_filters))
+            for pattern, domain in (
+                await self._session.execute(statement.order_by(SectionPattern.id))
+            ).all():
+                result.append(
+                    DatasetCandidate(
+                        "section_pattern",
+                        pattern.id,
+                        pattern.campaign_id,
+                        pattern.source_website_id,
+                        pattern.source_page_id,
+                        domain,
+                        pattern.category,
+                        pattern.language,
+                        pattern.confidence,
+                        pattern.schema_version,
+                        pattern.analyzer_version,
+                        {"pattern": pattern.pattern_json},
+                        pattern_hash=pattern.pattern_hash,
+                        section_type=pattern.section_type,
+                        layout=pattern.layout,
+                        style_tags=tuple(cast(list[str], pattern.style_tags)),
+                        approval_state=pattern.approval_state,
+                        provenance_state=pattern.provenance_state,
+                        expires_at=pattern.retrieval_expires_at,
+                        removed=pattern.retrieval_removed_at is not None,
+                        suppressed=pattern.legally_suppressed_at is not None,
+                    )
+                )
+        if "full_site_spec" in config.item_types:
+            website_statement = (
+                select(WebsiteProfile, ScanTarget.source_domain)
+                .join(ScanTarget, ScanTarget.id == WebsiteProfile.source_website_id)
+                .where(WebsiteProfile.project_id == project_id, WebsiteProfile.is_current.is_(True))
+            )
+            if config.source_campaign_filters:
+                website_statement = website_statement.where(
+                    WebsiteProfile.campaign_id.in_(config.source_campaign_filters)
+                )
+            if config.category_filters:
+                website_statement = website_statement.where(
+                    WebsiteProfile.category.in_(config.category_filters)
+                )
+            if config.language_filters:
+                website_statement = website_statement.where(
+                    WebsiteProfile.language.in_(config.language_filters)
+                )
+            for profile, domain in (
+                await self._session.execute(website_statement.order_by(WebsiteProfile.id))
+            ).all():
+                result.append(
+                    DatasetCandidate(
+                        "full_site_spec",
+                        profile.id,
+                        profile.campaign_id,
+                        profile.source_website_id,
+                        None,
+                        domain,
+                        profile.category,
+                        profile.language,
+                        profile.confidence,
+                        profile.schema_version,
+                        profile.analyzer_version,
+                        {"site_profile": profile.profile_json},
+                        style_tags=tuple(cast(list[str], profile.style_tags)),
+                        approval_state=profile.approval_state,
+                        provenance_state=profile.provenance_state,
                     )
                 )
         return tuple(sorted(result, key=lambda item: (item.item_type, str(item.source_record_id))))

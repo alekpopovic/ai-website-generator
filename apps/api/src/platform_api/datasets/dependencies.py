@@ -6,10 +6,15 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from platform_api.dependencies import DatabaseTransactionDependency
+from platform_api.dependencies import (
+    AfterCommitActionsDependency,
+    DatabaseTransactionDependency,
+    WorkflowDispatcherDependency,
+)
 from platform_api.persistence.audit import AuditLogService
 from platform_api.persistence.repositories import SqlAlchemyAuditLogRepository
 
+from .build_service import DatasetBuildService
 from .repository import DatasetRepository
 from .service import DatasetService
 
@@ -21,3 +26,21 @@ async def dataset_service_dependency(session: DatabaseTransactionDependency) -> 
 
 
 DatasetServiceDependency = Annotated[DatasetService, Depends(dataset_service_dependency)]
+
+
+async def dataset_build_service_dependency(
+    session: DatabaseTransactionDependency,
+    dispatcher: WorkflowDispatcherDependency,
+    after_commit: AfterCommitActionsDependency,
+) -> DatasetBuildService:
+    return DatasetBuildService(
+        DatasetRepository(session),
+        AuditLogService(SqlAlchemyAuditLogRepository(session)),
+        dispatcher,
+        after_commit,
+    )
+
+
+DatasetBuildServiceDependency = Annotated[
+    DatasetBuildService, Depends(dataset_build_service_dependency)
+]

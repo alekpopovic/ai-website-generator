@@ -39,6 +39,10 @@ class ScanCampaignSignal(StrEnum):
     CANCEL = "cancel"
 
 
+class DatasetBuildSignal(StrEnum):
+    CANCEL = "cancel"
+
+
 class WorkflowDispatcher(Protocol):
     """Boundary used by the FastAPI control plane after authorization and commit."""
 
@@ -53,6 +57,8 @@ class WorkflowDispatcher(Protocol):
     ) -> WorkflowDispatch: ...
 
     async def signal_scan_campaign(self, workflow_id: str, signal: ScanCampaignSignal) -> None: ...
+
+    async def signal_dataset_build(self, workflow_id: str, signal: DatasetBuildSignal) -> None: ...
 
 
 class TemporalClientSource(Protocol):
@@ -149,6 +155,12 @@ class TemporalWorkflowDispatcher:
         client = await self._clients.get()
         await client.get_workflow_handle(workflow_id).signal(signal.value)
 
+    async def signal_dataset_build(self, workflow_id: str, signal: DatasetBuildSignal) -> None:
+        if not re.fullmatch(r"aiwg:dataset-build:[0-9a-f-]{36}:[A-Za-z0-9._-]{1,128}", workflow_id):
+            raise ValueError("dataset build workflow ID is invalid")
+        client = await self._clients.get()
+        await client.get_workflow_handle(workflow_id).signal(signal.value)
+
 
 class DuplicateWorkflowDispatchError(RuntimeError):
     """Raised by the fake when one logical command is submitted twice."""
@@ -163,6 +175,7 @@ class FakeWorkflowDispatcher:
         self._workflow_ids: set[str] = set()
         self.scan_signals: list[tuple[str, ScanCampaignSignal]] = []
         self.embedding_indexes: list[EmbeddingIndexInput] = []
+        self.dataset_signals: list[tuple[str, DatasetBuildSignal]] = []
 
     async def dispatch(self, kind: WorkflowKind, command: CompactWorkflowInput) -> WorkflowDispatch:
         if kind in {WorkflowKind.MODEL_WARMUP, WorkflowKind.EMBEDDING_INDEX}:
@@ -205,3 +218,8 @@ class FakeWorkflowDispatcher:
         if workflow_id not in self._workflow_ids:
             raise ValueError("scan workflow has not been dispatched")
         self.scan_signals.append((workflow_id, signal))
+
+    async def signal_dataset_build(self, workflow_id: str, signal: DatasetBuildSignal) -> None:
+        if workflow_id not in self._workflow_ids:
+            raise ValueError("dataset build workflow has not been dispatched")
+        self.dataset_signals.append((workflow_id, signal))

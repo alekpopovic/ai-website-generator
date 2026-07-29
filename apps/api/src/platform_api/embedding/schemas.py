@@ -31,6 +31,8 @@ class EmbeddingRunResponse(BaseModel):
 
     id: UUID
     project_id: UUID
+    dataset_id: UUID | None
+    dataset_version_id: UUID | None
     kind: Literal["incremental", "reindex"]
     status: Literal["queued", "running", "succeeded", "failed", "cancelled"]
     batch_size: int

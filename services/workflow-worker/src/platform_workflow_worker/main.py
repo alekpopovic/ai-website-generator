@@ -20,7 +20,7 @@ from platform_workflows.worker import (
 from platform_workflows.workflows import WORKFLOW_TYPES
 from redis.asyncio import Redis
 
-from platform_workflow_worker.activities import ScanControlActivities
+from platform_workflow_worker.activities import DatasetBuildActivities, ScanControlActivities
 
 logger = logging.getLogger(__name__)
 
@@ -52,8 +52,12 @@ async def run() -> None:
             maxlen=settings.redis.job_event_stream_max_length,
         )
     activities = ScanControlActivities(database, settings.qdrant, event_publisher)
+    dataset_activities = DatasetBuildActivities(database, settings.qdrant)
     worker = create_worker(
-        client, config, workflows=WORKFLOW_TYPES, activities=activities.registered()
+        client,
+        config,
+        workflows=WORKFLOW_TYPES,
+        activities=activities.registered() + dataset_activities.registered(),
     )
     stop = asyncio.Event()
     loop = asyncio.get_running_loop()

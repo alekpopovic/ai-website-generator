@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import {
   Datasets,
+  type DatasetBuildResponse,
   type DatasetResponse,
   type DatasetVersionDetailResponse,
   type DatasetVersionResponse,
@@ -63,19 +64,40 @@ export class DatasetApiService {
     );
   }
 
-  async seal(
+  async startBuild(
     projectId: string,
     datasetId: string,
     version: DatasetVersionResponse,
-  ): Promise<DatasetVersionDetailResponse> {
+  ): Promise<DatasetBuildResponse> {
     return this.unwrap(
-      this.api.sealDatasetVersion({
+      this.api.startDatasetBuild({
         path: {
           project_id: projectId,
           dataset_id: datasetId,
           version_id: version.id,
         },
-        body: { version: version.version },
+        body: {
+          idempotency_key: `ui-${version.id}-${String(version.version)}`,
+          enqueue_missing_embeddings: false,
+        },
+      }),
+    );
+  }
+
+  async build(
+    projectId: string,
+    datasetId: string,
+    versionId: string,
+    buildId: string,
+  ): Promise<DatasetBuildResponse> {
+    return this.unwrap(
+      this.api.getDatasetBuild({
+        path: {
+          project_id: projectId,
+          dataset_id: datasetId,
+          version_id: versionId,
+          build_id: buildId,
+        },
       }),
     );
   }

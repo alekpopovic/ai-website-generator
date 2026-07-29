@@ -181,6 +181,13 @@ class EmbeddingIndexer:
                     run.kind == "incremental"
                     and pattern.current_status == "indexed"
                     and pattern.current_document_sha256 == digest
+                    and (
+                        run.dataset_version_id is None
+                        or (
+                            pattern.current_dataset_id == run.dataset_id
+                            and pattern.current_dataset_version_id == run.dataset_version_id
+                        )
+                    )
                 ):
                     skipped += 1
                     await self._repository.advance(run.id, processed=1)

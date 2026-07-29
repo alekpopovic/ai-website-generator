@@ -7,6 +7,7 @@ import pytest
 from platform_workflows.cancellation import raise_if_activity_cancelled
 from platform_workflows.commands import (
     CompactWorkflowInput,
+    DatasetBuildStageInput,
     EmbeddingIndexInput,
     ModelWarmupInput,
     ScanCampaignPlan,
@@ -14,6 +15,7 @@ from platform_workflows.commands import (
     ScanTargetWorkflowInput,
 )
 from platform_workflows.dispatcher import (
+    DatasetBuildSignal,
     DuplicateWorkflowDispatchError,
     FakeWorkflowDispatcher,
     ScanCampaignSignal,
@@ -110,6 +112,23 @@ async def test_fake_dispatcher_records_once_and_rejects_duplicate_run() -> None:
     assert dispatcher.dispatched == [(WorkflowKind.DATASET_BUILD, workflow_command)]
     with pytest.raises(DuplicateWorkflowDispatchError):
         await dispatcher.dispatch(WorkflowKind.DATASET_BUILD, workflow_command)
+
+
+@pytest.mark.anyio
+async def test_fake_dispatcher_records_dataset_cancel_signal() -> None:
+    dispatcher = FakeWorkflowDispatcher()
+    dispatched = await dispatcher.dispatch(WorkflowKind.DATASET_BUILD, command())
+
+    await dispatcher.signal_dataset_build(dispatched.workflow_id, DatasetBuildSignal.CANCEL)
+
+    assert dispatcher.dataset_signals == [(dispatched.workflow_id, DatasetBuildSignal.CANCEL)]
+
+
+def test_dataset_stage_contract_rejects_large_or_executable_payloads() -> None:
+    stage = DatasetBuildStageInput(str(uuid4()), str(uuid4()), "compute-distributions")
+    assert stage.stage == "compute-distributions"
+    with pytest.raises(ValueError, match="stage"):
+        DatasetBuildStageInput(str(uuid4()), str(uuid4()), "run <script>")
 
 
 @pytest.mark.anyio

@@ -12,6 +12,7 @@ from platform_api.persistence.json import JsonValue
 
 DatasetStatus = Literal["active", "archived"]
 DatasetVersionStatus = Literal["draft", "sealed"]
+DatasetBuildStatus = Literal["queued", "running", "cancelling", "cancelled", "failed", "succeeded"]
 DatasetItemType = Literal["section_pattern", "full_site_spec"]
 DatasetSplit = Literal["train", "validation", "test"]
 ProvenanceRequirement = Literal["authorized", "restricted"]
@@ -131,7 +132,39 @@ class DatasetVersionUpdateRequest(DatasetModel):
         return self
 
 
-class SealDatasetVersionRequest(DatasetModel):
+class DatasetQualityPolicy(DatasetModel):
+    max_domain_share: float = Field(default=0.6, gt=0, le=1)
+    minimum_category_count: int = Field(default=2, ge=1, le=100)
+    max_repeated_template_share: float = Field(default=0.25, ge=0, le=1)
+    required_section_types: tuple[str, ...] = Field(default=(), max_length=32)
+    maximum_serialized_text_chars: int = Field(default=20_000, ge=256, le=100_000)
+
+    @field_validator("required_section_types")
+    @classmethod
+    def normalize_section_types(cls, values: tuple[str, ...]) -> tuple[str, ...]:
+        normalized = tuple(value.strip().casefold() for value in values)
+        if any(not value or len(value) > 32 for value in normalized):
+            raise ValueError("Required section types must contain at most 32 characters.")
+        if len(normalized) != len(set(normalized)):
+            raise ValueError("Required section types must be unique.")
+        return normalized
+
+
+class DatasetBuildStartRequest(DatasetModel):
+    idempotency_key: str = Field(
+        min_length=1, max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    )
+    quality_policy: DatasetQualityPolicy = Field(default_factory=DatasetQualityPolicy)
+    enqueue_missing_embeddings: bool = False
+
+
+class DatasetBuildRetryRequest(DatasetModel):
+    idempotency_key: str = Field(
+        min_length=1, max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    )
+
+
+class DatasetBuildCancelRequest(DatasetModel):
     version: int = Field(ge=1)
 
 
@@ -190,3 +223,27 @@ class DatasetVersionDetailResponse(DatasetModel):
     dataset: DatasetResponse
     version: DatasetVersionResponse
     quality_report: DatasetQualityReportResponse | None
+
+
+class DatasetBuildResponse(DatasetModel):
+    id: UUID
+    project_id: UUID
+    dataset_id: UUID
+    dataset_version_id: UUID
+    requested_by_user_id: UUID | None
+    status: DatasetBuildStatus
+    stage: str
+    idempotency_key: str
+    quality_policy: DatasetQualityPolicy
+    enqueue_missing_embeddings: bool
+    excluded_counts: dict[str, JsonValue]
+    workflow_id: str | None
+    workflow_run_id: str | None
+    workflow_attempt: int
+    failure_code: str | None
+    started_at: datetime | None
+    completed_at: datetime | None
+    cancelled_at: datetime | None
+    created_at: datetime
+    updated_at: datetime
+    version: int

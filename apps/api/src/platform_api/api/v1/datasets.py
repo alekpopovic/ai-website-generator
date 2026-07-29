@@ -8,8 +8,15 @@ from uuid import UUID
 from fastapi import APIRouter, Query, Request, Response, status
 
 from platform_api.auth.dependencies import CurrentUserDependency
-from platform_api.datasets.dependencies import DatasetServiceDependency
+from platform_api.datasets.dependencies import (
+    DatasetBuildServiceDependency,
+    DatasetServiceDependency,
+)
 from platform_api.datasets.schemas import (
+    DatasetBuildCancelRequest,
+    DatasetBuildResponse,
+    DatasetBuildRetryRequest,
+    DatasetBuildStartRequest,
     DatasetCreateRequest,
     DatasetItemResponse,
     DatasetResponse,
@@ -18,7 +25,6 @@ from platform_api.datasets.schemas import (
     DatasetVersionDetailResponse,
     DatasetVersionResponse,
     DatasetVersionUpdateRequest,
-    SealDatasetVersionRequest,
 )
 from platform_api.errors import problem_responses, request_id_from
 from platform_api.models.common import PageResponse, PaginationMeta, PaginationParams, ResponseMeta
@@ -212,24 +218,98 @@ async def update_dataset_version(
 
 
 @router.post(
-    "/{dataset_id}/versions/{version_id}/seal",
-    response_model=DatasetVersionDetailResponse,
-    operation_id="sealDatasetVersion",
+    "/{dataset_id}/versions/{version_id}/builds",
+    response_model=DatasetBuildResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    operation_id="startDatasetBuild",
     responses=problem_responses(401, 404, 409, 422, 503),
 )
-async def seal_dataset_version(
+async def start_dataset_build(
     project_id: UUID,
     dataset_id: UUID,
     version_id: UUID,
-    payload: SealDatasetVersionRequest,
+    payload: DatasetBuildStartRequest,
     request: Request,
     user: CurrentUserDependency,
-    service: DatasetServiceDependency,
-) -> DatasetVersionDetailResponse:
-    return await service.seal(
+    service: DatasetBuildServiceDependency,
+) -> DatasetBuildResponse:
+    return await service.start(
         project_id,
         dataset_id,
         version_id,
+        payload,
+        owner_id=user.id,
+        request_id=request_id_from(request),
+    )
+
+
+@router.get(
+    "/{dataset_id}/versions/{version_id}/builds/{build_id}",
+    response_model=DatasetBuildResponse,
+    operation_id="getDatasetBuild",
+    responses=problem_responses(401, 404, 503),
+)
+async def get_dataset_build(
+    project_id: UUID,
+    dataset_id: UUID,
+    version_id: UUID,
+    build_id: UUID,
+    user: CurrentUserDependency,
+    service: DatasetBuildServiceDependency,
+) -> DatasetBuildResponse:
+    return await service.get(project_id, dataset_id, version_id, build_id, owner_id=user.id)
+
+
+@router.post(
+    "/{dataset_id}/versions/{version_id}/builds/{build_id}/cancel",
+    response_model=DatasetBuildResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    operation_id="cancelDatasetBuild",
+    responses=problem_responses(401, 404, 409, 422, 503),
+)
+async def cancel_dataset_build(
+    project_id: UUID,
+    dataset_id: UUID,
+    version_id: UUID,
+    build_id: UUID,
+    payload: DatasetBuildCancelRequest,
+    request: Request,
+    user: CurrentUserDependency,
+    service: DatasetBuildServiceDependency,
+) -> DatasetBuildResponse:
+    return await service.cancel(
+        project_id,
+        dataset_id,
+        version_id,
+        build_id,
+        payload,
+        owner_id=user.id,
+        request_id=request_id_from(request),
+    )
+
+
+@router.post(
+    "/{dataset_id}/versions/{version_id}/builds/{build_id}/retry",
+    response_model=DatasetBuildResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    operation_id="retryDatasetBuild",
+    responses=problem_responses(401, 404, 409, 422, 503),
+)
+async def retry_dataset_build(
+    project_id: UUID,
+    dataset_id: UUID,
+    version_id: UUID,
+    build_id: UUID,
+    payload: DatasetBuildRetryRequest,
+    request: Request,
+    user: CurrentUserDependency,
+    service: DatasetBuildServiceDependency,
+) -> DatasetBuildResponse:
+    return await service.retry(
+        project_id,
+        dataset_id,
+        version_id,
+        build_id,
         payload,
         owner_id=user.id,
         request_id=request_id_from(request),

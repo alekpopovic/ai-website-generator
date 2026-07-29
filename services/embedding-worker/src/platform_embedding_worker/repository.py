@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 
 from platform_api.database import DatabaseManager
 from platform_api.persistence.models import (
+    DatasetItem,
     EmbeddingIndexFailure,
     EmbeddingRun,
     ScanTarget,
@@ -70,11 +71,13 @@ class SqlAlchemyEmbeddingRepository:
             run.total_patterns = total
 
     async def eligible_count(self, run: EmbeddingRunRecord) -> int:
+        scope = _dataset_scope(run)
         async with self._database.session() as session:
             value = await session.scalar(
                 select(func.count(SectionPattern.id)).where(
                     SectionPattern.project_id == run.project_id,
                     *_eligible_conditions(),
+                    *scope,
                 )
             )
         return int(value or 0)
@@ -96,7 +99,11 @@ class SqlAlchemyEmbeddingRepository:
             select(SectionPattern, ScanTarget, SectionPatternEmbedding)
             .join(ScanTarget, ScanTarget.id == SectionPattern.source_website_id)
             .outerjoin(SectionPatternEmbedding, join)
-            .where(SectionPattern.project_id == run.project_id, *_eligible_conditions())
+            .where(
+                SectionPattern.project_id == run.project_id,
+                *_eligible_conditions(),
+                *_dataset_scope(run),
+            )
             .order_by(SectionPattern.id.asc())
             .limit(limit)
         )
@@ -105,7 +112,7 @@ class SqlAlchemyEmbeddingRepository:
         async with self._database.session() as session:
             rows = (await session.execute(statement)).all()
         return tuple(
-            _pattern_record(pattern, target, embedding) for pattern, target, embedding in rows
+            _pattern_record(pattern, target, embedding, run) for pattern, target, embedding in rows
         )
 
     async def removal_batch(self, project_id: UUID, *, limit: int) -> tuple[RemovalRecord, ...]:
@@ -174,6 +181,8 @@ class SqlAlchemyEmbeddingRepository:
                         project_id=run.project_id,
                         section_pattern_id=pattern_id,
                         embedding_run_id=run_id,
+                        dataset_id=run.dataset_id,
+                        dataset_version_id=run.dataset_version_id,
                         physical_collection=collection,
                         embedding_provider=identity.embedding_provider,
                         embedding_model=identity.embedding_model,
@@ -187,6 +196,8 @@ class SqlAlchemyEmbeddingRepository:
                     session.add(state)
                 else:
                     state.embedding_run_id = run_id
+                    state.dataset_id = run.dataset_id
+                    state.dataset_version_id = run.dataset_version_id
                     state.document_sha256 = document_sha256
                     state.status = "indexing"
                     state.attempts += 1
@@ -343,6 +354,8 @@ def _run_record(run: EmbeddingRun) -> EmbeddingRunRecord:
         run.collection_alias,
         run.serialization_schema_version,
         run.vector_name,
+        run.dataset_id,
+        run.dataset_version_id,
     )
 
 
@@ -350,6 +363,7 @@ def _pattern_record(
     pattern: SectionPattern,
     target: ScanTarget,
     embedding: SectionPatternEmbedding | None,
+    run: EmbeddingRunRecord,
 ) -> PatternForEmbedding:
     tags = pattern.style_tags
     if not isinstance(tags, list) or not all(isinstance(value, str) for value in tags):
@@ -376,6 +390,24 @@ def _pattern_record(
         provenance_state=pattern.provenance_state,
         current_document_sha256=embedding.document_sha256 if embedding else None,
         current_status=embedding.status if embedding else None,
+        current_dataset_id=embedding.dataset_id if embedding else None,
+        current_dataset_version_id=embedding.dataset_version_id if embedding else None,
+        dataset_id=run.dataset_id,
+        dataset_version_id=run.dataset_version_id,
+    )
+
+
+def _dataset_scope(run: EmbeddingRunRecord) -> tuple[ColumnElement[bool], ...]:
+    if run.dataset_version_id is None:
+        return ()
+    return (
+        SectionPattern.id.in_(
+            select(DatasetItem.source_record_id).where(
+                DatasetItem.dataset_version_id == run.dataset_version_id,
+                DatasetItem.item_type == "section_pattern",
+                DatasetItem.availability_status == "active",
+            )
+        ),
     )
 
 

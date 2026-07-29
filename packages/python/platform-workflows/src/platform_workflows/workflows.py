@@ -3,16 +3,19 @@
 import asyncio
 from dataclasses import dataclass
 from datetime import timedelta
+from typing import cast
 
 from temporalio import workflow
 from temporalio.exceptions import ActivityError
-from temporalio.workflow import ActivityCancellationType
+from temporalio.workflow import ActivityCancellationType, ParentClosePolicy
 
 from platform_workflows.commands import (
     ActivityCommand,
     ActivityResult,
     CompactWorkflowInput,
     CrawlTargetInput,
+    DatasetBuildStageInput,
+    DatasetBuildStageResult,
     EmbeddingIndexInput,
     ModelWarmupInput,
     RenderPageInput,
@@ -76,22 +79,18 @@ def _control(name: str) -> Stage:
 
 
 _DATASET_STAGES = (
-    _control("prepare-dataset"),
-    Stage(
-        "build-dataset",
-        TaskQueue.AI_ANALYSIS,
-        ActivityCategory.STORAGE,
-        timedelta(hours=1),
-        timedelta(seconds=30),
-    ),
-    Stage(
-        "embed-dataset",
-        TaskQueue.EMBEDDING,
-        ActivityCategory.STORAGE,
-        timedelta(minutes=30),
-        timedelta(seconds=30),
-    ),
-    _control("complete-dataset"),
+    "validate-selection-policy",
+    "resolve-candidate-patterns",
+    "exclude-ineligible-patterns",
+    "deduplicate-pattern-hashes",
+    "check-provenance-authorization",
+    "check-source-specific-copy",
+    "compute-distributions",
+    "create-domain-disjoint-splits",
+    "produce-quality-report",
+    "materialize-version-manifest",
+    "enqueue-missing-embeddings",
+    "seal-dataset-version",
 )
 _GENERATION_STAGES = (
     _control("prepare-generation"),
@@ -460,11 +459,58 @@ class ScanTargetWorkflow:
 
 @workflow.defn(name="DatasetBuildWorkflow")
 class DatasetBuildWorkflow:
-    """Skeleton for immutable dataset preparation and optional embeddings."""
+    """Build and seal a governed dataset using cancellable identifier-only stages."""
+
+    def __init__(self) -> None:
+        self._cancel_requested = False
+
+    @workflow.signal(name="cancel")
+    async def cancel(self) -> None:
+        self._cancel_requested = True
+
+    @workflow.query(name="control-state")
+    def control_state(self) -> str:
+        return "cancelling" if self._cancel_requested else "running"
 
     @workflow.run
     async def run(self, command: CompactWorkflowInput) -> WorkflowResult:
-        return await _run_stages(command, _DATASET_STAGES)
+        for stage in _DATASET_STAGES:
+            if self._cancel_requested:
+                await self._stage(command, "cancel-dataset-build")
+                return WorkflowResult(job_id=command.job_id, status="cancelled")
+            try:
+                result = await self._stage(command, stage)
+            except ActivityError:
+                await self._stage(command, "fail-dataset-build")
+                return WorkflowResult(job_id=command.job_id, status="failed")
+            if result.status == "cancelled":
+                return WorkflowResult(job_id=command.job_id, status="cancelled")
+            if result.status == "failed":
+                return WorkflowResult(job_id=command.job_id, status="failed")
+            if stage == "enqueue-missing-embeddings" and result.embedding_run_id is not None:
+                await workflow.start_child_workflow(
+                    EmbeddingIndexWorkflow.run,
+                    EmbeddingIndexInput(result.embedding_run_id),
+                    id=f"{workflow.info().workflow_id}:embedding:{result.embedding_run_id}",
+                    task_queue=TaskQueue.CONTROL.value,
+                    parent_close_policy=ParentClosePolicy.ABANDON,
+                )
+        return WorkflowResult(job_id=command.job_id, status="completed")
+
+    @staticmethod
+    async def _stage(command: CompactWorkflowInput, stage: str) -> DatasetBuildStageResult:
+        result = await workflow.execute_activity(
+            "run-dataset-build-stage",
+            DatasetBuildStageInput(command.job_id, command.project_id, stage),
+            result_type=DatasetBuildStageResult,
+            task_queue=TaskQueue.CONTROL.value,
+            start_to_close_timeout=timedelta(minutes=5),
+            heartbeat_timeout=timedelta(seconds=20),
+            retry_policy=retry_policy(ActivityCategory.CONTROL),
+            cancellation_type=ActivityCancellationType.WAIT_CANCELLATION_COMPLETED,
+            activity_id=f"{command.job_id}:{stage}",
+        )
+        return cast(DatasetBuildStageResult, result)
 
 
 @workflow.defn(name="SiteGenerationWorkflow")

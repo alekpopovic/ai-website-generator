@@ -30,3 +30,6 @@ row-level outcomes, and error export.
 
 See [analysis profiles](analysis-profiles.md) for historical structured analysis, deterministic
 section retrieval documents, duplicate lineage, and owner-audited curation.
+
+See [dataset builds](datasets.md) for governed selection, quality policy, deterministic domain-disjoint
+splits, immutable manifests, and start/cancel/inspect/retry workflow controls.

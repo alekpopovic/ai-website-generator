@@ -2,26 +2,21 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
-from collections import Counter
 from http import HTTPStatus
 from typing import cast
 from uuid import UUID
 
 from platform_api.errors import ApiError
 from platform_api.persistence.audit import AuditLogService
-from platform_api.persistence.base import utc_now
 from platform_api.persistence.json import JsonValue
 from platform_api.persistence.models import (
     Dataset,
-    DatasetItem,
     DatasetQualityReport,
     DatasetVersion,
 )
 from platform_api.persistence.pagination import Page
 
-from .repository import DatasetCandidate, DatasetRepository
+from .repository import DatasetRepository
 from .schemas import (
     DatasetCreateRequest,
     DatasetItemResponse,
@@ -32,12 +27,8 @@ from .schemas import (
     DatasetVersionDetailResponse,
     DatasetVersionResponse,
     DatasetVersionUpdateRequest,
-    SealDatasetVersionRequest,
     SelectionPolicy,
 )
-
-_SELECTION_MANIFEST_VERSION = 1
-_SPLIT_ALGORITHM = "source-domain-sha256-v1"
 
 
 class DatasetService:
@@ -213,87 +204,6 @@ class DatasetService:
         self._record("version_updated", entity.id, owner_id, request_id)
         return _version_response(entity)
 
-    async def seal(
-        self,
-        project_id: UUID,
-        dataset_id: UUID,
-        version_id: UUID,
-        payload: SealDatasetVersionRequest,
-        *,
-        owner_id: UUID,
-        request_id: str,
-    ) -> DatasetVersionDetailResponse:
-        dataset = await self._dataset(project_id, dataset_id, owner_id)
-        entity = await self._version_entity(
-            project_id, dataset_id, version_id, owner_id, for_update=True
-        )
-        self._draft(entity)
-        self._version(entity.version, payload.version)
-        policy = SelectionPolicy.model_validate(entity.selection_config)
-        candidates = await self._repository.candidates(project_id, policy)
-        if not candidates:
-            raise self._conflict(
-                "dataset_selection_empty",
-                "No eligible normalized records match this selection policy.",
-            )
-        await self._repository.clear_items(entity.id)
-        split_by_domain = {
-            candidate.source_domain: _domain_split(candidate.source_domain)
-            for candidate in candidates
-        }
-        items = [
-            _dataset_item(entity.id, candidate, split_by_domain[candidate.source_domain])
-            for candidate in candidates
-        ]
-        self._repository.add_all(cast(list[object], items))
-        statistics = _statistics(items)
-        analyzer_versions = sorted({candidate.analyzer_version for candidate in candidates})
-        manifest: dict[str, JsonValue] = {
-            "manifest_version": _SELECTION_MANIFEST_VERSION,
-            "split_algorithm": _SPLIT_ALGORITHM,
-            "selection_policy": policy.model_dump(mode="json"),
-            "source_domain_splits": dict(sorted(split_by_domain.items())),
-            "items": [
-                {
-                    "item_type": item.item_type,
-                    "source_record_id": str(item.source_record_id),
-                    "content_sha256": item.content_sha256,
-                    "split": item.split,
-                }
-                for item in items
-            ],
-        }
-        manifest_json = _canonical_json(manifest)
-        entity.status = "sealed"
-        entity.selection_manifest = manifest
-        entity.manifest_sha256 = hashlib.sha256(manifest_json.encode()).hexdigest()
-        entity.analyzer_versions = cast(JsonValue, analyzer_versions)
-        entity.statistics = statistics
-        entity.sealed_by_user_id = owner_id
-        entity.sealed_at = utc_now()
-        report = DatasetQualityReport(
-            dataset_version_id=entity.id,
-            status="passed",
-            item_count=len(items),
-            statistics=statistics,
-            findings=[],
-            report_version=1,
-        )
-        self._repository.add(report)
-        await self._repository.flush()
-        self._record(
-            "version_sealed",
-            entity.id,
-            owner_id,
-            request_id,
-            details={"manifest_sha256": entity.manifest_sha256, "item_count": len(items)},
-        )
-        return DatasetVersionDetailResponse(
-            dataset=_dataset_response(dataset),
-            version=_version_response(entity),
-            quality_report=_report_response(report),
-        )
-
     async def detail(
         self, project_id: UUID, dataset_id: UUID, version_id: UUID, owner_id: UUID
     ) -> DatasetVersionDetailResponse:
@@ -429,61 +339,3 @@ def _version_response(entity: DatasetVersion) -> DatasetVersionResponse:
 
 def _report_response(entity: DatasetQualityReport) -> DatasetQualityReportResponse:
     return DatasetQualityReportResponse.model_validate(entity, from_attributes=True)
-
-
-def _domain_split(domain: str) -> str:
-    percentile = (
-        int.from_bytes(hashlib.sha256(domain.casefold().encode()).digest()[:8], "big") % 100
-    )
-    if percentile < 80:
-        return "train"
-    if percentile < 90:
-        return "validation"
-    return "test"
-
-
-def _dataset_item(version_id: UUID, candidate: DatasetCandidate, split: str) -> DatasetItem:
-    content = candidate.content
-    return DatasetItem(
-        dataset_version_id=version_id,
-        item_type=candidate.item_type,
-        source_record_id=candidate.source_record_id,
-        source_campaign_id=candidate.campaign_id,
-        source_website_id=candidate.website_id,
-        source_page_id=candidate.page_id,
-        source_domain=candidate.source_domain,
-        split=split,
-        category=candidate.category,
-        language=candidate.language,
-        confidence=candidate.confidence,
-        schema_version=candidate.schema_version,
-        analyzer_version=candidate.analyzer_version,
-        content_snapshot=content,
-        source_reference={
-            "source_record_id": str(candidate.source_record_id),
-            "campaign_id": str(candidate.campaign_id),
-            "website_id": str(candidate.website_id),
-            "page_id": None if candidate.page_id is None else str(candidate.page_id),
-            "source_domain": candidate.source_domain,
-            "prompt_default": "excluded",
-        },
-        content_sha256=hashlib.sha256(_canonical_json(content).encode()).hexdigest(),
-        availability_status="active",
-    )
-
-
-def _statistics(items: list[DatasetItem]) -> dict[str, JsonValue]:
-    return {
-        "item_count": len(items),
-        "source_domain_count": len({item.source_domain for item in items}),
-        "splits": dict(Counter(item.split for item in items)),
-        "item_types": dict(Counter(item.item_type for item in items)),
-        "categories": dict(Counter(item.category for item in items)),
-        "languages": dict(Counter(item.language for item in items)),
-        "availability": dict(Counter(item.availability_status for item in items)),
-        "source_domain_leakage_count": 0,
-    }
-
-
-def _canonical_json(value: JsonValue) -> str:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)

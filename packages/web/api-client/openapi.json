@@ -2252,6 +2252,246 @@
         "title": "CurationRequest",
         "type": "object"
       },
+      "DatasetBuildCancelRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "version": {
+            "minimum": 1.0,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version"
+        ],
+        "title": "DatasetBuildCancelRequest",
+        "type": "object"
+      },
+      "DatasetBuildResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "cancelled_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancelled At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dataset_id": {
+            "format": "uuid",
+            "title": "Dataset Id",
+            "type": "string"
+          },
+          "dataset_version_id": {
+            "format": "uuid",
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "enqueue_missing_embeddings": {
+            "title": "Enqueue Missing Embeddings",
+            "type": "boolean"
+          },
+          "excluded_counts": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue-Output"
+            },
+            "title": "Excluded Counts",
+            "type": "object"
+          },
+          "failure_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Code"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "project_id": {
+            "format": "uuid",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "quality_policy": {
+            "$ref": "#/components/schemas/DatasetQualityPolicy"
+          },
+          "requested_by_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested By User Id"
+          },
+          "stage": {
+            "title": "Stage",
+            "type": "string"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "running",
+              "cancelling",
+              "cancelled",
+              "failed",
+              "succeeded"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "workflow_attempt": {
+            "title": "Workflow Attempt",
+            "type": "integer"
+          },
+          "workflow_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Id"
+          },
+          "workflow_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Run Id"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "dataset_id",
+          "dataset_version_id",
+          "requested_by_user_id",
+          "status",
+          "stage",
+          "idempotency_key",
+          "quality_policy",
+          "enqueue_missing_embeddings",
+          "excluded_counts",
+          "workflow_id",
+          "workflow_run_id",
+          "workflow_attempt",
+          "failure_code",
+          "started_at",
+          "completed_at",
+          "cancelled_at",
+          "created_at",
+          "updated_at",
+          "version"
+        ],
+        "title": "DatasetBuildResponse",
+        "type": "object"
+      },
+      "DatasetBuildRetryRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "idempotency_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Idempotency Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "idempotency_key"
+        ],
+        "title": "DatasetBuildRetryRequest",
+        "type": "object"
+      },
+      "DatasetBuildStartRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "enqueue_missing_embeddings": {
+            "default": false,
+            "title": "Enqueue Missing Embeddings",
+            "type": "boolean"
+          },
+          "idempotency_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "quality_policy": {
+            "$ref": "#/components/schemas/DatasetQualityPolicy"
+          }
+        },
+        "required": [
+          "idempotency_key"
+        ],
+        "title": "DatasetBuildStartRequest",
+        "type": "object"
+      },
       "DatasetCreateRequest": {
         "additionalProperties": false,
         "properties": {
@@ -2475,6 +2715,50 @@
           "created_at"
         ],
         "title": "DatasetItemResponse",
+        "type": "object"
+      },
+      "DatasetQualityPolicy": {
+        "additionalProperties": false,
+        "properties": {
+          "max_domain_share": {
+            "default": 0.6,
+            "exclusiveMinimum": 0.0,
+            "maximum": 1.0,
+            "title": "Max Domain Share",
+            "type": "number"
+          },
+          "max_repeated_template_share": {
+            "default": 0.25,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Max Repeated Template Share",
+            "type": "number"
+          },
+          "maximum_serialized_text_chars": {
+            "default": 20000,
+            "maximum": 100000.0,
+            "minimum": 256.0,
+            "title": "Maximum Serialized Text Chars",
+            "type": "integer"
+          },
+          "minimum_category_count": {
+            "default": 2,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Minimum Category Count",
+            "type": "integer"
+          },
+          "required_section_types": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 32,
+            "title": "Required Section Types",
+            "type": "array"
+          }
+        },
+        "title": "DatasetQualityPolicy",
         "type": "object"
       },
       "DatasetQualityReportResponse": {
@@ -3508,6 +3792,30 @@
             "title": "Created At",
             "type": "string"
           },
+          "dataset_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Id"
+          },
+          "dataset_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Version Id"
+          },
           "deleted_patterns": {
             "title": "Deleted Patterns",
             "type": "integer"
@@ -3671,6 +3979,8 @@
         "required": [
           "id",
           "project_id",
+          "dataset_id",
+          "dataset_version_id",
           "kind",
           "status",
           "batch_size",
@@ -7314,21 +7624,6 @@
         "title": "ScanTimeoutLimits",
         "type": "object"
       },
-      "SealDatasetVersionRequest": {
-        "additionalProperties": false,
-        "properties": {
-          "version": {
-            "minimum": 1.0,
-            "title": "Version",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "version"
-        ],
-        "title": "SealDatasetVersionRequest",
-        "type": "object"
-      },
       "SectionPattern": {
         "additionalProperties": false,
         "description": "Ordered abstract page section using only controlled pattern vocabularies.",
@@ -8427,7 +8722,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -8560,7 +8855,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "429": {
             "content": {
@@ -8781,7 +9076,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -8832,7 +9127,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -8886,7 +9181,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -8940,7 +9235,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -9131,7 +9426,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -9205,7 +9500,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -9379,7 +9674,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -9480,7 +9775,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -9576,7 +9871,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -9775,7 +10070,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -9886,7 +10181,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -10082,7 +10377,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -10183,7 +10478,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -10323,7 +10618,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -10519,7 +10814,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -10630,7 +10925,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -10826,7 +11121,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -10924,7 +11219,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -11025,7 +11320,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -11121,7 +11416,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -11222,7 +11517,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -11414,7 +11709,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -11525,7 +11820,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -11631,7 +11926,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -11845,7 +12140,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -11864,6 +12159,488 @@
           }
         ],
         "summary": "Update Dataset Version",
+        "tags": [
+          "datasets"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/datasets/{dataset_id}/versions/{version_id}/builds": {
+      "post": {
+        "operationId": "startDatasetBuild",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatasetBuildStartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetBuildResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start Dataset Build",
+        "tags": [
+          "datasets"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/datasets/{dataset_id}/versions/{version_id}/builds/{build_id}": {
+      "get": {
+        "operationId": "getDatasetBuild",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "build_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Build Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetBuildResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get Dataset Build",
+        "tags": [
+          "datasets"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/datasets/{dataset_id}/versions/{version_id}/builds/{build_id}/cancel": {
+      "post": {
+        "operationId": "cancelDatasetBuild",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "build_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Build Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatasetBuildCancelRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetBuildResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cancel Dataset Build",
+        "tags": [
+          "datasets"
+        ]
+      }
+    },
+    "/api/v1/projects/{project_id}/datasets/{dataset_id}/versions/{version_id}/builds/{build_id}/retry": {
+      "post": {
+        "operationId": "retryDatasetBuild",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "build_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Build Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatasetBuildRetryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetBuildResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "503": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Retry Dataset Build",
         "tags": [
           "datasets"
         ]
@@ -11966,7 +12743,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -11985,124 +12762,6 @@
           }
         ],
         "summary": "List Dataset Items",
-        "tags": [
-          "datasets"
-        ]
-      }
-    },
-    "/api/v1/projects/{project_id}/datasets/{dataset_id}/versions/{version_id}/seal": {
-      "post": {
-        "operationId": "sealDatasetVersion",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "project_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Project Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "dataset_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Dataset Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "version_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Version Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SealDatasetVersionRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DatasetVersionDetailResponse"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "404": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Unprocessable Content"
-          },
-          "503": {
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetail"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Seal Dataset Version",
         "tags": [
           "datasets"
         ]
@@ -12349,7 +13008,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -12442,7 +13101,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -12618,7 +13277,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -12714,7 +13373,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -12815,7 +13474,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -13007,7 +13666,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -13118,7 +13777,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -13248,7 +13907,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -13366,7 +14025,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -13580,7 +14239,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -13706,7 +14365,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -13884,7 +14543,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -14069,7 +14728,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -14387,7 +15046,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -14495,7 +15154,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -14606,7 +15265,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -14714,7 +15373,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -14822,7 +15481,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -14930,7 +15589,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -15038,7 +15697,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -15318,7 +15977,7 @@
                 }
               }
             },
-            "description": "Content Too Large"
+            "description": "Request Entity Too Large"
           },
           "422": {
             "content": {
@@ -15328,7 +15987,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -15544,7 +16203,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -15774,7 +16433,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -15880,7 +16539,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {
@@ -15991,7 +16650,7 @@
                 }
               }
             },
-            "description": "Unprocessable Content"
+            "description": "Unprocessable Entity"
           },
           "503": {
             "content": {

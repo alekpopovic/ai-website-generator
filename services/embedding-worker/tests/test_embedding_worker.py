@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
@@ -167,6 +168,56 @@ def run_record(
 
 async def no_progress(stage: str, completed: int) -> None:
     return None
+
+
+def test_dataset_scoped_pattern_payload_retains_manifest_lineage() -> None:
+    dataset_id = uuid4()
+    version_id = uuid4()
+    item = replace(pattern(uuid4()), dataset_id=dataset_id, dataset_version_id=version_id)
+
+    payload = item.payload()
+
+    assert payload.dataset_id == dataset_id
+    assert payload.dataset_version_id == version_id
+
+
+@pytest.mark.anyio
+async def test_dataset_scoped_incremental_run_refreshes_missing_lineage() -> None:
+    dataset_id = uuid4()
+    version_id = uuid4()
+    item = pattern(uuid4())
+    item = replace(
+        item,
+        current_document_sha256=hashlib.sha256(item.retrieval_document.encode()).hexdigest(),
+        current_status="indexed",
+        dataset_id=dataset_id,
+        dataset_version_id=version_id,
+    )
+    run = replace(
+        run_record(item.project_id),
+        kind="incremental",
+        dataset_id=dataset_id,
+        dataset_version_id=version_id,
+    )
+    repository = FakeRepository(run, (item,))
+    gateway = FakeLLMGateway()
+    vectors = InMemoryVectorStore()
+    metadata = await gateway.model_metadata(ModelRole.EMBEDDING)
+    identity = CollectionIdentity(
+        embedding_provider=metadata.provider,
+        embedding_model=metadata.name,
+        embedding_model_digest=metadata.digest,
+        serialization_schema_version=run.serialization_schema_version,
+        vector_name=run.vector_name,
+    )
+    await vectors.prepare_collection(identity, 3)
+    await vectors.promote_collection(identity)
+
+    outcome = await EmbeddingIndexer(repository, gateway, vectors).run(run.id, no_progress)
+
+    assert outcome.indexed == 1
+    assert outcome.skipped == 0
+    assert repository.indexed == [item.id]
 
 
 @pytest.mark.anyio

@@ -11,6 +11,8 @@ from platform_workflows.commands import (
     ActivityResult,
     CompactWorkflowInput,
     CrawlTargetInput,
+    DatasetBuildStageInput,
+    DatasetBuildStageResult,
     EmbeddingIndexInput,
     ModelWarmupInput,
     RenderPageInput,
@@ -39,10 +41,6 @@ from temporalio.worker import Worker
 pytestmark = pytest.mark.integration
 
 _ACTIVITY_QUEUES = {
-    "prepare-dataset": TaskQueue.CONTROL,
-    "build-dataset": TaskQueue.AI_ANALYSIS,
-    "embed-dataset": TaskQueue.EMBEDDING,
-    "complete-dataset": TaskQueue.CONTROL,
     "prepare-generation": TaskQueue.CONTROL,
     "analyze-generation": TaskQueue.AI_ANALYSIS,
     "generate-site-spec": TaskQueue.GENERATION,
@@ -76,7 +74,6 @@ def fake_activity(name: str):  # type: ignore[no-untyped-def]
 @pytest.mark.parametrize(
     ("workflow_type", "workflow_name", "name"),
     [
-        (DatasetBuildWorkflow, "DatasetBuildWorkflow", "dataset"),
         (SiteGenerationWorkflow, "SiteGenerationWorkflow", "generation"),
         (TrainingRunWorkflow, "TrainingRunWorkflow", "training"),
     ],
@@ -122,6 +119,46 @@ async def test_workflow_skeleton_runs_with_fake_activities(
     assert result.status == "completed"
     assert result.job_id == job_id
     assert result.output_object_key is not None
+
+
+@activity.defn(name="run-dataset-build-stage")
+async def fake_dataset_stage(command: DatasetBuildStageInput) -> DatasetBuildStageResult:
+    activity.heartbeat({"stage": command.stage})
+    return DatasetBuildStageResult(
+        command.build_id,
+        "sealed" if command.stage == "seal-dataset-version" else "passed",
+    )
+
+
+@pytest.mark.anyio
+async def test_dataset_build_workflow_runs_all_governance_stages() -> None:
+    config = TemporalTestServerConfig.from_environment()
+    if config is None or not _test_server_exists(config):
+        pytest.skip("TEMPORAL_TEST_SERVER_PATH is not configured to an existing binary")
+    job_id = str(uuid4())
+    command = CompactWorkflowInput(
+        job_id=job_id,
+        project_id=str(uuid4()),
+        requested_by_user_id=str(uuid4()),
+        idempotency_key="dataset-request",
+    )
+    async with (
+        temporal_test_environment(config) as environment,
+        Worker(
+            environment.client,
+            task_queue=TaskQueue.CONTROL.value,
+            workflows=[DatasetBuildWorkflow],
+            activities=[fake_dataset_stage],
+        ),
+    ):
+        result = await environment.client.execute_workflow(
+            DatasetBuildWorkflow.run,
+            command,
+            id=f"workflow-test-dataset-{job_id}",
+            task_queue=TaskQueue.CONTROL.value,
+        )
+    assert result.status == "completed"
+    assert result.job_id == job_id
 
 
 @activity.defn(name="validate-scan-campaign")

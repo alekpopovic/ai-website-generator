@@ -25,6 +25,8 @@ class EmbeddingRunRecord:
     collection_alias: str
     serialization_schema_version: int
     vector_name: str
+    dataset_id: UUID | None = None
+    dataset_version_id: UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,6 +52,10 @@ class PatternForEmbedding:
     provenance_state: str
     current_document_sha256: str | None
     current_status: str | None
+    current_dataset_id: UUID | None = None
+    current_dataset_version_id: UUID | None = None
+    dataset_id: UUID | None = None
+    dataset_version_id: UUID | None = None
 
     def eligible(self, now: datetime) -> bool:
         return (
@@ -63,6 +69,8 @@ class PatternForEmbedding:
     def payload(self) -> DesignPatternPayload:
         return DesignPatternPayload(
             project_id=self.project_id,
+            dataset_id=self.dataset_id,
+            dataset_version_id=self.dataset_version_id,
             source_website_id=self.source_website_id,
             source_page_id=self.source_page_id,
             section_pattern_id=self.id,

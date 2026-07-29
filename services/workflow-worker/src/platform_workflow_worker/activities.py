@@ -4,22 +4,34 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, ClassVar, cast
 from uuid import UUID, uuid4
 
 from platform_api.config import QdrantSettings
 from platform_api.database import DatabaseManager
+from platform_api.datasets.builder import BuildEvaluation, evaluate_dataset_build
+from platform_api.datasets.repository import DatasetRepository
+from platform_api.datasets.schemas import DatasetQualityPolicy, SelectionPolicy
+from platform_api.persistence.json import JsonValue
 from platform_api.persistence.models import (
     CrawlPage,
+    Dataset,
+    DatasetBuild,
+    DatasetItem,
+    DatasetQualityReport,
+    DatasetVersion,
     EmbeddingRun,
     JobEvent,
     ScanCampaign,
     ScanFailure,
     ScanTarget,
+    SectionPatternEmbedding,
 )
 from platform_workflows.commands import (
     ActivityResult,
     CompactWorkflowInput,
+    DatasetBuildStageInput,
+    DatasetBuildStageResult,
     ScanAggregationInput,
     ScanCampaignPlan,
     ScanIdentifierPage,
@@ -29,7 +41,8 @@ from platform_workflows.commands import (
 from platform_workflows.events import JobEvent as PublishedJobEvent
 from platform_workflows.events import JobEventPublisher
 from platform_workflows.heartbeat import ActivityHeartbeat
-from sqlalchemy import select
+from sqlalchemy import delete, select
+from sqlalchemy.ext.asyncio import AsyncSession
 from temporalio import activity
 from temporalio.exceptions import ApplicationError
 
@@ -305,3 +318,234 @@ class ScanControlActivities:
             self.prepare_embedding,
             self.aggregate,
         )
+
+
+class DatasetBuildActivities:
+    """Idempotent PostgreSQL activities for governed dataset construction."""
+
+    _PASS_THROUGH_STAGES: ClassVar[set[str]] = {
+        "validate-selection-policy",
+        "resolve-candidate-patterns",
+        "exclude-ineligible-patterns",
+        "deduplicate-pattern-hashes",
+        "check-provenance-authorization",
+        "check-source-specific-copy",
+        "compute-distributions",
+        "create-domain-disjoint-splits",
+    }
+
+    def __init__(self, database: DatabaseManager, qdrant: QdrantSettings) -> None:
+        self._database = database
+        self._qdrant = qdrant
+
+    @activity.defn(name="run-dataset-build-stage")
+    async def run_stage(self, command: DatasetBuildStageInput) -> DatasetBuildStageResult:
+        heartbeat = ActivityHeartbeat()
+        heartbeat.report(stage=command.stage, completed=0)
+        build_id = UUID(command.build_id)
+        async with self._database.transaction() as session:
+            build = await session.scalar(
+                select(DatasetBuild).where(DatasetBuild.id == build_id).with_for_update()
+            )
+            if build is None or build.project_id != UUID(command.project_id):
+                raise ApplicationError("dataset build was not found", non_retryable=True)
+            if build.status == "succeeded":
+                return DatasetBuildStageResult(command.build_id, "sealed")
+            if (
+                build.status in {"cancelled", "cancelling"}
+                or command.stage == "cancel-dataset-build"
+            ):
+                build.status = "cancelled"
+                build.stage = "cancelled"
+                build.cancelled_at = datetime.now(UTC)
+                build.completed_at = build.cancelled_at
+                return DatasetBuildStageResult(command.build_id, "cancelled")
+            if build.status == "failed":
+                return DatasetBuildStageResult(command.build_id, "failed")
+            if command.stage == "fail-dataset-build":
+                build.status = "failed"
+                build.stage = "failed"
+                build.failure_code = "dataset_stage_failed"
+                build.completed_at = datetime.now(UTC)
+                return DatasetBuildStageResult(command.build_id, "failed")
+
+            version = await session.get(DatasetVersion, build.dataset_version_id)
+            dataset = await session.get(Dataset, build.dataset_id)
+            if (
+                version is None
+                or dataset is None
+                or version.dataset_id != build.dataset_id
+                or dataset.project_id != build.project_id
+            ):
+                raise ApplicationError("dataset version was not found", non_retryable=True)
+            if version.status != "draft" or dataset.status != "active":
+                build.status = "failed"
+                build.failure_code = "dataset_version_not_draft"
+                build.completed_at = datetime.now(UTC)
+                return DatasetBuildStageResult(command.build_id, "failed")
+
+            build.status = "running"
+            build.stage = command.stage
+            build.started_at = build.started_at or datetime.now(UTC)
+            selection = SelectionPolicy.model_validate(version.selection_config)
+            quality = DatasetQualityPolicy.model_validate(build.quality_policy)
+            if command.stage in self._PASS_THROUGH_STAGES:
+                return DatasetBuildStageResult(command.build_id, "running")
+            if command.stage == "produce-quality-report":
+                evaluation = await self._evaluate(session, build, version, selection, quality)
+                report = await session.scalar(
+                    select(DatasetQualityReport).where(
+                        DatasetQualityReport.dataset_build_id == build.id
+                    )
+                )
+                if report is None:
+                    report = DatasetQualityReport(
+                        dataset_version_id=version.id,
+                        dataset_build_id=build.id,
+                        status="passed" if evaluation.passed else "failed",
+                        item_count=len(evaluation.items),
+                        statistics=evaluation.statistics,
+                        findings=list(evaluation.findings),
+                        report_version=2,
+                    )
+                    session.add(report)
+                build.excluded_counts = evaluation.excluded_counts
+                if not evaluation.passed:
+                    build.status = "failed"
+                    build.failure_code = "dataset_quality_checks_failed"
+                    build.completed_at = datetime.now(UTC)
+                    return DatasetBuildStageResult(command.build_id, "failed")
+                return DatasetBuildStageResult(command.build_id, "passed")
+            if command.stage == "materialize-version-manifest":
+                evaluation = await self._evaluate(session, build, version, selection, quality)
+                if not evaluation.passed:
+                    build.status = "failed"
+                    build.failure_code = "dataset_quality_checks_failed"
+                    build.completed_at = datetime.now(UTC)
+                    return DatasetBuildStageResult(command.build_id, "failed")
+                await session.execute(
+                    delete(DatasetItem).where(DatasetItem.dataset_version_id == version.id)
+                )
+                session.add_all(list(evaluation.items))
+                version.selection_manifest = evaluation.manifest
+                version.manifest_sha256 = evaluation.manifest_sha256
+                version.analyzer_versions = cast(JsonValue, list(evaluation.analyzer_versions))
+                version.statistics = evaluation.statistics
+                return DatasetBuildStageResult(command.build_id, "passed")
+            if command.stage == "enqueue-missing-embeddings":
+                run_id = await self._enqueue_embeddings(session, build, version)
+                return DatasetBuildStageResult(
+                    command.build_id,
+                    "passed",
+                    None if run_id is None else str(run_id),
+                )
+            if command.stage == "seal-dataset-version":
+                report = await session.scalar(
+                    select(DatasetQualityReport).where(
+                        DatasetQualityReport.dataset_build_id == build.id,
+                        DatasetQualityReport.status == "passed",
+                    )
+                )
+                evaluation = await self._evaluate(session, build, version, selection, quality)
+                if (
+                    report is None
+                    or not evaluation.passed
+                    or version.manifest_sha256 is None
+                    or version.manifest_sha256 != evaluation.manifest_sha256
+                ):
+                    build.status = "failed"
+                    build.failure_code = "dataset_required_checks_changed"
+                    build.completed_at = datetime.now(UTC)
+                    return DatasetBuildStageResult(command.build_id, "failed")
+                now = datetime.now(UTC)
+                version.status = "sealed"
+                version.sealed_by_user_id = build.requested_by_user_id
+                version.sealed_at = now
+                build.status = "succeeded"
+                build.stage = "sealed"
+                build.completed_at = now
+                build.failure_code = None
+                return DatasetBuildStageResult(command.build_id, "sealed")
+            raise ApplicationError("unknown dataset build stage", non_retryable=True)
+
+    async def _evaluate(
+        self,
+        session: AsyncSession,
+        build: DatasetBuild,
+        version: DatasetVersion,
+        selection: SelectionPolicy,
+        quality: DatasetQualityPolicy,
+    ) -> BuildEvaluation:
+        candidates = await DatasetRepository(session).build_candidates(build.project_id, selection)
+        return evaluate_dataset_build(
+            version_id=version.id,
+            candidates=candidates,
+            selection=selection,
+            quality=quality,
+            schema_version=version.schema_version,
+            now=datetime.now(UTC),
+        )
+
+    async def _enqueue_embeddings(
+        self, session: AsyncSession, build: DatasetBuild, version: DatasetVersion
+    ) -> UUID | None:
+        if not build.enqueue_missing_embeddings:
+            return None
+        pattern_ids = tuple(
+            (
+                await session.scalars(
+                    select(DatasetItem.source_record_id).where(
+                        DatasetItem.dataset_version_id == version.id,
+                        DatasetItem.item_type == "section_pattern",
+                    )
+                )
+            ).all()
+        )
+        if not pattern_ids:
+            return None
+        indexed_ids = set(
+            (
+                await session.scalars(
+                    select(SectionPatternEmbedding.section_pattern_id).where(
+                        SectionPatternEmbedding.section_pattern_id.in_(pattern_ids),
+                        SectionPatternEmbedding.status == "indexed",
+                    )
+                )
+            ).all()
+        )
+        if all(pattern_id in indexed_ids for pattern_id in pattern_ids):
+            return None
+        key = f"dataset-{version.id}-attempt-{build.workflow_attempt}"
+        existing = await session.scalar(
+            select(EmbeddingRun).where(
+                EmbeddingRun.project_id == build.project_id,
+                EmbeddingRun.idempotency_key == key,
+            )
+        )
+        if existing is not None:
+            return existing.id
+        run = EmbeddingRun(
+            id=uuid4(),
+            project_id=build.project_id,
+            requested_by_user_id=build.requested_by_user_id,
+            dataset_id=build.dataset_id,
+            dataset_version_id=version.id,
+            kind="incremental",
+            status="queued",
+            idempotency_key=key,
+            batch_size=64,
+            promote_alias=False,
+            collection_alias=self._qdrant.collection_alias,
+            serialization_schema_version=self._qdrant.serialization_schema_version,
+            vector_name=self._qdrant.vector_name,
+            total_patterns=0,
+            processed_patterns=0,
+            indexed_patterns=0,
+            deleted_patterns=0,
+            failed_patterns=0,
+        )
+        session.add(run)
+        return run.id
+
+    def registered(self) -> tuple[Callable[..., Any], ...]:
+        return (self.run_stage,)

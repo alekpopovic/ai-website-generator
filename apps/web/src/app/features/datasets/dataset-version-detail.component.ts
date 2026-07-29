@@ -1,6 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import type { DatasetItemResponse, DatasetVersionDetailResponse } from '@platform/api-client';
+import type {
+  DatasetBuildResponse,
+  DatasetItemResponse,
+  DatasetVersionDetailResponse,
+} from '@platform/api-client';
 
 import { DatasetApiService } from '../../core/datasets/dataset-api.service';
 import { EmptyStateComponent } from '../../shared/states/empty-state.component';
@@ -22,11 +26,23 @@ import { LoadingStateComponent } from '../../shared/states/loading-state.compone
             <p>Manifest {{ current.version.manifest_sha256 || 'not sealed' }}</p>
           </div>
           @if (current.version.status === 'draft') {
-            <button class="primary-button" type="button" [disabled]="sealing()" (click)="seal()">
-              {{ sealing() ? 'Sealing…' : 'Seal version' }}
+            <button class="primary-button" type="button" [disabled]="building()" (click)="build()">
+              {{ building() ? 'Starting…' : 'Build and seal version' }}
             </button>
           }
         </header>
+        @if (activeBuild(); as build) {
+          <div class="state-card" role="status">
+            Dataset build: {{ build.status }} · {{ build.stage }}
+            @if (
+              build.status !== 'succeeded' &&
+              build.status !== 'failed' &&
+              build.status !== 'cancelled'
+            ) {
+              <button type="button" (click)="refreshBuild()">Refresh status</button>
+            }
+          </div>
+        }
         <dl class="summary-grid">
           <div>
             <dt>Items</dt>
@@ -50,7 +66,7 @@ import { LoadingStateComponent } from '../../shared/states/loading-state.compone
           @if (items().length === 0) {
             <app-empty-state
               heading="No items yet"
-              message="Items are materialized when the draft is sealed."
+              message="Items are materialized after the dataset build passes every quality check."
             />
           } @else {
             <div class="table-scroll">
@@ -93,26 +109,47 @@ export class DatasetVersionDetailComponent {
   readonly detail = signal<DatasetVersionDetailResponse | null>(null);
   readonly items = signal<readonly DatasetItemResponse[]>([]);
   readonly loading = signal(true);
-  readonly sealing = signal(false);
+  readonly building = signal(false);
+  readonly activeBuild = signal<DatasetBuildResponse | null>(null);
   readonly error = signal<string | null>(null);
 
   constructor() {
     void this.load();
   }
 
-  async seal(): Promise<void> {
+  async build(): Promise<void> {
     const current = this.detail();
     if (current === null) return;
-    this.sealing.set(true);
+    this.building.set(true);
     try {
-      this.detail.set(await this.api.seal(this.projectId, this.datasetId, current.version));
-      this.items.set((await this.api.items(this.projectId, this.datasetId, this.versionId)).items);
+      this.activeBuild.set(
+        await this.api.startBuild(this.projectId, this.datasetId, current.version),
+      );
     } catch (error: unknown) {
       this.error.set(
-        error instanceof Error ? error.message : 'The dataset version could not be sealed.',
+        error instanceof Error ? error.message : 'The dataset build could not be started.',
       );
     } finally {
-      this.sealing.set(false);
+      this.building.set(false);
+    }
+  }
+
+  async refreshBuild(): Promise<void> {
+    const build = this.activeBuild();
+    if (build === null) return;
+    try {
+      const refreshed = await this.api.build(
+        this.projectId,
+        this.datasetId,
+        this.versionId,
+        build.id,
+      );
+      this.activeBuild.set(refreshed);
+      if (refreshed.status === 'succeeded') await this.load();
+    } catch (error: unknown) {
+      this.error.set(
+        error instanceof Error ? error.message : 'The dataset build could not be loaded.',
+      );
     }
   }
 

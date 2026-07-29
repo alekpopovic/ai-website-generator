@@ -1072,6 +1072,130 @@ export type CurationRequest = {
 };
 
 /**
+ * DatasetBuildCancelRequest
+ */
+export type DatasetBuildCancelRequest = {
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * DatasetBuildResponse
+ */
+export type DatasetBuildResponse = {
+    /**
+     * Cancelled At
+     */
+    cancelled_at: string | null;
+    /**
+     * Completed At
+     */
+    completed_at: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Dataset Id
+     */
+    dataset_id: string;
+    /**
+     * Dataset Version Id
+     */
+    dataset_version_id: string;
+    /**
+     * Enqueue Missing Embeddings
+     */
+    enqueue_missing_embeddings: boolean;
+    /**
+     * Excluded Counts
+     */
+    excluded_counts: {
+        [key: string]: JsonValueOutput;
+    };
+    /**
+     * Failure Code
+     */
+    failure_code: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Idempotency Key
+     */
+    idempotency_key: string;
+    /**
+     * Project Id
+     */
+    project_id: string;
+    quality_policy: DatasetQualityPolicy;
+    /**
+     * Requested By User Id
+     */
+    requested_by_user_id: string | null;
+    /**
+     * Stage
+     */
+    stage: string;
+    /**
+     * Started At
+     */
+    started_at: string | null;
+    /**
+     * Status
+     */
+    status: 'queued' | 'running' | 'cancelling' | 'cancelled' | 'failed' | 'succeeded';
+    /**
+     * Updated At
+     */
+    updated_at: string;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Workflow Attempt
+     */
+    workflow_attempt: number;
+    /**
+     * Workflow Id
+     */
+    workflow_id: string | null;
+    /**
+     * Workflow Run Id
+     */
+    workflow_run_id: string | null;
+};
+
+/**
+ * DatasetBuildRetryRequest
+ */
+export type DatasetBuildRetryRequest = {
+    /**
+     * Idempotency Key
+     */
+    idempotency_key: string;
+};
+
+/**
+ * DatasetBuildStartRequest
+ */
+export type DatasetBuildStartRequest = {
+    /**
+     * Enqueue Missing Embeddings
+     */
+    enqueue_missing_embeddings?: boolean;
+    /**
+     * Idempotency Key
+     */
+    idempotency_key: string;
+    quality_policy?: DatasetQualityPolicy;
+};
+
+/**
  * DatasetCreateRequest
  */
 export type DatasetCreateRequest = {
@@ -1189,6 +1313,32 @@ export type DatasetItemResponse = {
      * Split
      */
     split: 'train' | 'validation' | 'test';
+};
+
+/**
+ * DatasetQualityPolicy
+ */
+export type DatasetQualityPolicy = {
+    /**
+     * Max Domain Share
+     */
+    max_domain_share?: number;
+    /**
+     * Max Repeated Template Share
+     */
+    max_repeated_template_share?: number;
+    /**
+     * Maximum Serialized Text Chars
+     */
+    maximum_serialized_text_chars?: number;
+    /**
+     * Minimum Category Count
+     */
+    minimum_category_count?: number;
+    /**
+     * Required Section Types
+     */
+    required_section_types?: Array<string>;
 };
 
 /**
@@ -1730,6 +1880,14 @@ export type EmbeddingRunResponse = {
      * Created At
      */
     created_at: string;
+    /**
+     * Dataset Id
+     */
+    dataset_id: string | null;
+    /**
+     * Dataset Version Id
+     */
+    dataset_version_id: string | null;
     /**
      * Deleted Patterns
      */
@@ -3647,16 +3805,6 @@ export type ScanTimeoutLimits = {
 };
 
 /**
- * SealDatasetVersionRequest
- */
-export type SealDatasetVersionRequest = {
-    /**
-     * Version
-     */
-    version: number;
-};
-
-/**
  * SectionPattern
  *
  * Ordered abstract page section using only controlled pattern vocabularies.
@@ -4271,7 +4419,7 @@ export type WarmUpConfiguredModelErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -4341,7 +4489,7 @@ export type LoginErrors = {
      */
     403: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -4490,7 +4638,7 @@ export type RegisterErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -4519,7 +4667,7 @@ export type RequestPasswordResetData = {
 
 export type RequestPasswordResetErrors = {
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -4552,7 +4700,7 @@ export type ResetPasswordErrors = {
      */
     400: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -4585,7 +4733,7 @@ export type VerifyEmailErrors = {
      */
     400: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -4672,7 +4820,7 @@ export type ListProjectsErrors = {
      */
     401: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -4709,7 +4857,7 @@ export type CreateProjectErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -4797,7 +4945,7 @@ export type UpdateProjectErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -4848,7 +4996,7 @@ export type ListEmbeddingRunsErrors = {
      */
     404: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -4894,7 +5042,7 @@ export type CreateEmbeddingRunErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -4995,7 +5143,7 @@ export type ListEmbeddingRunFailuresErrors = {
      */
     404: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -5050,7 +5198,7 @@ export type ListPageProfilesErrors = {
      */
     404: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -5146,7 +5294,7 @@ export type CuratePageProfileErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -5197,7 +5345,7 @@ export type ListAnalysisRunsErrors = {
      */
     404: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -5256,7 +5404,7 @@ export type ListSectionPatternsErrors = {
      */
     404: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -5352,7 +5500,7 @@ export type CurateSectionPatternErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -5407,7 +5555,7 @@ export type ListWebsiteProfilesErrors = {
      */
     404: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -5503,7 +5651,7 @@ export type CurateWebsiteProfileErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -5549,7 +5697,7 @@ export type ArchiveProjectErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -5600,7 +5748,7 @@ export type ListDatasetsErrors = {
      */
     404: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -5646,7 +5794,7 @@ export type CreateDatasetErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -5701,7 +5849,7 @@ export type DeleteDatasetErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -5797,7 +5945,7 @@ export type UpdateDatasetErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -5852,7 +6000,7 @@ export type ListDatasetVersionsErrors = {
      */
     404: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -5902,7 +6050,7 @@ export type CreateDatasetVersionErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -6006,7 +6154,7 @@ export type UpdateDatasetVersionErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -6025,6 +6173,230 @@ export type UpdateDatasetVersionResponses = {
 };
 
 export type UpdateDatasetVersionResponse = UpdateDatasetVersionResponses[keyof UpdateDatasetVersionResponses];
+
+export type StartDatasetBuildData = {
+    body: DatasetBuildStartRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Dataset Id
+         */
+        dataset_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/datasets/{dataset_id}/versions/{version_id}/builds';
+};
+
+export type StartDatasetBuildErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Entity
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type StartDatasetBuildError = StartDatasetBuildErrors[keyof StartDatasetBuildErrors];
+
+export type StartDatasetBuildResponses = {
+    /**
+     * Successful Response
+     */
+    202: DatasetBuildResponse;
+};
+
+export type StartDatasetBuildResponse = StartDatasetBuildResponses[keyof StartDatasetBuildResponses];
+
+export type GetDatasetBuildData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Dataset Id
+         */
+        dataset_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+        /**
+         * Build Id
+         */
+        build_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/datasets/{dataset_id}/versions/{version_id}/builds/{build_id}';
+};
+
+export type GetDatasetBuildErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type GetDatasetBuildError = GetDatasetBuildErrors[keyof GetDatasetBuildErrors];
+
+export type GetDatasetBuildResponses = {
+    /**
+     * Successful Response
+     */
+    200: DatasetBuildResponse;
+};
+
+export type GetDatasetBuildResponse = GetDatasetBuildResponses[keyof GetDatasetBuildResponses];
+
+export type CancelDatasetBuildData = {
+    body: DatasetBuildCancelRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Dataset Id
+         */
+        dataset_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+        /**
+         * Build Id
+         */
+        build_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/datasets/{dataset_id}/versions/{version_id}/builds/{build_id}/cancel';
+};
+
+export type CancelDatasetBuildErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Entity
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type CancelDatasetBuildError = CancelDatasetBuildErrors[keyof CancelDatasetBuildErrors];
+
+export type CancelDatasetBuildResponses = {
+    /**
+     * Successful Response
+     */
+    202: DatasetBuildResponse;
+};
+
+export type CancelDatasetBuildResponse = CancelDatasetBuildResponses[keyof CancelDatasetBuildResponses];
+
+export type RetryDatasetBuildData = {
+    body: DatasetBuildRetryRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Dataset Id
+         */
+        dataset_id: string;
+        /**
+         * Version Id
+         */
+        version_id: string;
+        /**
+         * Build Id
+         */
+        build_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/datasets/{dataset_id}/versions/{version_id}/builds/{build_id}/retry';
+};
+
+export type RetryDatasetBuildErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Entity
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type RetryDatasetBuildError = RetryDatasetBuildErrors[keyof RetryDatasetBuildErrors];
+
+export type RetryDatasetBuildResponses = {
+    /**
+     * Successful Response
+     */
+    202: DatasetBuildResponse;
+};
+
+export type RetryDatasetBuildResponse = RetryDatasetBuildResponses[keyof RetryDatasetBuildResponses];
 
 export type ListDatasetItemsData = {
     body?: never;
@@ -6065,7 +6437,7 @@ export type ListDatasetItemsErrors = {
      */
     404: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -6084,60 +6456,6 @@ export type ListDatasetItemsResponses = {
 };
 
 export type ListDatasetItemsResponse = ListDatasetItemsResponses[keyof ListDatasetItemsResponses];
-
-export type SealDatasetVersionData = {
-    body: SealDatasetVersionRequest;
-    path: {
-        /**
-         * Project Id
-         */
-        project_id: string;
-        /**
-         * Dataset Id
-         */
-        dataset_id: string;
-        /**
-         * Version Id
-         */
-        version_id: string;
-    };
-    query?: never;
-    url: '/api/v1/projects/{project_id}/datasets/{dataset_id}/versions/{version_id}/seal';
-};
-
-export type SealDatasetVersionErrors = {
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetail;
-    /**
-     * Not Found
-     */
-    404: ProblemDetail;
-    /**
-     * Conflict
-     */
-    409: ProblemDetail;
-    /**
-     * Unprocessable Content
-     */
-    422: ProblemDetail;
-    /**
-     * Service Unavailable
-     */
-    503: ProblemDetail;
-};
-
-export type SealDatasetVersionError = SealDatasetVersionErrors[keyof SealDatasetVersionErrors];
-
-export type SealDatasetVersionResponses = {
-    /**
-     * Successful Response
-     */
-    200: DatasetVersionDetailResponse;
-};
-
-export type SealDatasetVersionResponse = SealDatasetVersionResponses[keyof SealDatasetVersionResponses];
 
 export type StreamJobEventsData = {
     body?: never;
@@ -6246,7 +6564,7 @@ export type PollJobEventsErrors = {
      */
     404: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -6292,7 +6610,7 @@ export type RestoreProjectErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -6359,7 +6677,7 @@ export type ListScanCampaignsErrors = {
      */
     404: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -6405,7 +6723,7 @@ export type CreateScanCampaignErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -6455,7 +6773,7 @@ export type DeleteDraftScanCampaignErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -6551,7 +6869,7 @@ export type UpdateScanCampaignErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -6606,7 +6924,7 @@ export type ListScanCampaignActivityErrors = {
      */
     404: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -6669,7 +6987,7 @@ export type CreateScanArtifactReadUrlErrors = {
      */
     410: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -6723,7 +7041,7 @@ export type RequestScanArtifactRemovalErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -6825,7 +7143,7 @@ export type CancelScanCampaignErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -6884,7 +7202,7 @@ export type ListScanCampaignDuplicateGroupsErrors = {
      */
     404: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -6955,7 +7273,7 @@ export type ListScanCampaignFailuresErrors = {
      */
     404: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -7022,7 +7340,7 @@ export type ListScanCampaignPagesErrors = {
      */
     404: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -7178,7 +7496,7 @@ export type OverrideScanCampaignPageRepresentativeErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -7228,7 +7546,7 @@ export type PauseScanCampaignErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -7283,7 +7601,7 @@ export type ListScanCampaignRepresentativeDecisionsErrors = {
      */
     404: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -7333,7 +7651,7 @@ export type ResumeScanCampaignErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -7383,7 +7701,7 @@ export type RetryScanCampaignFailuresErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -7433,7 +7751,7 @@ export type RetrySelectedScanCampaignFailuresErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -7483,7 +7801,7 @@ export type StartScanCampaignErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -7604,11 +7922,11 @@ export type ImportScanCampaignTargetsErrors = {
      */
     409: ProblemDetail;
     /**
-     * Content Too Large
+     * Request Entity Too Large
      */
     413: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -7712,7 +8030,7 @@ export type CommitScanTargetImportErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -7819,7 +8137,7 @@ export type ListScanCampaignTargetsErrors = {
      */
     404: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -7869,7 +8187,7 @@ export type AddScanCampaignTargetErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**
@@ -7923,7 +8241,7 @@ export type DeleteDraftScanCampaignTargetErrors = {
      */
     409: ProblemDetail;
     /**
-     * Unprocessable Content
+     * Unprocessable Entity
      */
     422: ProblemDetail;
     /**

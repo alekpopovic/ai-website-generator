@@ -1057,6 +1057,56 @@ class DatasetVersion(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin
     sealed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class DatasetBuild(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, Base):
+    """Durable, owner-authorized workflow attempt for one draft dataset version."""
+
+    __tablename__ = "dataset_builds"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('queued', 'running', 'cancelling', 'cancelled', 'failed', 'succeeded')",
+            name="status_allowed",
+        ),
+        CheckConstraint("workflow_attempt >= 1", name="workflow_attempt_positive"),
+        Index("ix_dataset_builds_project_created", "project_id", "created_at"),
+        Index("ix_dataset_builds_version_status", "dataset_version_id", "status"),
+        Index(
+            "uq_dataset_builds_active_version",
+            "dataset_version_id",
+            unique=True,
+            postgresql_where=text("status IN ('queued', 'running', 'cancelling')"),
+        ),
+        UniqueConstraint("dataset_version_id", "idempotency_key"),
+    )
+
+    project_id: Mapped[UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
+    )
+    dataset_id: Mapped[UUID] = mapped_column(
+        ForeignKey("datasets.id", ondelete="CASCADE"), nullable=False
+    )
+    dataset_version_id: Mapped[UUID] = mapped_column(
+        ForeignKey("dataset_versions.id", ondelete="CASCADE"), nullable=False
+    )
+    requested_by_user_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="queued")
+    stage: Mapped[str] = mapped_column(String(64), nullable=False, default="queued")
+    idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    quality_policy: Mapped[JsonValue] = mapped_column(SafeJSONB, nullable=False)
+    enqueue_missing_embeddings: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    excluded_counts: Mapped[JsonValue] = mapped_column(
+        SafeJSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")
+    )
+    workflow_id: Mapped[str | None] = mapped_column(String(300))
+    workflow_run_id: Mapped[str | None] = mapped_column(String(100))
+    workflow_attempt: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    failure_code: Mapped[str | None] = mapped_column(String(100))
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class DatasetItem(UUIDPrimaryKeyMixin, Base):
     """Immutable abstract training item with audit-only source references."""
 
@@ -1119,6 +1169,9 @@ class DatasetQualityReport(UUIDPrimaryKeyMixin, Base):
     dataset_version_id: Mapped[UUID] = mapped_column(
         ForeignKey("dataset_versions.id", ondelete="CASCADE"), nullable=False
     )
+    dataset_build_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("dataset_builds.id", ondelete="CASCADE"), unique=True
+    )
     status: Mapped[str] = mapped_column(String(16), nullable=False)
     item_count: Mapped[int] = mapped_column(Integer, nullable=False)
     statistics: Mapped[JsonValue] = mapped_column(SafeJSONB, nullable=False)
@@ -1145,9 +1198,14 @@ class EmbeddingRun(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, 
             "AND deleted_patterns >= 0 AND failed_patterns >= 0",
             name="counts_nonnegative",
         ),
+        CheckConstraint(
+            "(dataset_id IS NULL) = (dataset_version_id IS NULL)",
+            name="dataset_lineage_complete",
+        ),
         Index("ix_embedding_runs_project_created", "project_id", "created_at"),
         Index("ix_embedding_runs_project_status", "project_id", "status"),
         UniqueConstraint("project_id", "idempotency_key"),
+        Index("ix_embedding_runs_dataset_version", "dataset_version_id", "status"),
     )
 
     project_id: Mapped[UUID] = mapped_column(
@@ -1155,6 +1213,10 @@ class EmbeddingRun(UUIDPrimaryKeyMixin, TimestampMixin, OptimisticVersionMixin, 
     )
     requested_by_user_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL")
+    )
+    dataset_id: Mapped[UUID | None] = mapped_column(ForeignKey("datasets.id", ondelete="CASCADE"))
+    dataset_version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("dataset_versions.id", ondelete="CASCADE")
     )
     kind: Mapped[str] = mapped_column(String(16), nullable=False)
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="queued")

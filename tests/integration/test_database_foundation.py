@@ -18,7 +18,10 @@ from platform_api.persistence.models import (
     CrawlPage,
     CrawlPolicyRecord,
     Dataset,
+    DatasetBuild,
+    DatasetQualityReport,
     DatasetVersion,
+    EmbeddingRun,
     Project,
     ScanCampaign,
     ScanTarget,
@@ -156,33 +159,94 @@ async def test_dataset_draft_policy_persists_in_postgresql(migrated_database: st
             )
             session.add(dataset)
             await session.flush()
+            version = DatasetVersion(
+                dataset_id=dataset.id,
+                status="draft",
+                version_number=1,
+                selection_config={
+                    "source_campaign_filters": [],
+                    "category_filters": ["technology"],
+                    "language_filters": ["en"],
+                    "item_types": ["section_pattern"],
+                    "minimum_confidence": 0.8,
+                    "require_approved": True,
+                    "provenance_requirements": ["authorized"],
+                },
+                selection_manifest={},
+                schema_version=1,
+                analyzer_versions=[],
+                statistics={},
+                created_by_user_id=user.id,
+            )
+            session.add(version)
+            await session.flush()
+            build = DatasetBuild(
+                project_id=project.id,
+                dataset_id=dataset.id,
+                dataset_version_id=version.id,
+                requested_by_user_id=user.id,
+                status="failed",
+                stage="produce-quality-report",
+                idempotency_key="integration-build-1",
+                quality_policy={
+                    "max_domain_share": 0.6,
+                    "minimum_category_count": 2,
+                    "max_repeated_template_share": 0.25,
+                    "required_section_types": [],
+                    "maximum_serialized_text_chars": 20000,
+                },
+                enqueue_missing_embeddings=False,
+                excluded_counts={"insufficient_confidence": 2},
+                workflow_attempt=1,
+                failure_code="dataset_quality_checks_failed",
+            )
+            session.add(build)
+            await session.flush()
             session.add(
-                DatasetVersion(
+                DatasetQualityReport(
+                    dataset_version_id=version.id,
+                    dataset_build_id=build.id,
+                    status="failed",
+                    item_count=0,
+                    statistics={"item_count": 0},
+                    findings=[{"code": "selection_empty"}],
+                    report_version=2,
+                )
+            )
+            session.add(
+                EmbeddingRun(
+                    project_id=project.id,
+                    requested_by_user_id=user.id,
                     dataset_id=dataset.id,
-                    status="draft",
-                    version_number=1,
-                    selection_config={
-                        "source_campaign_filters": [],
-                        "category_filters": ["technology"],
-                        "language_filters": ["en"],
-                        "item_types": ["section_pattern"],
-                        "minimum_confidence": 0.8,
-                        "require_approved": True,
-                        "provenance_requirements": ["authorized"],
-                    },
-                    selection_manifest={},
-                    schema_version=1,
-                    analyzer_versions=[],
-                    statistics={},
-                    created_by_user_id=user.id,
+                    dataset_version_id=version.id,
+                    kind="incremental",
+                    status="queued",
+                    idempotency_key="dataset-build-embedding-1",
+                    batch_size=64,
+                    promote_alias=False,
+                    collection_alias="patterns",
+                    serialization_schema_version=1,
+                    vector_name="design-pattern",
+                    total_patterns=0,
+                    processed_patterns=0,
+                    indexed_patterns=0,
+                    deleted_patterns=0,
+                    failed_patterns=0,
                 )
             )
         async with manager.session() as session:
             stored = await session.scalar(select(DatasetVersion))
+            stored_build = await session.scalar(select(DatasetBuild))
+            stored_report = await session.scalar(select(DatasetQualityReport))
+            stored_run = await session.scalar(select(EmbeddingRun))
             assert stored is not None
             assert stored.status == "draft"
             assert cast(dict[str, object], stored.selection_config)["minimum_confidence"] == 0.8
             assert stored.created_at.utcoffset() is not None
+            assert stored_build is not None
+            assert stored_build.excluded_counts == {"insufficient_confidence": 2}
+            assert stored_report is not None and stored_report.dataset_build_id == stored_build.id
+            assert stored_run is not None and stored_run.dataset_version_id == stored.id
     finally:
         await manager.close()
 

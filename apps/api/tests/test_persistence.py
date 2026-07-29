@@ -48,6 +48,7 @@ def test_metadata_contains_named_foundation_tables_and_constraints() -> None:
         "crawl_pages",
         "crawl_policy_records",
         "datasets",
+        "dataset_builds",
         "dataset_versions",
         "dataset_items",
         "dataset_quality_reports",
