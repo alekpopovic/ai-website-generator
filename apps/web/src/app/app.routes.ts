@@ -247,6 +247,14 @@ function projectRoutes(): Routes {
             ),
         },
         {
+          path: 'datasets/new',
+          title: 'Create dataset',
+          loadComponent: () =>
+            import('./features/datasets/dataset-create-wizard.component').then(
+              (module) => module.DatasetCreateWizardComponent,
+            ),
+        },
+        {
           path: 'datasets/:datasetId/versions/:versionId',
           title: 'Dataset version',
           loadComponent: () =>

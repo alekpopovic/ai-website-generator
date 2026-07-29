@@ -2,7 +2,9 @@ import { Injectable, inject } from '@angular/core';
 import {
   Datasets,
   type DatasetBuildResponse,
+  type DatasetCreateRequest,
   type DatasetResponse,
+  type DatasetVersionUpdateRequest,
   type DatasetVersionDetailResponse,
   type DatasetVersionResponse,
   type PageResponseDatasetItemResponse,
@@ -29,6 +31,10 @@ export class DatasetApiService {
     return this.unwrap(
       this.api.getDataset({ path: { project_id: projectId, dataset_id: datasetId } }),
     );
+  }
+
+  async create(projectId: string, body: DatasetCreateRequest): Promise<DatasetResponse> {
+    return this.unwrap(this.api.createDataset({ path: { project_id: projectId }, body }));
   }
 
   async versions(
@@ -60,6 +66,20 @@ export class DatasetApiService {
     return this.unwrap(
       this.api.getDatasetVersion({
         path: { project_id: projectId, dataset_id: datasetId, version_id: versionId },
+      }),
+    );
+  }
+
+  async updateVersion(
+    projectId: string,
+    datasetId: string,
+    versionId: string,
+    body: DatasetVersionUpdateRequest,
+  ): Promise<DatasetVersionResponse> {
+    return this.unwrap(
+      this.api.updateDatasetVersion({
+        path: { project_id: projectId, dataset_id: datasetId, version_id: versionId },
+        body,
       }),
     );
   }
@@ -98,6 +118,44 @@ export class DatasetApiService {
           version_id: versionId,
           build_id: buildId,
         },
+      }),
+    );
+  }
+
+  async cancelBuild(
+    projectId: string,
+    datasetId: string,
+    versionId: string,
+    build: DatasetBuildResponse,
+  ): Promise<DatasetBuildResponse> {
+    return this.unwrap(
+      this.api.cancelDatasetBuild({
+        path: {
+          project_id: projectId,
+          dataset_id: datasetId,
+          version_id: versionId,
+          build_id: build.id,
+        },
+        body: { version: build.version },
+      }),
+    );
+  }
+
+  async retryBuild(
+    projectId: string,
+    datasetId: string,
+    versionId: string,
+    buildId: string,
+  ): Promise<DatasetBuildResponse> {
+    return this.unwrap(
+      this.api.retryDatasetBuild({
+        path: {
+          project_id: projectId,
+          dataset_id: datasetId,
+          version_id: versionId,
+          build_id: buildId,
+        },
+        body: { idempotency_key: crypto.randomUUID() },
       }),
     );
   }

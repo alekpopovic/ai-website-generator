@@ -70,6 +70,13 @@ import { LoadingStateComponent } from '../../shared/states/loading-state.compone
                     }}</span>
                   </div>
                   <span>{{ version.statistics['item_count'] || 0 }} items</span>
+                  <span>
+                    {{
+                      version.sealed_at
+                        ? 'Sealed ' + formatDate(version.sealed_at)
+                        : 'Draft created ' + formatDate(version.created_at)
+                    }}
+                  </span>
                 </li>
               }
             </ol>
@@ -94,6 +101,10 @@ export class DatasetDetailShellComponent {
 
   constructor() {
     void this.load();
+  }
+
+  formatDate(value: string): string {
+    return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(new Date(value));
   }
 
   async createVersion(): Promise<void> {

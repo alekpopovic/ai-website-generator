@@ -15,7 +15,7 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    command: 'pnpm start -- --host 127.0.0.1 --port 4200',
+    command: 'pnpm start --host 127.0.0.1 --port 4200',
     url: 'http://127.0.0.1:4200/login',
     reuseExistingServer: !isCi,
     timeout: 120_000,

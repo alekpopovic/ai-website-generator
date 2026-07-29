@@ -11,6 +11,8 @@ from platform_api.analysis.patterns import pattern_hash, retrieval_document
 from platform_api.analysis.repository import AnalysisRepository
 from platform_api.analysis.schemas import (
     AnalysisRunInput,
+    BulkCurationItem,
+    BulkCurationRequest,
     CurationRequest,
     PageAnalysisPersistenceInput,
 )
@@ -141,6 +143,13 @@ class FakeAnalysisRepository:
         profile = self.pages.get(profile_id)
         return profile if profile is not None and profile.project_id == project_id else None
 
+    async def owned_patterns(
+        self, pattern_ids: tuple[UUID, ...], project_id: UUID, owner_id: UUID
+    ) -> tuple[SectionPatternRecord, ...]:
+        del owner_id
+        by_id = {item.id: item for item in self.patterns if item.project_id == project_id}
+        return tuple(by_id[item_id] for item_id in pattern_ids if item_id in by_id)
+
 
 class RecordingAuditRepository:
     def __init__(self) -> None:
@@ -248,6 +257,31 @@ async def test_curation_is_version_checked_and_audited_without_profile_content()
     assert updated.approval_state == "approved"
     assert audits.entries[0].action == "analysis.page_profile.approved"
     assert "profile" not in str(audits.entries[0].details).casefold()
+
+
+@pytest.mark.anyio
+async def test_bulk_pattern_curation_is_version_checked_and_audited() -> None:
+    repository = FakeAnalysisRepository()
+    audits = RecordingAuditRepository()
+    service = AnalysisProfileService(repository, AuditLogService(audits))  # type: ignore[arg-type]
+    value = command(page_id=uuid4(), run_id=uuid4(), website_id=uuid4(), project_id=uuid4())
+    await service.persist_page(value)
+    patterns = tuple(repository.patterns)
+
+    updated = await service.curate_patterns_bulk(
+        value.project_id,
+        BulkCurationRequest(
+            items=tuple(BulkCurationItem(id=item.id, version=item.version) for item in patterns),
+            approval_state="approved",
+            note="Dataset review",
+        ),
+        owner_id=uuid4(),
+        request_id="bulk-request",
+    )
+
+    assert {item.approval_state for item in updated} == {"approved"}
+    assert len(audits.entries) == len(patterns)
+    assert all(entry.request_id == "bulk-request" for entry in audits.entries)
 
 
 def test_analysis_tables_expose_repository_grouping_indexes() -> None:

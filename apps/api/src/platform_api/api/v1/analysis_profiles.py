@@ -8,10 +8,14 @@ from uuid import UUID
 from fastapi import APIRouter, Query, Request, status
 
 from platform_api.analysis.dependencies import AnalysisProfileServiceDependency
+from platform_api.analysis.repository import PatternFilters
 from platform_api.analysis.schemas import (
     AnalysisRunResponse,
+    BulkCurationRequest,
     CurationRequest,
     PageProfileResponse,
+    SectionPatternDetailResponse,
+    SectionPatternFacetsResponse,
     SectionPatternResponse,
     WebsiteProfileResponse,
 )
@@ -151,18 +155,98 @@ async def list_section_patterns(
     service: AnalysisProfileServiceDependency,
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    domain: Annotated[str | None, Query(min_length=1, max_length=253)] = None,
+    category: Annotated[str | None, Query(min_length=1, max_length=64)] = None,
+    page_type: Annotated[str | None, Query(min_length=1, max_length=32)] = None,
     section_type: Annotated[str | None, Query(min_length=1, max_length=32)] = None,
+    layout: Annotated[str | None, Query(min_length=1, max_length=32)] = None,
+    language: Annotated[str | None, Query(min_length=2, max_length=35)] = None,
+    minimum_confidence: Annotated[float | None, Query(ge=0, le=1)] = None,
+    maximum_confidence: Annotated[float | None, Query(ge=0, le=1)] = None,
     approval_state: Literal["needs_review", "approved", "rejected"] | None = None,
+    provenance_state: Literal["authorized", "restricted", "removal_pending", "removed"]
+    | None = None,
 ) -> PageResponse[SectionPatternResponse]:
     page = await service.list_patterns(
         project_id,
         user.id,
         limit=limit,
         offset=offset,
-        section_type=section_type,
-        approval_state=approval_state,
+        filters=PatternFilters(
+            domain=domain,
+            category=category,
+            page_type=page_type,
+            section_type=section_type,
+            layout=layout,
+            language=language,
+            minimum_confidence=minimum_confidence,
+            maximum_confidence=maximum_confidence,
+            approval_state=approval_state,
+            provenance_state=provenance_state,
+        ),
     )
     return _page(request, page.items, page.total, offset, limit)
+
+
+@router.get(
+    "/section-patterns/facets",
+    response_model=SectionPatternFacetsResponse,
+    operation_id="getSectionPatternFacets",
+    responses=problem_responses(401, 404, 422, 503),
+)
+async def get_section_pattern_facets(
+    project_id: UUID,
+    user: CurrentUserDependency,
+    service: AnalysisProfileServiceDependency,
+    domain: Annotated[str | None, Query(min_length=1, max_length=253)] = None,
+    category: Annotated[str | None, Query(min_length=1, max_length=64)] = None,
+    page_type: Annotated[str | None, Query(min_length=1, max_length=32)] = None,
+    section_type: Annotated[str | None, Query(min_length=1, max_length=32)] = None,
+    layout: Annotated[str | None, Query(min_length=1, max_length=32)] = None,
+    language: Annotated[str | None, Query(min_length=2, max_length=35)] = None,
+    minimum_confidence: Annotated[float | None, Query(ge=0, le=1)] = None,
+    maximum_confidence: Annotated[float | None, Query(ge=0, le=1)] = None,
+    approval_state: Literal["needs_review", "approved", "rejected"] | None = None,
+    provenance_state: Literal["authorized", "restricted", "removal_pending", "removed"]
+    | None = None,
+) -> SectionPatternFacetsResponse:
+    return await service.pattern_facets(
+        project_id,
+        user.id,
+        filters=PatternFilters(
+            domain=domain,
+            category=category,
+            page_type=page_type,
+            section_type=section_type,
+            layout=layout,
+            language=language,
+            minimum_confidence=minimum_confidence,
+            maximum_confidence=maximum_confidence,
+            approval_state=approval_state,
+            provenance_state=provenance_state,
+        ),
+    )
+
+
+@router.patch(
+    "/section-patterns/bulk-curation",
+    response_model=list[SectionPatternResponse],
+    operation_id="bulkCurateSectionPatterns",
+    responses=problem_responses(401, 404, 409, 422, 503),
+)
+async def bulk_curate_section_patterns(
+    project_id: UUID,
+    payload: BulkCurationRequest,
+    request: Request,
+    user: CurrentUserDependency,
+    service: AnalysisProfileServiceDependency,
+) -> tuple[SectionPatternResponse, ...]:
+    return await service.curate_patterns_bulk(
+        project_id,
+        payload,
+        owner_id=user.id,
+        request_id=request_id_from(request),
+    )
 
 
 @router.get(
@@ -178,6 +262,21 @@ async def get_section_pattern(
     service: AnalysisProfileServiceDependency,
 ) -> SectionPatternResponse:
     return await service.get_pattern(project_id, pattern_id, user.id)
+
+
+@router.get(
+    "/section-patterns/{pattern_id}/detail",
+    response_model=SectionPatternDetailResponse,
+    operation_id="getSectionPatternDetail",
+    responses=problem_responses(401, 404, 503),
+)
+async def get_section_pattern_detail(
+    project_id: UUID,
+    pattern_id: UUID,
+    user: CurrentUserDependency,
+    service: AnalysisProfileServiceDependency,
+) -> SectionPatternDetailResponse:
+    return await service.get_pattern_detail(project_id, pattern_id, user.id)
 
 
 @router.patch(

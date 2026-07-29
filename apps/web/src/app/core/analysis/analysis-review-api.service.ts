@@ -1,15 +1,22 @@
 import { Injectable, inject } from '@angular/core';
 import {
   AnalysisProfiles,
+  type ListSectionPatternsData,
   type PageProfileResponse,
   type PageResponsePageProfileResponse,
   type PageResponseSectionPatternResponse,
+  type SectionPatternDetailResponse,
+  type SectionPatternFacetsResponse,
   type SectionPatternResponse,
 } from '@platform/api-client';
 
 import { toAppError } from '../errors/app-error';
 
 export type ApprovalState = 'approved' | 'needs_review' | 'rejected';
+export type PatternFilterQuery = Omit<
+  NonNullable<ListSectionPatternsData['query']>,
+  'limit' | 'offset'
+>;
 
 @Injectable({ providedIn: 'root' })
 export class AnalysisReviewApiService {
@@ -26,17 +33,56 @@ export class AnalysisReviewApiService {
 
   async sectionPatterns(
     projectId: string,
-    approvalState?: ApprovalState,
+    filters: PatternFilterQuery = {},
+    offset = 0,
   ): Promise<PageResponseSectionPatternResponse> {
-    const query: { limit: number; offset: number; approval_state?: ApprovalState } = {
+    const query: NonNullable<ListSectionPatternsData['query']> = {
       limit: 100,
-      offset: 0,
+      offset,
+      ...filters,
     };
-    if (approvalState !== undefined) query.approval_state = approvalState;
     return this.unwrap(
       this.profiles.listSectionPatterns({
         path: { project_id: projectId },
         query,
+      }),
+    );
+  }
+
+  async patternFacets(
+    projectId: string,
+    filters: PatternFilterQuery = {},
+  ): Promise<SectionPatternFacetsResponse> {
+    return this.unwrap(
+      this.profiles.getSectionPatternFacets({
+        path: { project_id: projectId },
+        query: filters,
+      }),
+    );
+  }
+
+  async patternDetail(projectId: string, patternId: string): Promise<SectionPatternDetailResponse> {
+    return this.unwrap(
+      this.profiles.getSectionPatternDetail({
+        path: { project_id: projectId, pattern_id: patternId },
+      }),
+    );
+  }
+
+  async curatePatterns(
+    projectId: string,
+    patterns: readonly SectionPatternResponse[],
+    approvalState: ApprovalState,
+    note: string | null,
+  ): Promise<readonly SectionPatternResponse[]> {
+    return this.unwrap(
+      this.profiles.bulkCurateSectionPatterns({
+        path: { project_id: projectId },
+        body: {
+          items: patterns.map(({ id, version }) => ({ id, version })),
+          approval_state: approvalState,
+          note,
+        },
       }),
     );
   }

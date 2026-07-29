@@ -23,6 +23,14 @@ interface DatasetListEntry {
           <h1 id="datasets-heading">Datasets</h1>
           <p>Versioned selections of approved, provenance-safe normalized patterns.</p>
         </div>
+        @if (projectId(); as currentProjectId) {
+          <a
+            class="primary-button"
+            [routerLink]="['/projects', currentProjectId, 'datasets', 'new']"
+          >
+            Create dataset
+          </a>
+        }
       </header>
       @if (loading()) {
         <app-loading-state label="Loading datasets…" />
@@ -117,7 +125,7 @@ export class DatasetListPageComponent {
     }
   }
 
-  private projectId(): string | null {
+  projectId(): string | null {
     for (const route of [...this.route.pathFromRoot].reverse()) {
       const value = route.snapshot.paramMap.get('projectId');
       if (value !== null) return value;

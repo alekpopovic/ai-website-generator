@@ -327,6 +327,38 @@ export type ArtifactRetentionPolicy = {
 };
 
 /**
+ * BulkCurationItem
+ */
+export type BulkCurationItem = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Version
+     */
+    version: number;
+};
+
+/**
+ * BulkCurationRequest
+ */
+export type BulkCurationRequest = {
+    /**
+     * Approval State
+     */
+    approval_state: 'needs_review' | 'approved' | 'rejected';
+    /**
+     * Items
+     */
+    items: Array<BulkCurationItem>;
+    /**
+     * Note
+     */
+    note?: string | null;
+};
+
+/**
  * CampaignActionRequest
  */
 export type CampaignActionRequest = {
@@ -2805,6 +2837,152 @@ export type PasswordResetRequest = {
 };
 
 /**
+ * PatternAnalysisMetadata
+ */
+export type PatternAnalysisMetadata = {
+    /**
+     * Analyzer Version
+     */
+    analyzer_version: string;
+    /**
+     * Attempts
+     */
+    attempts: number;
+    /**
+     * Latency Ms
+     */
+    latency_ms: number;
+    /**
+     * Model Digest
+     */
+    model_digest: string;
+    /**
+     * Model Name
+     */
+    model_name: string;
+    /**
+     * Prompt Version
+     */
+    prompt_version: string;
+    /**
+     * Schema Version
+     */
+    schema_version: number;
+    /**
+     * Strategy
+     */
+    strategy: string;
+    /**
+     * Used Fallback
+     */
+    used_fallback: boolean;
+};
+
+/**
+ * PatternEmbeddingStatus
+ */
+export type PatternEmbeddingStatus = {
+    /**
+     * Collection
+     */
+    collection: string;
+    /**
+     * Error Code
+     */
+    error_code: string | null;
+    /**
+     * Indexed At
+     */
+    indexed_at: string | null;
+    /**
+     * Model
+     */
+    model: string;
+    /**
+     * Status
+     */
+    status: string;
+};
+
+/**
+ * PatternFacetValue
+ */
+export type PatternFacetValue = {
+    /**
+     * Count
+     */
+    count: number;
+    /**
+     * Value
+     */
+    value: string;
+};
+
+/**
+ * PatternScreenshotMetadata
+ */
+export type PatternScreenshotMetadata = {
+    /**
+     * Artifact Id
+     */
+    artifact_id: string;
+    /**
+     * Campaign Id
+     */
+    campaign_id: string;
+    /**
+     * Height
+     */
+    height: number | null;
+    /**
+     * Scanned At
+     */
+    scanned_at: string;
+    /**
+     * Viewport
+     */
+    viewport: string | null;
+    /**
+     * Width
+     */
+    width: number | null;
+};
+
+/**
+ * PatternSourceMetadata
+ */
+export type PatternSourceMetadata = {
+    /**
+     * Content Type
+     */
+    content_type: string | null;
+    /**
+     * Domain
+     */
+    domain: string;
+    /**
+     * Final Url
+     */
+    final_url: string | null;
+    /**
+     * Http Status
+     */
+    http_status: number | null;
+    /**
+     * Scanned At
+     */
+    scanned_at: string | null;
+    /**
+     * Title
+     */
+    title: string | null;
+    /**
+     * Url
+     */
+    url: string;
+};
+
+/**
  * PresignedArtifactReadResponse
  */
 export type PresignedArtifactReadResponse = {
@@ -3848,6 +4026,60 @@ export type SectionPattern = {
      * Controlled section registry type.
      */
     section_type: SectionType;
+};
+
+/**
+ * SectionPatternDetailResponse
+ */
+export type SectionPatternDetailResponse = {
+    analysis: PatternAnalysisMetadata;
+    design_tokens: DesignTokens | null;
+    embedding: PatternEmbeddingStatus | null;
+    pattern: SectionPatternResponse;
+    screenshot: PatternScreenshotMetadata | null;
+    source: PatternSourceMetadata;
+};
+
+/**
+ * SectionPatternFacetsResponse
+ */
+export type SectionPatternFacetsResponse = {
+    /**
+     * Approvals
+     */
+    approvals: Array<PatternFacetValue>;
+    /**
+     * Categories
+     */
+    categories: Array<PatternFacetValue>;
+    /**
+     * Domains
+     */
+    domains: Array<PatternFacetValue>;
+    /**
+     * Languages
+     */
+    languages: Array<PatternFacetValue>;
+    /**
+     * Layouts
+     */
+    layouts: Array<PatternFacetValue>;
+    /**
+     * Page Types
+     */
+    page_types: Array<PatternFacetValue>;
+    /**
+     * Provenance
+     */
+    provenance: Array<PatternFacetValue>;
+    /**
+     * Section Types
+     */
+    section_types: Array<PatternFacetValue>;
+    /**
+     * Total
+     */
+    total: number;
 };
 
 /**
@@ -5383,13 +5615,45 @@ export type ListSectionPatternsData = {
          */
         limit?: number;
         /**
+         * Domain
+         */
+        domain?: string | null;
+        /**
+         * Category
+         */
+        category?: string | null;
+        /**
+         * Page Type
+         */
+        page_type?: string | null;
+        /**
          * Section Type
          */
         section_type?: string | null;
         /**
+         * Layout
+         */
+        layout?: string | null;
+        /**
+         * Language
+         */
+        language?: string | null;
+        /**
+         * Minimum Confidence
+         */
+        minimum_confidence?: number | null;
+        /**
+         * Maximum Confidence
+         */
+        maximum_confidence?: number | null;
+        /**
          * Approval State
          */
         approval_state?: 'needs_review' | 'approved' | 'rejected' | null;
+        /**
+         * Provenance State
+         */
+        provenance_state?: 'authorized' | 'restricted' | 'removal_pending' | 'removed' | null;
     };
     url: '/api/v1/projects/{project_id}/analysis/section-patterns';
 };
@@ -5423,6 +5687,137 @@ export type ListSectionPatternsResponses = {
 };
 
 export type ListSectionPatternsResponse = ListSectionPatternsResponses[keyof ListSectionPatternsResponses];
+
+export type BulkCurateSectionPatternsData = {
+    body: BulkCurationRequest;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/analysis/section-patterns/bulk-curation';
+};
+
+export type BulkCurateSectionPatternsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Conflict
+     */
+    409: ProblemDetail;
+    /**
+     * Unprocessable Entity
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type BulkCurateSectionPatternsError = BulkCurateSectionPatternsErrors[keyof BulkCurateSectionPatternsErrors];
+
+export type BulkCurateSectionPatternsResponses = {
+    /**
+     * Response Bulkcuratesectionpatterns
+     *
+     * Successful Response
+     */
+    200: Array<SectionPatternResponse>;
+};
+
+export type BulkCurateSectionPatternsResponse = BulkCurateSectionPatternsResponses[keyof BulkCurateSectionPatternsResponses];
+
+export type GetSectionPatternFacetsData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+    };
+    query?: {
+        /**
+         * Domain
+         */
+        domain?: string | null;
+        /**
+         * Category
+         */
+        category?: string | null;
+        /**
+         * Page Type
+         */
+        page_type?: string | null;
+        /**
+         * Section Type
+         */
+        section_type?: string | null;
+        /**
+         * Layout
+         */
+        layout?: string | null;
+        /**
+         * Language
+         */
+        language?: string | null;
+        /**
+         * Minimum Confidence
+         */
+        minimum_confidence?: number | null;
+        /**
+         * Maximum Confidence
+         */
+        maximum_confidence?: number | null;
+        /**
+         * Approval State
+         */
+        approval_state?: 'needs_review' | 'approved' | 'rejected' | null;
+        /**
+         * Provenance State
+         */
+        provenance_state?: 'authorized' | 'restricted' | 'removal_pending' | 'removed' | null;
+    };
+    url: '/api/v1/projects/{project_id}/analysis/section-patterns/facets';
+};
+
+export type GetSectionPatternFacetsErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Unprocessable Entity
+     */
+    422: ProblemDetail;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type GetSectionPatternFacetsError = GetSectionPatternFacetsErrors[keyof GetSectionPatternFacetsErrors];
+
+export type GetSectionPatternFacetsResponses = {
+    /**
+     * Successful Response
+     */
+    200: SectionPatternFacetsResponse;
+};
+
+export type GetSectionPatternFacetsResponse = GetSectionPatternFacetsResponses[keyof GetSectionPatternFacetsResponses];
 
 export type GetSectionPatternData = {
     body?: never;
@@ -5519,6 +5914,52 @@ export type CurateSectionPatternResponses = {
 };
 
 export type CurateSectionPatternResponse = CurateSectionPatternResponses[keyof CurateSectionPatternResponses];
+
+export type GetSectionPatternDetailData = {
+    body?: never;
+    path: {
+        /**
+         * Project Id
+         */
+        project_id: string;
+        /**
+         * Pattern Id
+         */
+        pattern_id: string;
+    };
+    query?: never;
+    url: '/api/v1/projects/{project_id}/analysis/section-patterns/{pattern_id}/detail';
+};
+
+export type GetSectionPatternDetailErrors = {
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetail;
+    /**
+     * Not Found
+     */
+    404: ProblemDetail;
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+    /**
+     * Service Unavailable
+     */
+    503: ProblemDetail;
+};
+
+export type GetSectionPatternDetailError = GetSectionPatternDetailErrors[keyof GetSectionPatternDetailErrors];
+
+export type GetSectionPatternDetailResponses = {
+    /**
+     * Successful Response
+     */
+    200: SectionPatternDetailResponse;
+};
+
+export type GetSectionPatternDetailResponse = GetSectionPatternDetailResponses[keyof GetSectionPatternDetailResponses];
 
 export type ListWebsiteProfilesData = {
     body?: never;

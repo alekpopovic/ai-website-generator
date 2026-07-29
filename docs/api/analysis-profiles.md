@@ -21,18 +21,31 @@ The section retrieval document is deterministically assembled from controlled sc
 
 All paths are under `/api/v1/projects/{project_id}/analysis`:
 
-| Method  | Path                                      | Purpose                                     |
-| ------- | ----------------------------------------- | ------------------------------------------- |
-| `GET`   | `/page-profiles`                          | List current or historical page profiles    |
-| `GET`   | `/page-profiles/{profile_id}`             | Inspect one page profile                    |
-| `PATCH` | `/page-profiles/{profile_id}/curation`    | Approve, reject, or mark for review         |
-| `GET`   | `/website-profiles`                       | List current or historical website profiles |
-| `GET`   | `/website-profiles/{profile_id}`          | Inspect one website profile                 |
-| `PATCH` | `/website-profiles/{profile_id}/curation` | Curate one website profile                  |
-| `GET`   | `/section-patterns`                       | Filter and inspect independent sections     |
-| `GET`   | `/section-patterns/{pattern_id}`          | Inspect one section and duplicate lineage   |
-| `PATCH` | `/section-patterns/{pattern_id}/curation` | Curate one section pattern                  |
-| `GET`   | `/runs`                                   | Inspect historical analyzer run metadata    |
+| Method  | Path                                      | Purpose                                                                  |
+| ------- | ----------------------------------------- | ------------------------------------------------------------------------ |
+| `GET`   | `/page-profiles`                          | List current or historical page profiles                                 |
+| `GET`   | `/page-profiles/{profile_id}`             | Inspect one page profile                                                 |
+| `PATCH` | `/page-profiles/{profile_id}/curation`    | Approve, reject, or mark for review                                      |
+| `GET`   | `/website-profiles`                       | List current or historical website profiles                              |
+| `GET`   | `/website-profiles/{profile_id}`          | Inspect one website profile                                              |
+| `PATCH` | `/website-profiles/{profile_id}/curation` | Curate one website profile                                               |
+| `GET`   | `/section-patterns`                       | Filter and inspect independent sections                                  |
+| `GET`   | `/section-patterns/facets`                | Server-side counts for curation filters and charts                       |
+| `GET`   | `/section-patterns/{pattern_id}`          | Inspect one section and duplicate lineage                                |
+| `GET`   | `/section-patterns/{pattern_id}/detail`   | Inspect safe source, analysis, token, screenshot, and embedding metadata |
+| `PATCH` | `/section-patterns/{pattern_id}/curation` | Curate one section pattern                                               |
+| `PATCH` | `/section-patterns/bulk-curation`         | Version-check and curate up to 100 patterns atomically                   |
+
+The section-pattern collection supports domain, category, page type, section type, layout,
+language, confidence range, approval, and provenance filters. Facet counts are computed in
+PostgreSQL and returned as bounded aggregates, so distribution charts do not download the complete
+pattern collection.
+
+The detail response contains only normalized `SectionPattern` structures, controlled design tokens,
+source metadata, analysis metadata, embedding state, and an identifier for an authorized safe
+screenshot. Raw or rendered scanned HTML, object-storage keys, and private storage URLs are never
+returned. Screenshot bytes continue to use the existing owner-authorized, provenance-gated endpoint.
+| `GET` | `/runs` | Inspect historical analyzer run metadata |
 
 Curation uses optimistic versions and records the actor, timestamp, optional bounded note, and an audit event. Audit details include only the old and new state, never profile JSON or source content.
 

@@ -10,18 +10,26 @@ from http import HTTPStatus
 from typing import Literal, cast
 from uuid import UUID
 
+from platform_schemas import DesignTokens, StyleTag
 from platform_schemas import PageProfile as PageProfileSchema
 from platform_schemas import SectionPattern as SectionPatternSchema
-from platform_schemas import StyleTag
 from platform_schemas import WebsiteProfile as WebsiteProfileSchema
 
 from platform_api.analysis.patterns import pattern_hash, retrieval_document
-from platform_api.analysis.repository import AnalysisRepository
+from platform_api.analysis.repository import AnalysisRepository, PatternFilters
 from platform_api.analysis.schemas import (
     AnalysisRunResponse,
+    BulkCurationRequest,
     CurationRequest,
     PageAnalysisPersistenceInput,
     PageProfileResponse,
+    PatternAnalysisMetadata,
+    PatternEmbeddingStatus,
+    PatternFacetValue,
+    PatternScreenshotMetadata,
+    PatternSourceMetadata,
+    SectionPatternDetailResponse,
+    SectionPatternFacetsResponse,
     SectionPatternResponse,
     WebsiteAnalysisPersistenceInput,
     WebsiteProfileResponse,
@@ -230,18 +238,42 @@ class AnalysisProfileService:
         *,
         limit: int,
         offset: int,
-        section_type: str | None,
-        approval_state: str | None,
+        filters: PatternFilters,
     ) -> Page[SectionPatternResponse]:
         page = await self._repository.list_patterns(
             project_id=project_id,
             owner_id=owner_id,
             limit=limit,
             offset=offset,
-            section_type=section_type,
-            approval_state=approval_state,
+            filters=filters,
         )
         return _map_owned_page(page, _pattern_response)
+
+    async def pattern_facets(
+        self, project_id: UUID, owner_id: UUID, *, filters: PatternFilters
+    ) -> SectionPatternFacetsResponse:
+        values = await self._repository.pattern_facets(
+            project_id=project_id, owner_id=owner_id, filters=filters
+        )
+        if values is None:
+            raise ApiError(HTTPStatus.NOT_FOUND, "project_not_found", "Project was not found.")
+
+        def facet(name: str) -> tuple[PatternFacetValue, ...]:
+            return tuple(
+                PatternFacetValue(value=value, count=count) for value, count in values[name]
+            )
+
+        return SectionPatternFacetsResponse(
+            total=values["total"][0][1],
+            domains=facet("domains"),
+            categories=facet("categories"),
+            page_types=facet("page_types"),
+            section_types=facet("section_types"),
+            layouts=facet("layouts"),
+            languages=facet("languages"),
+            approvals=facet("approvals"),
+            provenance=facet("provenance"),
+        )
 
     async def list_runs(
         self, project_id: UUID, owner_id: UUID, *, limit: int, offset: int
@@ -268,6 +300,73 @@ class AnalysisProfileService:
     ) -> SectionPatternResponse:
         entity = await self._repository.owned_pattern(pattern_id, project_id, owner_id)
         return _pattern_response(_found(entity))
+
+    async def get_pattern_detail(
+        self, project_id: UUID, pattern_id: UUID, owner_id: UUID
+    ) -> SectionPatternDetailResponse:
+        context = await self._repository.pattern_context(
+            project_id=project_id, pattern_id=pattern_id, owner_id=owner_id
+        )
+        if context is None:
+            raise ApiError(
+                HTTPStatus.NOT_FOUND,
+                "analysis_profile_not_found",
+                "The analysis review item was not found.",
+            )
+        design_tokens: DesignTokens | None = None
+        if context.website_profile is not None:
+            design_tokens = WebsiteProfileSchema.model_validate(
+                context.website_profile.profile_json
+            ).design_tokens
+        embedding = context.embedding
+        screenshot = context.screenshot
+        return SectionPatternDetailResponse(
+            pattern=_pattern_response(context.pattern),
+            design_tokens=design_tokens,
+            source=PatternSourceMetadata(
+                domain=context.target.source_domain,
+                url=context.page.url,
+                final_url=context.page.final_url,
+                title=context.page.title,
+                http_status=context.page.http_status,
+                content_type=context.page.content_type,
+                scanned_at=context.page.updated_at if context.page.status == "fetched" else None,
+            ),
+            analysis=PatternAnalysisMetadata(
+                prompt_version=context.run.prompt_version,
+                analyzer_version=context.run.analyzer_version,
+                strategy=context.run.strategy,
+                model_name=context.run.model_name,
+                model_digest=context.run.model_digest,
+                schema_version=context.run.schema_version,
+                latency_ms=context.run.latency_ms,
+                attempts=context.run.attempts,
+                used_fallback=context.run.used_fallback,
+            ),
+            embedding=(
+                PatternEmbeddingStatus(
+                    status=embedding.status,
+                    model=embedding.embedding_model,
+                    collection=embedding.physical_collection,
+                    indexed_at=embedding.indexed_at,
+                    error_code=embedding.error_code,
+                )
+                if embedding is not None
+                else None
+            ),
+            screenshot=(
+                PatternScreenshotMetadata(
+                    artifact_id=screenshot.id,
+                    campaign_id=screenshot.campaign_id,
+                    viewport=screenshot.viewport,
+                    width=None,
+                    height=None,
+                    scanned_at=screenshot.scan_timestamp,
+                )
+                if screenshot is not None
+                else None
+            ),
+        )
 
     async def curate_page(
         self,
@@ -327,6 +426,38 @@ class AnalysisProfileService:
             resource_type="section_pattern",
         )
         return _pattern_response(entity)
+
+    async def curate_patterns_bulk(
+        self,
+        project_id: UUID,
+        payload: BulkCurationRequest,
+        *,
+        owner_id: UUID,
+        request_id: str,
+    ) -> tuple[SectionPatternResponse, ...]:
+        requested_versions = {item.id: item.version for item in payload.items}
+        entities = await self._repository.owned_patterns(
+            tuple(requested_versions), project_id, owner_id
+        )
+        if len(entities) != len(payload.items):
+            raise ApiError(
+                HTTPStatus.NOT_FOUND,
+                "analysis_profile_not_found",
+                "One or more analysis review items were not found.",
+            )
+        for entity in entities:
+            await self._curate(
+                entity,
+                CurationRequest(
+                    approval_state=payload.approval_state,
+                    note=payload.note,
+                    version=requested_versions[entity.id],
+                ),
+                owner_id=owner_id,
+                request_id=request_id,
+                resource_type="section_pattern",
+            )
+        return tuple(_pattern_response(entity) for entity in entities)
 
     async def _curate(
         self,

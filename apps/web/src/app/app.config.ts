@@ -1,6 +1,7 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   ErrorHandler,
+  Injector,
   inject,
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
@@ -11,10 +12,12 @@ import { TitleStrategy, provideRouter, withComponentInputBinding } from '@angula
 import {
   API_REFRESH_STRATEGY,
   PlatformApiConfiguration,
+  type ApiRefreshStrategy,
   apiBearerInterceptor,
   providePlatformApi,
   requestCorrelationInterceptor,
 } from '@platform/api-client';
+import { defer } from 'rxjs';
 
 import { AuthenticationService } from './core/auth/authentication.service';
 import { RuntimeConfigService } from './core/config/runtime-config';
@@ -32,7 +35,19 @@ export const appConfig: ApplicationConfig = {
       withInterceptors([requestCorrelationInterceptor, httpErrorInterceptor, apiBearerInterceptor]),
     ),
     providePlatformApi(),
-    { provide: API_REFRESH_STRATEGY, useExisting: AuthenticationService },
+    {
+      provide: API_REFRESH_STRATEGY,
+      useFactory: (): ApiRefreshStrategy => {
+        const injector = inject(Injector);
+        return {
+          refreshAccessToken: () =>
+            defer(() => injector.get(AuthenticationService).refreshAccessToken()),
+          clearSession: () => {
+            injector.get(AuthenticationService).clearSession();
+          },
+        };
+      },
+    },
     provideAppInitializer(() => {
       const runtime = inject(RuntimeConfigService);
       const api = inject(PlatformApiConfiguration);

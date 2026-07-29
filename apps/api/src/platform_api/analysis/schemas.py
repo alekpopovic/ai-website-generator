@@ -15,7 +15,7 @@ from platform_schemas import (
     StyleTag,
     WebsiteProfile,
 )
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 ApprovalState = Literal["needs_review", "approved", "rejected"]
 ProvenanceState = Literal["authorized", "restricted", "removal_pending", "removed"]
@@ -75,6 +75,24 @@ class CurationRequest(BaseModel):
     approval_state: ApprovalState
     version: int = Field(ge=1)
     note: str | None = Field(default=None, max_length=500)
+
+
+class BulkCurationItem(AnalysisWriteModel):
+    id: UUID
+    version: int = Field(ge=1)
+
+
+class BulkCurationRequest(AnalysisWriteModel):
+    items: tuple[BulkCurationItem, ...] = Field(min_length=1, max_length=100)
+    approval_state: ApprovalState
+    note: str | None = Field(default=None, max_length=500)
+
+    @field_validator("items")
+    @classmethod
+    def unique_items(cls, values: tuple[BulkCurationItem, ...]) -> tuple[BulkCurationItem, ...]:
+        if len(values) != len({item.id for item in values}):
+            raise ValueError("Pattern IDs must be unique.")
+        return values
 
 
 class AnalysisRunResponse(BaseModel):
@@ -190,3 +208,68 @@ class SectionPatternResponse(BaseModel):
     reviewed_at: datetime | None
     created_at: datetime
     version: int
+
+
+class PatternFacetValue(AnalysisWriteModel):
+    value: str
+    count: int = Field(ge=0)
+
+
+class SectionPatternFacetsResponse(AnalysisWriteModel):
+    total: int = Field(ge=0)
+    domains: tuple[PatternFacetValue, ...]
+    categories: tuple[PatternFacetValue, ...]
+    page_types: tuple[PatternFacetValue, ...]
+    section_types: tuple[PatternFacetValue, ...]
+    layouts: tuple[PatternFacetValue, ...]
+    languages: tuple[PatternFacetValue, ...]
+    approvals: tuple[PatternFacetValue, ...]
+    provenance: tuple[PatternFacetValue, ...]
+
+
+class PatternSourceMetadata(AnalysisWriteModel):
+    domain: str
+    url: str
+    final_url: str | None
+    title: str | None
+    http_status: int | None
+    content_type: str | None
+    scanned_at: datetime | None
+
+
+class PatternAnalysisMetadata(AnalysisWriteModel):
+    prompt_version: str
+    analyzer_version: str
+    strategy: str
+    model_name: str
+    model_digest: str
+    schema_version: int
+    latency_ms: int
+    attempts: int
+    used_fallback: bool
+
+
+class PatternEmbeddingStatus(AnalysisWriteModel):
+    status: str
+    model: str
+    collection: str
+    indexed_at: datetime | None
+    error_code: str | None
+
+
+class PatternScreenshotMetadata(AnalysisWriteModel):
+    artifact_id: UUID
+    campaign_id: UUID
+    viewport: str | None
+    width: int | None
+    height: int | None
+    scanned_at: datetime
+
+
+class SectionPatternDetailResponse(AnalysisWriteModel):
+    pattern: SectionPatternResponse
+    design_tokens: DesignTokens | None
+    source: PatternSourceMetadata
+    analysis: PatternAnalysisMetadata
+    embedding: PatternEmbeddingStatus | None
+    screenshot: PatternScreenshotMetadata | None
